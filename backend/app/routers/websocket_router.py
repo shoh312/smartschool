@@ -1,0 +1,33 @@
+import asyncio
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+from app.websocket.manager import manager
+from app.stream.stream_manager import stream_manager
+
+router = APIRouter(tags=["websocket"])
+
+
+@router.websocket("/ws/attendance")
+async def attendance_websocket(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+
+@router.websocket("/ws/stream")
+async def stream_websocket(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        last_frame: bytes | None = None
+        while True:
+            frame = await stream_manager.get_frame()
+            if frame is not None and frame is not last_frame:
+                await websocket.send_bytes(frame)
+                last_frame = frame
+            await asyncio.sleep(0.1)
+    except WebSocketDisconnect:
+        pass

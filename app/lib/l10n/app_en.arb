@@ -1,0 +1,199 @@
+{
+  "title": "Smart School",
+  "login": "Login",
+  "signIn": "Sign In",
+  "email": "Email",
+  "password": "Password",
+  "phone": "Phone Number",
+  "welcome": "Welcome",
+  "login_desc": "Enter your credentials to sign in.",
+  "dashboard": "Dashboard",
+  "live": "Live",
+  "manage": "Management",
+  "alerts": "Alerts",
+  "students": "Students",
+  "classes": "Classes",
+  "classSingle": "Class",
+  "cameras": "Cameras",
+  "settings": "Settings",
+  "language": "Language",
+  "logout": "Logout",
+  "invalidPhoneError": "Please enter a valid phone number",
+  "errorPrefix": "Error: {error}",
+  "@errorPrefix": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "needSupport": "Need support? ",
+  "contact": "Contact",
+  "roleDirector": "Director",
+  "roleParent": "Parent",
+  "createAccount": "Create Account",
+  "lastStep": "Last step!",
+  "tellUsName": "Please enter your name to complete registration for {phone}",
+  "@tellUsName": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "fullName": "Full Name",
+  "fullNameHint": "John Doe",
+  "completeRegistration": "Complete Registration",
+  "termsAndPrivacy": "By continuing, you agree to our Terms of Use and Privacy Policy.",
+  "present": "Present",
+  "late": "Late",
+  "absent": "Absent",
+  "leftSchool": "Left School",
+  "notDetected": "Not Detected",
+  "quickActions": "Quick Actions",
+  "history": "History",
+  "liveStream": "Live Stream",
+  "recentActivity": "Recent Activity",
+  "noAttendanceRecorded": "No attendance recorded yet today",
+  "cameraLabel": "Camera: {cameraId}",
+  "@cameraLabel": {
+    "placeholders": {
+      "cameraId": {
+        "type": "String"
+      }
+    }
+  },
+  "noChildrenLinked": "No children linked",
+  "assignedStudentsWillAppear": "Assigned students will appear here.",
+  "children": "Children",
+  "attendanceHistory": "Attendance History",
+  "liveStatus": "Live Status",
+  "selectClass": "Please select a class",
+  "studentPhotoRequired": "Student photo is required",
+  "deleteStudentTitle": "Delete Student",
+  "deleteStudentConfirm": "Are you sure you want to delete this student?",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "studentManagement": "Student Management",
+  "addNewStudent": "Add New Student",
+  "editStudent": "Edit Student",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "parentPhoneNumber": "Parent Phone Number",
+  "isActive": "Is Active",
+  "studentFacePhoto": "Student Face Photo",
+  "updatePhotoOptional": "Update Photo (optional)",
+  "requiredForFaceRecognition": "Required for face recognition",
+  "addStudent": "Add Student",
+  "saveChanges": "Save Changes",
+  "studentsList": "Students List",
+  "noStudents": "No students",
+  "studentsAssignedWillAppear": "Students assigned to classes and parents will appear here.",
+  "deleteClassTitle": "Delete Class",
+  "deleteClassConfirm": "Are you sure you want to delete this class? This may affect linked students and cameras.",
+  "classManagement": "Class Management",
+  "createNewClass": "Create New Class",
+  "editClass": "Edit Class",
+  "classNameLabel": "Class Name",
+  "classNameHint": "e.g., 9A, 10B",
+  "gradeOptional": "Grade (optional)",
+  "gradeHint": "Auto-detected if empty",
+  "createClass": "Create Class",
+  "existingClasses": "Existing Classes",
+  "noClasses": "No classes",
+  "createClassesMessage": "Create classes to monitor attendance.",
+  "gradeLabel": "Grade {grade}",
+  "@gradeLabel": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteCameraTitle": "Delete Camera",
+  "deleteCameraConfirm": "Are you sure you want to delete this camera?",
+  "cameraManagement": "Camera Management",
+  "addNewCamera": "Add New Camera",
+  "editCamera": "Edit Camera",
+  "cameraNameLabel": "Camera Name",
+  "assignToClass": "Assign to Class",
+  "rtspUrl": "RTSP URL",
+  "startTime": "Start Time",
+  "endTime": "End Time",
+  "detectSec": "Detection (sec)",
+  "waitMin": "Wait (min)",
+  "addCamera": "Add Camera",
+  "registeredCameras": "Registered Cameras",
+  "noCameras": "No cameras",
+  "classroomCamerasWillAppear": "Classroom cameras will appear here.",
+  "cameraListSubtitle": "Class: {className} • Wait: {waitDuration}m",
+  "@cameraListSubtitle": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      },
+      "waitDuration": {
+        "type": "String"
+      }
+    }
+  },
+  "unassigned": "Unassigned",
+  "noAttendanceRecords": "No attendance records",
+  "recordsWillAppear": "Records will appear once face recognition starts.",
+  "inTimeOutTime": "In {inTime}  Out {outTime}",
+  "@inTimeOutTime": {
+    "placeholders": {
+      "inTime": {
+        "type": "String"
+      },
+      "outTime": {
+        "type": "String"
+      }
+    }
+  },
+  "noLiveData": "No live data",
+  "realtimeAttendanceMessage": "Real-time attendance will appear during detection.",
+  "lastSeenTime": "Last seen at {time}",
+  "@lastSeenTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "directorNotifications": "Director Notifications",
+  "schoolWideNotificationView": "School-wide notification view can be enabled later.",
+  "noNotifications": "No notifications",
+  "attendanceAlertsWillAppear": "Attendance alerts will appear here.",
+  "studentNotFound": "Student not found",
+  "classLabel": "Class {classId}",
+  "@classLabel": {
+    "placeholders": {
+      "classId": {
+        "type": "String"
+      }
+    }
+  },
+  "parentLabel": "Parent {parentId}",
+  "@parentLabel": {
+    "placeholders": {
+      "parentId": {
+        "type": "String"
+      }
+    }
+  },
+  "viewAttendanceHistoryButton": "View Attendance History",
+  "viewLiveStatusButton": "View Live Status",
+  "signOutTooltip": "Sign out",
+  "classTileLabel": "Class: {className}",
+  "@classTileLabel": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "directorDashboard": "Director Dashboard",
+  "parentDashboard": "Parent Dashboard",
+  "notifications": "Notifications"
+}

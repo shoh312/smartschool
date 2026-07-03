@@ -1,0 +1,28 @@
+{
+  "project_info": {
+    "project_number": "476056518828",
+    "project_id": "auth-smart",
+    "storage_bucket": "auth-smart.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:476056518828:android:48bd86e0ed766669bd9f09",
+        "android_client_info": {
+          "package_name": "com.example.maktab_app"
+        }      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvNb3DtGmTglDYIgyj-ht8IAj5HAWnjO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
