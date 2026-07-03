@@ -15,6 +15,8 @@ class Camera(Base):
 
     id = Column(Integer, primary_key=True)
 
+    school_id = Column(Integer, ForeignKey("schools.id"), index=True)
+
     class_id = Column(
         Integer,
         ForeignKey("classes.id")

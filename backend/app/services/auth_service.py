@@ -142,21 +142,42 @@ def create_director_token(director: Director) -> str:
     )
 
 
-def ensure_default_director(db: Session) -> Director:
+def ensure_default_director(db: Session, default_school_id: int | None = None) -> Director:
     director = db.query(Director).filter(
         Director.email == DEFAULT_DIRECTOR_EMAIL
     ).first()
-    if director:
-        return director
+    if not director:
+        director = Director(
+            school_id=default_school_id,
+            full_name="SmartSchool Director",
+            email=DEFAULT_DIRECTOR_EMAIL,
+            hashed_password=hash_password(DEFAULT_DIRECTOR_PASSWORD),
+            is_active=True,
+            is_superadmin=True,
+        )
+        db.add(director)
+        db.commit()
+        db.refresh(director)
+    elif director.school_id is None and default_school_id is not None:
+        director.school_id = default_school_id
+        director.is_superadmin = True
+        db.commit()
+        db.refresh(director)
 
-    director = Director(
-        school_id=None,
-        full_name="SmartSchool Director",
-        email=DEFAULT_DIRECTOR_EMAIL,
-        hashed_password=hash_password(DEFAULT_DIRECTOR_PASSWORD),
-        is_active=True,
-    )
-    db.add(director)
-    db.commit()
-    db.refresh(director)
+    if verify_password(DEFAULT_DIRECTOR_PASSWORD, director.hashed_password):
+        print(
+            "\n"
+            "!!! SECURITY WARNING: the default director account "
+            f"({DEFAULT_DIRECTOR_EMAIL}) still uses its default password. "
+            "Log in and call POST /auth/director/change-password before "
+            "using this instance for real students. !!!\n"
+        )
+
     return director
+
+
+def change_director_password(db: Session, director: Director, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, director.hashed_password):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    director.hashed_password = hash_password(new_password)
+    db.commit()

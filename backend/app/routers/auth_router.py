@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_director
+from app.deps import get_current_director, get_current_superadmin
 from app.models.director_model import Director
 from app.schemas.auth_schema import (
+    DirectorChangePassword,
     DirectorCreate,
     DirectorLogin,
     DirectorResponse,
@@ -15,6 +16,7 @@ from app.schemas.auth_schema import (
 )
 from app.services.auth_service import (
     authenticate_director,
+    change_director_password,
     create_director,
     create_director_token,
     login_parent,
@@ -66,6 +68,7 @@ def register_complete(payload: ParentRegisterRequest, db: Session = Depends(get_
 def create_director_account(
     payload: DirectorCreate,
     db: Session = Depends(get_db),
+    _current_superadmin: Director = Depends(get_current_superadmin),
 ):
     return create_director(
         db,
@@ -96,3 +99,18 @@ def login_director(
 @router.get("/me", response_model=DirectorResponse)
 def auth_me(current_director: Director = Depends(get_current_director)):
     return current_director
+
+
+@router.post("/director/change-password")
+def change_password(
+    payload: DirectorChangePassword,
+    db: Session = Depends(get_db),
+    current_director: Director = Depends(get_current_director),
+):
+    change_director_password(
+        db,
+        current_director,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
+    return {"message": "Password updated"}

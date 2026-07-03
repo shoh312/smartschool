@@ -1,7 +1,8 @@
 import asyncio
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
+from app.deps import get_current_director_ws
 from app.websocket.manager import manager
 from app.stream.stream_manager import stream_manager
 
@@ -9,7 +10,10 @@ router = APIRouter(tags=["websocket"])
 
 
 @router.websocket("/ws/attendance")
-async def attendance_websocket(websocket: WebSocket):
+async def attendance_websocket(
+    websocket: WebSocket,
+    _director=Depends(get_current_director_ws),
+):
     await manager.connect(websocket)
     try:
         while True:
@@ -19,7 +23,10 @@ async def attendance_websocket(websocket: WebSocket):
 
 
 @router.websocket("/ws/stream")
-async def stream_websocket(websocket: WebSocket):
+async def stream_websocket(
+    websocket: WebSocket,
+    _director=Depends(get_current_director_ws),
+):
     await websocket.accept()
     try:
         last_frame: bytes | None = None

@@ -15,12 +15,18 @@ class DirectorLogin(BaseModel):
     password: str
 
 
+class DirectorChangePassword(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class DirectorResponse(BaseModel):
     id: int
     school_id: Optional[int] = None
     full_name: str
     email: EmailStr
     is_active: bool
+    is_superadmin: bool = False
 
     class Config:
         from_attributes = True

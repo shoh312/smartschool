@@ -11,6 +11,8 @@ import '../screens/notification_screen.dart';
 import '../screens/parent_dashboard_screen.dart';
 import '../screens/student_details_screen.dart';
 import '../screens/student_management_screen.dart';
+import '../screens/teacher_dashboard_screen.dart';
+import '../screens/teacher_management_screen.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -24,6 +26,8 @@ class AppRoutes {
   static const classes = '/classes';
   static const notifications = '/notifications';
   static const students = '/students';
+  static const teacherDashboard = '/teacher';
+  static const teacherManagement = '/teachers';
 
   static Map<String, WidgetBuilder> get routes => {
     login: (_) => const LoginScreen(),
@@ -37,5 +41,7 @@ class AppRoutes {
     classes: (_) => const ClassManagementScreen(),
     notifications: (_) => const NotificationScreen(),
     students: (_) => const StudentManagementScreen(),
+    teacherDashboard: (_) => const TeacherDashboardScreen(),
+    teacherManagement: (_) => const TeacherManagementScreen(),
   };
 }

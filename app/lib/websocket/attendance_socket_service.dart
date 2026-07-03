@@ -5,16 +5,22 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../core/constants.dart';
 import '../models/attendance.dart';
+import '../services/token_storage.dart';
 
 class AttendanceSocketService {
   WebSocketChannel? _channel;
   final _controller = StreamController<List<LiveAttendance>>.broadcast();
+  final _tokenStorage = TokenStorage();
 
   Stream<List<LiveAttendance>> get stream => _controller.stream;
 
-  void connect() {
+  Future<void> connect() async {
     disconnect();
-    _channel = WebSocketChannel.connect(Uri.parse(AppConstants.websocketUrl));
+    final token = await _tokenStorage.readToken();
+    final uri = Uri.parse(AppConstants.websocketUrl).replace(
+      queryParameters: {if (token != null) 'token': token},
+    );
+    _channel = WebSocketChannel.connect(uri);
     _channel!.stream.listen(
       (message) {
         final decoded = jsonDecode(message as String) as Map<String, dynamic>;

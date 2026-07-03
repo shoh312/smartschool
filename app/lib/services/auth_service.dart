@@ -43,6 +43,25 @@ class AuthService {
     return parentId;
   }
 
+  Future<void> loginTeacher({
+    required String email,
+    required String password,
+  }) async {
+    final data =
+        await _apiClient.post(
+              '/auth/teacher/login',
+              body: {'email': email, 'password': password},
+            )
+            as Map<String, dynamic>;
+
+    final teacher = data['teacher'] as Map<String, dynamic>;
+    await _tokenStorage.saveSession(
+      token: data['access_token'] as String,
+      role: AppRole.teacher,
+      teacherId: teacher['id'] as int,
+    );
+  }
+
   Future<int> completeRegistration({
     required String phone,
     required String fullName,

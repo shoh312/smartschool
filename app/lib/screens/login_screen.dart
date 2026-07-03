@@ -41,6 +41,13 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted || !success) return;
       Navigator.pushReplacementNamed(context, AppRoutes.main);
+    } else if (_role == AppRole.teacher) {
+      final success = await auth.loginTeacher(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (!mounted || !success) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
     } else {
       // Parent Login - Bypassing OTP
       final phoneNumber = _phoneController.text.trim();
@@ -136,12 +143,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           .map(
                             (role) => ButtonSegment(
                               value: role,
-                              label: Text(role == AppRole.director ? l10n.roleDirector : l10n.roleParent),
-                              icon: Icon(
-                                role == AppRole.director
-                                    ? Icons.admin_panel_settings_rounded
-                                    : Icons.family_restroom_rounded,
-                              ),
+                              label: Text(switch (role) {
+                                AppRole.director => l10n.roleDirector,
+                                AppRole.parent => l10n.roleParent,
+                                AppRole.teacher => 'Oʻqituvchi',
+                              }),
+                              icon: Icon(switch (role) {
+                                AppRole.director =>
+                                  Icons.admin_panel_settings_rounded,
+                                AppRole.parent => Icons.family_restroom_rounded,
+                                AppRole.teacher => Icons.school_rounded,
+                              }),
                             ),
                           )
                           .toList(),
@@ -154,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: _role == AppRole.director
+                    child: _role != AppRole.parent
                         ? Column(
                             key: const ValueKey('director_fields'),
                             children: [

@@ -1,10 +1,12 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.deps import AuthActor, get_current_actor, get_current_director, get_current_superadmin
 from app.models.attendance_model import Attendance
+from app.models.director_model import Director
 from app.models.student import Student
 from app.schemas.attendance_schema import AttendanceResponse, LiveAttendanceStatus
 from app.services.attendance_service import (
@@ -22,26 +24,42 @@ def get_attendance_history(
     parent_id: int | None = None,
     limit: int = 100,
     db: Session = Depends(get_db),
+    actor: AuthActor = Depends(get_current_actor),
 ):
+    school_id = None
+    if actor.role == "parent":
+        if student_id is not None:
+            student = db.query(Student).filter(Student.id == student_id).first()
+            if not student or student.parent_id != actor.parent.id:
+                raise HTTPException(status_code=403, detail="Not your student")
+        parent_id = actor.parent.id
+    else:
+        school_id = actor.director.school_id
+
     return attendance_history(
         db,
         student_id=student_id,
         parent_id=parent_id,
+        school_id=school_id,
         limit=limit,
     )
 
 
-@router.get("/live-status", response_model=list[LiveAttendanceStatus])
+@router.get(
+    "/live-status",
+    response_model=list[LiveAttendanceStatus],
+)
 def live_attendance_status(
     class_id: int | None = None,
     db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
 ):
     today = date.today()
     query = db.query(Student, Attendance).outerjoin(
         Attendance,
         (Attendance.student_id == Student.id)
         & (Attendance.attendance_date == today),
-    ).filter(Student.is_active == True)
+    ).filter(Student.is_active == True, Student.school_id == director.school_id)
 
     if class_id is not None:
         query = query.filter(Student.class_id == class_id)
@@ -64,11 +82,21 @@ def live_attendance_status(
     return response
 
 
-@router.post("/check-absent", response_model=list[AttendanceResponse])
+@router.post(
+    "/check-absent",
+    response_model=list[AttendanceResponse],
+    dependencies=[Depends(get_current_superadmin)],
+)
 def check_absent(db: Session = Depends(get_db)):
+    # System-wide maintenance operation (also runs automatically every cycle in
+    # the background loop) -- superadmin-only since it touches every school's data.
     return mark_absent_students(db)
 
 
-@router.post("/check-left-school", response_model=list[AttendanceResponse])
+@router.post(
+    "/check-left-school",
+    response_model=list[AttendanceResponse],
+    dependencies=[Depends(get_current_superadmin)],
+)
 def check_left_school(db: Session = Depends(get_db)):
     return mark_left_school_students(db)

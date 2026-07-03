@@ -199,14 +199,21 @@ def attendance_history(
     db: Session,
     student_id: int | None = None,
     parent_id: int | None = None,
+    school_id: int | None = None,
     limit: int = 100,
 ) -> list[Attendance]:
     query = db.query(Attendance)
+    joined_student = False
 
     if parent_id is not None:
         query = query.join(Student, Student.id == Attendance.student_id).filter(
             Student.parent_id == parent_id
         )
+        joined_student = True
+    if school_id is not None:
+        if not joined_student:
+            query = query.join(Student, Student.id == Attendance.student_id)
+        query = query.filter(Student.school_id == school_id)
     if student_id is not None:
         query = query.filter(Attendance.student_id == student_id)
 

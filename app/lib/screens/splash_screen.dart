@@ -34,6 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final route = switch (auth.role) {
       AppRole.director => AppRoutes.main,
       AppRole.parent => AppRoutes.parentDashboard,
+      AppRole.teacher => AppRoutes.teacherDashboard,
       null => AppRoutes.login,
     };
 

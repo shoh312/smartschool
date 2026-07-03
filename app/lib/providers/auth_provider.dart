@@ -10,6 +10,7 @@ class AuthProvider extends ChangeNotifier {
 
   AppRole? role;
   int? parentId;
+  int? teacherId;
   bool isLoading = false;
   String? error;
 
@@ -21,6 +22,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> restoreSession() async {
     role = await _storage?.readRole();
     parentId = await _storage?.readParentId();
+    teacherId = await _storage?.readTeacherId();
     notifyListeners();
   }
 
@@ -29,6 +31,16 @@ class AuthProvider extends ChangeNotifier {
       await _authService!.loginDirector(email: email, password: password);
       role = AppRole.director;
       parentId = null;
+      teacherId = null;
+    });
+  }
+
+  Future<bool> loginTeacher(String email, String password) async {
+    return _run(() async {
+      await _authService!.loginTeacher(email: email, password: password);
+      role = AppRole.teacher;
+      parentId = null;
+      teacherId = await _storage?.readTeacherId();
     });
   }
 
@@ -54,6 +66,7 @@ class AuthProvider extends ChangeNotifier {
     await _authService?.logout();
     role = null;
     parentId = null;
+    teacherId = null;
     notifyListeners();
   }
 

@@ -13,4 +13,5 @@ class Director(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+    is_superadmin = Column(Boolean, default=False, nullable=False, server_default="false")
     created_at = Column(TIMESTAMP, server_default=func.now())

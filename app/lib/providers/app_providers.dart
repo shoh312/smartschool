@@ -4,17 +4,22 @@ import 'package:provider/single_child_widget.dart';
 import '../services/api_client.dart';
 import '../services/attendance_service.dart';
 import '../services/auth_service.dart';
+import '../services/journal_service.dart';
 import '../services/notification_service.dart';
 import '../services/school_service.dart';
 import '../services/student_service.dart';
+import '../services/teacher_service.dart';
 import '../services/token_storage.dart';
 import '../websocket/attendance_socket_service.dart';
 import 'attendance_provider.dart';
 import 'auth_provider.dart';
+import 'journal_provider.dart';
 import 'language_provider.dart';
 import 'notification_provider.dart';
 import 'school_provider.dart';
 import 'student_provider.dart';
+import 'teacher_admin_provider.dart';
+import 'teacher_provider.dart';
 
 List<SingleChildWidget> buildAppProviders() {
   return [
@@ -38,6 +43,12 @@ List<SingleChildWidget> buildAppProviders() {
     ),
     ProxyProvider<ApiClient, NotificationService>(
       update: (_, api, __) => NotificationService(api),
+    ),
+    ProxyProvider<ApiClient, JournalService>(
+      update: (_, api, __) => JournalService(api),
+    ),
+    ProxyProvider<ApiClient, TeacherService>(
+      update: (_, api, __) => TeacherService(api),
     ),
     Provider(create: (_) => AttendanceSocketService()),
     ChangeNotifierProxyProvider2<AuthService, TokenStorage, AuthProvider>(
@@ -68,6 +79,26 @@ List<SingleChildWidget> buildAppProviders() {
       create: (_) => NotificationProvider(),
       update: (_, service, provider) =>
           (provider ?? NotificationProvider())..attach(service),
+    ),
+    ChangeNotifierProxyProvider2<
+      TeacherService,
+      JournalService,
+      TeacherProvider
+    >(
+      create: (_) => TeacherProvider(),
+      update: (_, teacherService, journalService, provider) =>
+          (provider ?? TeacherProvider())
+            ..attach(teacherService, journalService),
+    ),
+    ChangeNotifierProxyProvider<TeacherService, TeacherAdminProvider>(
+      create: (_) => TeacherAdminProvider(),
+      update: (_, service, provider) =>
+          (provider ?? TeacherAdminProvider())..attach(service),
+    ),
+    ChangeNotifierProxyProvider<JournalService, JournalProvider>(
+      create: (_) => JournalProvider(),
+      update: (_, service, provider) =>
+          (provider ?? JournalProvider())..attach(service),
     ),
   ];
 }

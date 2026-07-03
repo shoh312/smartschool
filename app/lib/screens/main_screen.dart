@@ -11,6 +11,7 @@ import '../screens/student_management_screen.dart';
 import '../screens/class_management_screen.dart';
 import '../screens/camera_management_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/teacher_management_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -84,11 +85,12 @@ class _ManagementTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.manage),
           bottom: TabBar(
+            isScrollable: true,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 3,
             labelColor: Theme.of(context).colorScheme.primary,
@@ -99,6 +101,7 @@ class _ManagementTab extends StatelessWidget {
               Tab(text: l10n.students),
               Tab(text: l10n.classes),
               Tab(text: l10n.cameras),
+              const Tab(text: 'Oʻqituvchilar'),
             ],
           ),
           actions: [
@@ -122,6 +125,7 @@ class _ManagementTab extends StatelessWidget {
             StudentManagementScreen(isIntegrated: true),
             ClassManagementScreen(isIntegrated: true),
             CameraManagementScreen(isIntegrated: true),
+            TeacherManagementScreen(isIntegrated: true),
           ],
         ),
       ),

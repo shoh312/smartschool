@@ -1,9 +1,10 @@
 import asyncio
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.responses import StreamingResponse
+from app.deps import get_current_director
 from app.stream.stream_manager import stream_manager
 
-router = APIRouter(prefix="/stream", tags=["Stream"])
+router = APIRouter(prefix="/stream", tags=["Stream"], dependencies=[Depends(get_current_director)])
 
 async def frame_generator():
     while True:

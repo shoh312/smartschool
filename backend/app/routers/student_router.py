@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 
 from app.database import get_db
+from app.deps import get_current_director
 from app.models.class_model import Class
+from app.models.director_model import Director
 from app.models.parent_model import Parent
 from app.models.student import Student
 from app.schemas.student_schema import (
@@ -19,7 +21,7 @@ from app.ai.face_engine import (
     generate_face_encoding
 )
 
-router = APIRouter(tags=["students"])
+router = APIRouter(tags=["students"], dependencies=[Depends(get_current_director)])
 
 # ==================================================
 # CREATE STUDENT
@@ -29,10 +31,13 @@ router = APIRouter(tags=["students"])
 
 def create_student(
     student: StudentCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
 ):
 
     new_student = Student(
+
+        school_id=director.school_id,
 
         class_id=student.class_id,
 
@@ -65,10 +70,13 @@ def create_student(
 )
 
 def get_students(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
 ):
 
-    rows = db.query(Student, Class, Parent).outerjoin(
+    rows = db.query(Student, Class, Parent).filter(
+        Student.school_id == director.school_id
+    ).outerjoin(
         Class,
         Student.class_id == Class.id
     ).outerjoin(
@@ -107,11 +115,13 @@ def director_create_student(
     parent_phone: str = Form(...),
     parent_full_name: str | None = Form(None),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
 ):
 
     school_class = db.query(Class).filter(
-        Class.id == class_id
+        Class.id == class_id,
+        Class.school_id == director.school_id,
     ).first()
 
     if not school_class:
@@ -131,6 +141,7 @@ def director_create_student(
     if not parent:
 
         parent = Parent(
+            school_id=director.school_id,
             full_name=parent_full_name or normalized_phone,
             phone=normalized_phone
         )
@@ -146,6 +157,7 @@ def director_create_student(
     extension = os.path.splitext(file.filename or "")[1] or ".jpg"
 
     new_student = Student(
+        school_id=director.school_id,
         class_id=school_class.id,
         parent_id=parent.id,
         first_name=first_name.strip(),
@@ -208,11 +220,13 @@ def director_create_student(
 def register_face(
     student_id: int,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
 ):
 
     student = db.query(Student).filter(
-        Student.id == student_id
+        Student.id == student_id,
+        Student.school_id == director.school_id,
     ).first()
 
     if not student:
@@ -258,13 +272,20 @@ def update_student(
     parent_phone: str = Form(...),
     is_active: bool = Form(True),
     file: UploadFile | None = File(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
 ):
-    student = db.query(Student).filter(Student.id == student_id).first()
+    student = db.query(Student).filter(
+        Student.id == student_id,
+        Student.school_id == director.school_id,
+    ).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    school_class = db.query(Class).filter(Class.id == class_id).first()
+    school_class = db.query(Class).filter(
+        Class.id == class_id,
+        Class.school_id == director.school_id,
+    ).first()
     if not school_class:
         raise HTTPException(status_code=404, detail="Class not found")
 
@@ -272,7 +293,11 @@ def update_student(
     normalized_phone = parent_phone.strip()
     parent = db.query(Parent).filter(Parent.phone == normalized_phone).first()
     if not parent:
-        parent = Parent(full_name=normalized_phone, phone=normalized_phone)
+        parent = Parent(
+            school_id=director.school_id,
+            full_name=normalized_phone,
+            phone=normalized_phone,
+        )
         db.add(parent)
         db.commit()
         db.refresh(parent)
@@ -313,8 +338,15 @@ def update_student(
 
 
 @router.delete("/students/{student_id}")
-def delete_student(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.id == student_id).first()
+def delete_student(
+    student_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    student = db.query(Student).filter(
+        Student.id == student_id,
+        Student.school_id == director.school_id,
+    ).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     

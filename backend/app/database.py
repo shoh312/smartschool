@@ -46,8 +46,53 @@ def ensure_database_schema():
         "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS detection_end_time VARCHAR",
         "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS detect_duration_seconds INTEGER",
         "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS wait_duration_minutes INTEGER",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES schools(id)",
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES schools(id)",
+        "ALTER TABLE parents ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES schools(id)",
+        "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES schools(id)",
+        "ALTER TABLE directors ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN NOT NULL DEFAULT false",
+        "ALTER TABLE schools ADD COLUMN IF NOT EXISTS phone VARCHAR",
+        "ALTER TABLE schools ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true",
+        "CREATE INDEX IF NOT EXISTS ix_classes_school_id ON classes (school_id)",
+        "CREATE INDEX IF NOT EXISTS ix_students_school_id ON students (school_id)",
+        "CREATE INDEX IF NOT EXISTS ix_parents_school_id ON parents (school_id)",
+        "CREATE INDEX IF NOT EXISTS ix_cameras_school_id ON cameras (school_id)",
+        "CREATE INDEX IF NOT EXISTS ix_grades_student_id ON grades (student_id)",
+        "CREATE INDEX IF NOT EXISTS ix_grades_class_id ON grades (class_id)",
+        "CREATE INDEX IF NOT EXISTS ix_homework_class_id ON homework (class_id)",
+        "CREATE INDEX IF NOT EXISTS ix_teacher_classes_teacher_id ON teacher_classes (teacher_id)",
+        "CREATE INDEX IF NOT EXISTS ix_teacher_classes_class_id ON teacher_classes (class_id)",
     ]
 
     with engine.begin() as connection:
         for statement in statements:
             connection.execute(text(statement))
+
+
+def ensure_default_school_and_backfill() -> int:
+    """Multi-tenant migration: every row used to implicitly belong to one school.
+
+    Creates a "Default School" (if none exists yet) and assigns it to any
+    class/student/parent/camera row that predates the school_id column, so
+    existing single-school deployments keep working unchanged.
+    """
+    with engine.begin() as connection:
+        school_id = connection.execute(
+            text("SELECT id FROM schools ORDER BY id ASC LIMIT 1")
+        ).scalar()
+
+        if school_id is None:
+            school_id = connection.execute(
+                text(
+                    "INSERT INTO schools (name, is_active) "
+                    "VALUES ('Default School', true) RETURNING id"
+                )
+            ).scalar()
+
+        for table in ("classes", "students", "parents", "cameras"):
+            connection.execute(
+                text(f"UPDATE {table} SET school_id = :school_id WHERE school_id IS NULL"),
+                {"school_id": school_id},
+            )
+
+        return school_id
