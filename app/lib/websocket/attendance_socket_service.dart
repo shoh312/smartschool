@@ -37,7 +37,14 @@ class AttendanceSocketService {
         }
       },
       onError: _controller.addError,
-      onDone: () {},
+      onDone: () {
+        final code = _channel?.closeCode;
+        if (code != null && code != 1000) {
+          _controller.addError(
+            'Ulanish uzildi (kod $code) — qayta login qiling yoki qayta urinib ko\'ring.',
+          );
+        }
+      },
     );
   }
 

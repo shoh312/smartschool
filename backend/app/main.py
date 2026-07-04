@@ -29,6 +29,7 @@ from app.models.journal_model import Grade, Homework
 from app.models.notification_model import DeviceToken, NotificationEvent
 from app.background.tasks import attendance_background_loop
 from app.database import SessionLocal
+from app.discovery import start_discovery_responder
 from app.services.auth_service import ensure_default_director
 from app.ai.live_detection import start_detection_background
 
@@ -75,4 +76,5 @@ def root():
 @app.on_event("startup")
 async def start_background_tasks():
     asyncio.create_task(attendance_background_loop())
+    asyncio.create_task(start_discovery_responder())
     threading.Thread(target=start_detection_background, daemon=True).start()

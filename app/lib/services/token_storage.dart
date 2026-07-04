@@ -7,6 +7,7 @@ class TokenStorage {
   static const _roleKey = 'app_role';
   static const _parentIdKey = 'parent_id';
   static const _teacherIdKey = 'teacher_id';
+  static const _serverUrlKey = 'server_base_url';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -43,6 +44,13 @@ class TokenStorage {
     final value = await _storage.read(key: _teacherIdKey);
     return value == null ? null : int.tryParse(value);
   }
+
+  /// Last backend address that was reachable, kept across logout since it's
+  /// network config, not auth state -- avoids re-discovering on every launch.
+  Future<void> saveServerUrl(String url) =>
+      _storage.write(key: _serverUrlKey, value: url);
+
+  Future<String?> readServerUrl() => _storage.read(key: _serverUrlKey);
 
   Future<void> clear() async {
     await _storage.delete(key: _tokenKey);

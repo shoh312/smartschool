@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/constants.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart';
 import '../routes/app_routes.dart';
+import '../services/discovery_service.dart';
+import '../services/token_storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,8 +28,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _restore() async {
     final auth = context.read<AuthProvider>();
+    final tokenStorage = context.read<TokenStorage>();
 
-    await Future.delayed(const Duration(milliseconds: 1500));
+    await Future.wait([
+      _resolveServerUrl(tokenStorage),
+      Future.delayed(const Duration(milliseconds: 1500)),
+    ]);
     await auth.restoreSession();
 
     if (!mounted) return;
@@ -39,6 +46,26 @@ class _SplashScreenState extends State<SplashScreen> {
     };
 
     Navigator.pushReplacementNamed(context, route);
+  }
+
+  /// Finds the backend on the current network: try the last known-good
+  /// address first (fast path, no traffic if it still works), and only fall
+  /// back to a broadcast search if that fails or nothing was cached yet.
+  Future<void> _resolveServerUrl(TokenStorage tokenStorage) async {
+    final discovery = DiscoveryService();
+    final cachedUrl = await tokenStorage.readServerUrl();
+
+    if (cachedUrl != null && await discovery.isReachable(cachedUrl)) {
+      AppConstants.setResolvedBaseUrl(cachedUrl);
+      return;
+    }
+
+    final discoveredUrl = await discovery.discoverBaseUrl();
+    if (discoveredUrl != null) {
+      AppConstants.setResolvedBaseUrl(discoveredUrl);
+      await tokenStorage.saveServerUrl(discoveredUrl);
+    }
+    // If discovery also fails, AppConstants just keeps its hardcoded fallback.
   }
 
   @override

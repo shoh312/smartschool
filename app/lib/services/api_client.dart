@@ -22,7 +22,7 @@ class ApiClient {
 
   final http.Client _httpClient;
   final TokenStorage _tokenStorage;
-  final String baseUrl = AppConstants.apiBaseUrl;
+  String get baseUrl => AppConstants.apiBaseUrl;
 
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
     return _send('GET', path, query: query);

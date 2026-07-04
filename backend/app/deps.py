@@ -146,10 +146,16 @@ def get_current_actor(
 async def get_current_director_ws(websocket: WebSocket, db: Session = Depends(get_db)) -> Director:
     """Websocket clients can't send custom headers as easily as HTTP clients, so the
     director JWT is passed as a `token` query parameter instead of an Authorization header.
+
+    The handshake is always accepted before any rejection close(): closing a websocket
+    that was never accepted doesn't produce a clean handshake failure on every client
+    (some just see the raw TCP connection abort), whereas accept-then-close is reliably
+    understood by websocket clients as "connected, then the server ended the session".
     """
     token = websocket.query_params.get("token")
     if not token:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        await websocket.accept()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Missing token")
         raise HTTPException(status_code=401, detail="Missing token")
 
     try:
@@ -160,6 +166,7 @@ async def get_current_director_ws(websocket: WebSocket, db: Session = Depends(ge
         if not director or not director.is_active:
             raise HTTPException(status_code=401, detail="Director not found or inactive")
         return director
-    except HTTPException:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+    except HTTPException as exc:
+        await websocket.accept()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason=str(exc.detail))
         raise
