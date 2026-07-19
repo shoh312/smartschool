@@ -17,6 +17,7 @@ from app.routers.teacher_router import router as teacher_router
 from app.routers.journal_router import router as journal_router
 from app.routers.websocket_router import router as websocket_router
 from app.routers.stream_router import router as stream_router
+from app.routers.sync_status_router import router as sync_status_router
 
 from app.models.student import Student
 from app.models.class_model import Class
@@ -28,7 +29,9 @@ from app.models.school_model import School
 from app.models.teacher_model import Teacher, TeacherClass
 from app.models.journal_model import Grade
 from app.models.notification_model import DeviceToken, NotificationEvent
+from app.models.sync_outbox_model import SyncOutboxEntry
 from app.background.tasks import attendance_background_loop
+from app.background.sync_worker import sync_background_loop
 from app.database import SessionLocal
 from app.discovery import start_discovery_responder
 from app.services.auth_service import ensure_default_director
@@ -69,6 +72,7 @@ app.include_router(teacher_router)
 app.include_router(journal_router)
 app.include_router(websocket_router)
 app.include_router(stream_router)
+app.include_router(sync_status_router)
 
 @app.get("/")
 def root():
@@ -78,5 +82,6 @@ def root():
 @app.on_event("startup")
 async def start_background_tasks():
     asyncio.create_task(attendance_background_loop())
+    asyncio.create_task(sync_background_loop())
     asyncio.create_task(start_discovery_responder())
     threading.Thread(target=start_detection_background, daemon=True).start()

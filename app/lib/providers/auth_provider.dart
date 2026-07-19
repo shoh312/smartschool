@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 
 import '../models/app_role.dart';
 import '../services/auth_service.dart';
+import '../services/parent_auth_service.dart';
 import '../services/token_storage.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthService? _authService;
+  ParentAuthService? _parentAuthService;
   TokenStorage? _storage;
 
   AppRole? role;
@@ -14,8 +16,13 @@ class AuthProvider extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
-  void attach(AuthService authService, TokenStorage storage) {
+  void attach(
+    AuthService authService,
+    ParentAuthService parentAuthService,
+    TokenStorage storage,
+  ) {
     _authService = authService;
+    _parentAuthService = parentAuthService;
     _storage = storage;
   }
 
@@ -46,11 +53,12 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> loginParent(String phone) async {
     return _run(() async {
-      final parentId = await _authService!.loginParent(phone: phone);
-      if (parentId == -1) {
-        throw 'registration_required';
-      }
-      this.parentId = parentId;
+      // Talks to the Public Server, not the local school network -- see
+      // ParentAuthService. An unknown phone throws a normal ApiException
+      // with a server-provided "ask your school" message, which _run's
+      // catch below surfaces via `error` the same as any other login
+      // failure (no more separate self-registration branch).
+      parentId = await _parentAuthService!.loginParent(phone: phone);
       role = AppRole.parent;
     });
   }

@@ -6,6 +6,8 @@ import '../services/attendance_service.dart';
 import '../services/auth_service.dart';
 import '../services/journal_service.dart';
 import '../services/notification_service.dart';
+import '../services/parent_auth_service.dart';
+import '../services/public_api_client.dart';
 import '../services/school_service.dart';
 import '../services/student_service.dart';
 import '../services/teacher_service.dart';
@@ -31,32 +33,48 @@ List<SingleChildWidget> buildAppProviders() {
     ProxyProvider<TokenStorage, ApiClient>(
       update: (_, storage, __) => ApiClient(tokenStorage: storage),
     ),
+    // A second, independently-injectable client pointed at the Public
+    // Server -- only parent-facing services use this. Director/teacher
+    // services keep using ApiClient (the auto-discovered local server)
+    // above, unchanged.
+    ProxyProvider<TokenStorage, PublicApiClient>(
+      update: (_, storage, __) => PublicApiClient(tokenStorage: storage),
+    ),
     ProxyProvider2<ApiClient, TokenStorage, AuthService>(
       update: (_, api, storage, __) => AuthService(api, storage),
     ),
-    ProxyProvider<ApiClient, StudentService>(
-      update: (_, api, __) => StudentService(api),
+    ProxyProvider2<PublicApiClient, TokenStorage, ParentAuthService>(
+      update: (_, api, storage, __) => ParentAuthService(api, storage),
     ),
-    ProxyProvider<ApiClient, AttendanceService>(
-      update: (_, api, __) => AttendanceService(api),
+    ProxyProvider2<ApiClient, PublicApiClient, StudentService>(
+      update: (_, api, publicApi, __) => StudentService(api, publicApi),
+    ),
+    ProxyProvider2<ApiClient, PublicApiClient, AttendanceService>(
+      update: (_, api, publicApi, __) => AttendanceService(api, publicApi),
     ),
     ProxyProvider<ApiClient, SchoolService>(
       update: (_, api, __) => SchoolService(api),
     ),
-    ProxyProvider<ApiClient, NotificationService>(
+    ProxyProvider<PublicApiClient, NotificationService>(
       update: (_, api, __) => NotificationService(api),
     ),
-    ProxyProvider<ApiClient, JournalService>(
-      update: (_, api, __) => JournalService(api),
+    ProxyProvider2<ApiClient, PublicApiClient, JournalService>(
+      update: (_, api, publicApi, __) => JournalService(api, publicApi),
     ),
     ProxyProvider<ApiClient, TeacherService>(
       update: (_, api, __) => TeacherService(api),
     ),
     Provider(create: (_) => AttendanceSocketService()),
-    ChangeNotifierProxyProvider2<AuthService, TokenStorage, AuthProvider>(
+    ChangeNotifierProxyProvider3<
+      AuthService,
+      ParentAuthService,
+      TokenStorage,
+      AuthProvider
+    >(
       create: (_) => AuthProvider(),
-      update: (_, authService, storage, provider) =>
-          (provider ?? AuthProvider())..attach(authService, storage),
+      update: (_, authService, parentAuthService, storage, provider) =>
+          (provider ?? AuthProvider())
+            ..attach(authService, parentAuthService, storage),
     ),
     ChangeNotifierProxyProvider<StudentService, StudentProvider>(
       create: (_) => StudentProvider(),

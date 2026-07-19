@@ -13,6 +13,7 @@ from app.schemas.student_schema import (
     StudentResponse
 )
 from app.services.auth_service import get_parent_family_ids
+from app.services.sync_outbox_service import enqueue_student_event
 from app.utils.phone import normalize_phone
 
 from fastapi import Form, UploadFile, File
@@ -244,6 +245,11 @@ def director_create_student(
 
     new_student.face_encoding = encoding
 
+    db.flush()
+    # Sync the enrollment now (not only on the first grade/attendance event)
+    # so the parent can log into the Public Server the same day.
+    enqueue_student_event(db, new_student, operation="upsert")
+
     db.commit()
 
     db.refresh(new_student)
@@ -372,6 +378,8 @@ def update_student(
             student.photo = file_path
             student.face_encoding = encoding
 
+    db.flush()
+    enqueue_student_event(db, student, operation="upsert")
     db.commit()
     db.refresh(student)
 
@@ -422,7 +430,12 @@ def delete_student(
     # 4. Delete grades entered for this student
     db.query(Grade).filter(Grade.student_id == student_id).delete(synchronize_session=False)
 
-    # 5. Delete the student
+    # 5. Tell the Public Server this student is gone -- deactivate, not a
+    # hard delete, so history already synced (old grades/attendance) doesn't
+    # vanish retroactively from the parent's view.
+    enqueue_student_event(db, student, operation="deactivate")
+
+    # 6. Delete the student
     db.delete(student)
     db.commit()
     return {"message": "Student deleted"}

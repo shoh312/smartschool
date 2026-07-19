@@ -1,18 +1,23 @@
 import '../models/attendance.dart';
 import 'api_client.dart';
+import 'public_api_client.dart';
 
 class AttendanceService {
-  AttendanceService(this._apiClient);
+  AttendanceService(this._apiClient, this._publicApiClient);
 
   final ApiClient _apiClient;
+  final PublicApiClient _publicApiClient;
 
   Future<List<AttendanceRecord>> history({
     int? studentId,
     int? parentId,
     int limit = 100,
   }) async {
+    // A parent's own attendance history lives on the Public Server; director
+    // views (no parentId) stay on the local, camera-derived data.
+    final client = parentId != null ? _publicApiClient : _apiClient;
     final data =
-        await _apiClient.get(
+        await client.get(
               '/attendance/history',
               query: {
                 if (studentId != null) 'student_id': studentId.toString(),

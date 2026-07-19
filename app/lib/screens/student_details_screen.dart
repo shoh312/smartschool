@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../core/design_tokens.dart';
+import '../models/app_role.dart';
 import '../models/student.dart';
+import '../providers/auth_provider.dart';
 import '../providers/journal_provider.dart';
 import '../routes/app_routes.dart';
 import '../utils/date_formatters.dart';
@@ -28,8 +30,12 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
 
     if (student != null && !_requested) {
       _requested = true;
+      final auth = context.read<AuthProvider>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<JournalProvider>().loadForStudent(student.id);
+        context.read<JournalProvider>().loadForStudent(
+          student.id,
+          parentId: auth.role == AppRole.parent ? auth.parentId : null,
+        );
       });
     }
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.attendance_model import Attendance
 from app.models.student import Student
 from app.notifications.firebase import create_notification_event
+from app.services.sync_outbox_service import enqueue_attendance_event
 from app.utils.config import settings
 
 PRESENT = "present"
@@ -75,6 +76,8 @@ def record_detection(
                     student_id=student.id,
                     attendance_id=attendance.id,
                 )
+        db.flush()
+        enqueue_attendance_event(db, attendance, operation="upsert")
         db.commit()
         db.refresh(attendance)
         return attendance
@@ -91,6 +94,8 @@ def record_detection(
         detected_at=detected_at,
     )
     db.add(attendance)
+    db.flush()
+    enqueue_attendance_event(db, attendance, operation="upsert")
     db.commit()
     db.refresh(attendance)
 
@@ -138,6 +143,8 @@ def mark_absent_students(
             detected_at=now,
         )
         db.add(absent_record)
+        db.flush()
+        enqueue_attendance_event(db, absent_record, operation="upsert")
         db.commit()
         db.refresh(absent_record)
         created.append(absent_record)
@@ -187,6 +194,7 @@ def mark_left_school_students(
                 student_id=student.id,
                 attendance_id=attendance.id,
             )
+        enqueue_attendance_event(db, attendance, operation="upsert")
         updated.append(attendance)
 
     db.commit()

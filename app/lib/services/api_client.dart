@@ -16,13 +16,18 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  ApiClient({http.Client? httpClient, TokenStorage? tokenStorage})
-    : _httpClient = httpClient ?? http.Client(),
-      _tokenStorage = tokenStorage ?? TokenStorage();
+  ApiClient({
+    http.Client? httpClient,
+    TokenStorage? tokenStorage,
+    String Function()? baseUrlResolver,
+  }) : _httpClient = httpClient ?? http.Client(),
+       _tokenStorage = tokenStorage ?? TokenStorage(),
+       _baseUrlResolver = baseUrlResolver ?? (() => AppConstants.apiBaseUrl);
 
   final http.Client _httpClient;
   final TokenStorage _tokenStorage;
-  String get baseUrl => AppConstants.apiBaseUrl;
+  final String Function() _baseUrlResolver;
+  String get baseUrl => _baseUrlResolver();
 
   Future<dynamic> get(String path, {Map<String, String>? query}) async {
     return _send('GET', path, query: query);

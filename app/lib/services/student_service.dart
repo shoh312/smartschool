@@ -1,16 +1,24 @@
 import '../models/student.dart';
 import 'api_client.dart';
+import 'public_api_client.dart';
 
 class StudentService {
-  StudentService(this._apiClient);
+  StudentService(this._apiClient, this._publicApiClient);
 
   final ApiClient _apiClient;
+  final PublicApiClient _publicApiClient;
 
   Future<List<Student>> fetchStudents({int? parentId}) async {
-    // Parents only have access to their own /students/me; /students is a
-    // director-only endpoint that lists the whole school.
-    final path = parentId != null ? '/students/me' : '/students';
-    final data = await _apiClient.get(path) as List<dynamic>;
+    // A parent's own children live on the Public Server (/students/me);
+    // /students is a director-only endpoint on the local server that lists
+    // the whole school.
+    if (parentId != null) {
+      final data = await _publicApiClient.get('/students/me') as List<dynamic>;
+      return data
+          .map((item) => Student.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    final data = await _apiClient.get('/students') as List<dynamic>;
     return data
         .map((item) => Student.fromJson(item as Map<String, dynamic>))
         .toList();

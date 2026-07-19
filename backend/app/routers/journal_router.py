@@ -9,6 +9,7 @@ from app.models.journal_model import Grade
 from app.models.student import Student
 from app.models.teacher_model import Teacher
 from app.schemas.journal_schema import GradeCreate, GradeResponse, GradeUpdate
+from app.services.sync_outbox_service import enqueue_grade_event
 from app.services.teacher_service import teacher_can_grade_class
 
 router = APIRouter(tags=["journal"])
@@ -84,6 +85,8 @@ def create_grade(
         grade_date=today,
     )
     db.add(grade)
+    db.flush()
+    enqueue_grade_event(db, grade, operation="upsert")
     db.commit()
     db.refresh(grade)
     return grade
@@ -160,6 +163,8 @@ def update_grade(
     if payload.grade_date is not None:
         grade.grade_date = payload.grade_date
 
+    db.flush()
+    enqueue_grade_event(db, grade, operation="upsert")
     db.commit()
     db.refresh(grade)
     return grade
@@ -172,5 +177,6 @@ def delete_grade(
     teacher: Teacher = Depends(get_current_teacher),
 ):
     grade = _require_own_grade(db, grade_id, teacher)
+    enqueue_grade_event(db, grade, operation="delete")
     db.delete(grade)
     db.commit()

@@ -1,10 +1,12 @@
 import '../models/grade.dart';
 import 'api_client.dart';
+import 'public_api_client.dart';
 
 class JournalService {
-  JournalService(this._apiClient);
+  JournalService(this._apiClient, this._publicApiClient);
 
   final ApiClient _apiClient;
+  final PublicApiClient _publicApiClient;
 
   Future<Grade> createGrade({
     required int studentId,
@@ -55,10 +57,15 @@ class JournalService {
     int? studentId,
     int? classId,
     String? subject,
+    int? parentId,
     int limit = 200,
   }) async {
+    // parentId is a client-side routing signal only (never sent to the
+    // server) -- a parent viewing their child's grades reads from the
+    // Public Server; director/teacher views stay on the local server.
+    final client = parentId != null ? _publicApiClient : _apiClient;
     final data =
-        await _apiClient.get(
+        await client.get(
               '/grades',
               query: {
                 if (studentId != null) 'student_id': studentId.toString(),

@@ -1,20 +1,21 @@
 {
   "project_info": {
-    "project_number": "476056518828",
-    "project_id": "auth-smart",
-    "storage_bucket": "auth-smart.firebasestorage.app"
+    "project_number": "440977070353",
+    "project_id": "smartschool-e2352",
+    "storage_bucket": "smartschool-e2352.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:476056518828:android:48bd86e0ed766669bd9f09",
+        "mobilesdk_app_id": "1:440977070353:android:95dee94bed819e3ab414b0",
         "android_client_info": {
           "package_name": "com.example.maktab_app"
-        }      },
+        }
+      },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBvNb3DtGmTglDYIgyj-ht8IAj5HAWnjO4"
+          "current_key": "AIzaSyAdn6KbnSJHqp11dKlXEc-HBjRD5VXkSVI"
         }
       ],
       "services": {

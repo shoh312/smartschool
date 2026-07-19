@@ -21,6 +21,16 @@ class AppConstants {
   static String liveStreamUrl({int cameraId = 0}) =>
       '$apiBaseUrl/stream/frame?camera_id=$cameraId';
 
+  /// The Public Server: a fixed, non-LAN-discovered address (unlike
+  /// [apiBaseUrl]) that only the parent role talks to, so student photos and
+  /// video -- which only ever live on the school's local network -- are
+  /// never exposed to it. Android emulators need `10.0.2.2` instead of
+  /// `localhost` to reach the host machine.
+  static const String publicServerBaseUrl = String.fromEnvironment(
+    'PUBLIC_SERVER_BASE_URL',
+    defaultValue: 'http://localhost:8100',
+  );
+
   /// Subjects taught in the standard Tajikistan general-education (umumta'lim)
   /// curriculum, used to populate the subject picker when a director assigns
   /// a teacher to a class -- keeps subject names consistent across teachers

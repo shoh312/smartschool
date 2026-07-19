@@ -25,24 +25,6 @@ class AuthService {
     );
   }
 
-  Future<int> loginParent({required String phone}) async {
-    final data =
-        await _apiClient.post('/auth/login', body: {'phone': phone})
-            as Map<String, dynamic>;
-
-    if (data['status'] == 'register') {
-      return -1; // Special value indicating registration is needed
-    }
-
-    final parentId = data['parent_id'] as int;
-    await _tokenStorage.saveSession(
-      token: data['access_token'] as String,
-      role: AppRole.parent,
-      parentId: parentId,
-    );
-    return parentId;
-  }
-
   Future<void> loginTeacher({
     required String email,
     required String password,
