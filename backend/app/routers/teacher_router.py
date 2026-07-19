@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_director, get_current_teacher
 from app.models.class_model import Class
 from app.models.director_model import Director
+from app.models.journal_model import Grade
 from app.models.parent_model import Parent
 from app.models.student import Student
 from app.models.teacher_model import Teacher, TeacherClass
@@ -12,6 +14,7 @@ from app.schemas.student_schema import StudentResponse
 from app.schemas.teacher_schema import (
     ClassAssignmentCreate,
     ClassAssignmentResponse,
+    ClassSubjectResponse,
     TeacherCreate,
     TeacherLogin,
     TeacherResponse,
@@ -22,10 +25,21 @@ from app.services.teacher_service import (
     authenticate_teacher,
     create_teacher,
     create_teacher_token,
+    remove_class_assignment,
     teacher_can_grade_class,
 )
 
 router = APIRouter(tags=["teachers"])
+
+
+def _require_teacher(db: Session, teacher_id: int, director: Director) -> Teacher:
+    teacher = db.query(Teacher).filter(
+        Teacher.id == teacher_id,
+        Teacher.school_id == director.school_id,
+    ).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    return teacher
 
 
 @router.post("/auth/teacher/login", response_model=TeacherTokenResponse)
@@ -58,6 +72,7 @@ def director_create_teacher(
         full_name=payload.full_name,
         email=str(payload.email),
         password=payload.password,
+        subject=payload.subject,
     )
 
 
@@ -67,12 +82,14 @@ def director_create_teacher(
     dependencies=[Depends(get_current_director)],
 )
 def list_teachers(
+    subject: str | None = None,
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    return db.query(Teacher).filter(
-        Teacher.school_id == director.school_id
-    ).order_by(Teacher.full_name.asc()).all()
+    query = db.query(Teacher).filter(Teacher.school_id == director.school_id)
+    if subject is not None:
+        query = query.filter(Teacher.subject == subject)
+    return query.order_by(Teacher.full_name.asc()).all()
 
 
 @router.post(
@@ -169,3 +186,71 @@ def teacher_class_roster(
         )
         for student, school_class, parent in rows
     ]
+
+
+@router.delete(
+    "/teachers/{teacher_id}/classes/{assignment_id}",
+    dependencies=[Depends(get_current_director)],
+)
+def director_remove_class_assignment(
+    teacher_id: int,
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    _require_teacher(db, teacher_id, director)
+    remove_class_assignment(db, teacher_id=teacher_id, assignment_id=assignment_id)
+    return {"message": "Assignment removed"}
+
+
+@router.get(
+    "/classes/{class_id}/subjects",
+    response_model=list[ClassSubjectResponse],
+    dependencies=[Depends(get_current_director)],
+)
+def director_class_subjects(
+    class_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    school_class = db.query(Class).filter(
+        Class.id == class_id,
+        Class.school_id == director.school_id,
+    ).first()
+    if not school_class:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    rows = db.query(TeacherClass, Teacher).join(
+        Teacher, Teacher.id == TeacherClass.teacher_id
+    ).filter(TeacherClass.class_id == class_id).order_by(TeacherClass.subject.asc()).all()
+
+    return [
+        ClassSubjectResponse(
+            id=assignment.id,
+            subject=assignment.subject,
+            teacher_id=teacher.id,
+            teacher_name=teacher.full_name,
+        )
+        for assignment, teacher in rows
+    ]
+
+
+@router.delete(
+    "/teachers/{teacher_id}",
+    dependencies=[Depends(get_current_director)],
+)
+def director_delete_teacher(
+    teacher_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    teacher = _require_teacher(db, teacher_id, director)
+
+    db.query(Grade).filter(Grade.teacher_id == teacher_id).delete(synchronize_session=False)
+    db.query(TeacherClass).filter(TeacherClass.teacher_id == teacher_id).delete(synchronize_session=False)
+    # "homework" has no ORM model (the feature was removed from the app) but
+    # the table -- and its FK to teachers -- is still in the database.
+    db.execute(text("DELETE FROM homework WHERE teacher_id = :teacher_id"), {"teacher_id": teacher_id})
+    db.delete(teacher)
+    db.commit()
+    return {"message": "Teacher deleted"}

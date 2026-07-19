@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants.dart';
+import '../core/design_tokens.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart';
 import '../routes/app_routes.dart';
@@ -73,44 +74,54 @@ class _SplashScreenState extends State<SplashScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.school_rounded,
-                size: 80,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'SmartSchool',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                color: theme.colorScheme.primary,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 64),
-            SizedBox(
-              width: 140,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  backgroundColor:
-                      theme.colorScheme.primary.withOpacity(0.1),
-                  minHeight: 6,
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppGradients.canvas),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  gradient: AppGradients.primary,
+                  shape: BoxShape.circle,
+                  boxShadow: AppShadows.colored(AppColors.primary),
+                ),
+                child: const Icon(
+                  Icons.school_rounded,
+                  size: 72,
+                  color: Colors.white,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 32),
+              Text(
+                'SmartSchool',
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'PREMIUM EDITION',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.primary,
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 64),
+              SizedBox(
+                width: 140,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    backgroundColor: AppColors.surfaceSunken,
+                    valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                    minHeight: 6,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

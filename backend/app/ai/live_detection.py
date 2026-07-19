@@ -296,6 +296,16 @@ import concurrent.futures
 _detection_threads: list[threading.Thread] = []
 
 def _run_camera(camera_id: int, camera_source: str):
+    try:
+        _run_camera_once(camera_id, camera_source)
+    finally:
+        # However the loop below exits (timeout, disconnect, error), drop this
+        # camera from the active set so the watcher's next pass restarts it
+        # instead of believing it's still running forever.
+        _active_camera_ids.discard(camera_id)
+
+
+def _run_camera_once(camera_id: int, camera_source: str):
     db = SessionLocal()
     known_encodings, known_students = load_students(db)
     print(f"[+] Camera {camera_id}: loaded {len(known_students)} students, source={camera_source}")
@@ -308,7 +318,10 @@ def _run_camera(camera_id: int, camera_source: str):
     cap = None
     with concurrent.futures.ThreadPoolExecutor() as ex:
         try:
-            cap = ex.submit(_open).result(timeout=10)
+            # OpenCV's own ffmpeg RTSP connect timeout defaults to ~30s, so
+            # the outer guard must be longer than that or it fires first and
+            # kills a connection attempt that would have succeeded.
+            cap = ex.submit(_open).result(timeout=35)
         except concurrent.futures.TimeoutError:
             print(f"[-] Camera {camera_id}: timeout ({camera_source})")
             db.close()
@@ -358,12 +371,23 @@ def _run_camera(camera_id: int, camera_source: str):
 
     print(f"[+] Camera {camera_id}: schedule={start_str}-{end_str}, detect={detect_seconds}s, wait={wait_seconds//60}m, started={'in-schedule' if detection_enabled else 'outside-schedule'}")
 
+    consecutive_read_failures = 0
     while True:
         for _ in range(3):
             cap.grab()
         ret, frame = cap.read()
         if not ret:
+            consecutive_read_failures += 1
+            if consecutive_read_failures >= 50:
+                # Stream dropped mid-run (flaky link, camera reboot, etc).
+                # Give up so the watcher restarts this camera with a fresh
+                # connection instead of spinning here forever.
+                print(f"[-] Camera {camera_id}: lost stream, reconnecting ({camera_source})")
+                cap.release()
+                db.close()
+                return
             continue
+        consecutive_read_failures = 0
 
         stream_manager.update_frame(frame, camera_id=camera_id)
         now = time.time()

@@ -22,6 +22,9 @@ class StudentProvider extends ChangeNotifier {
       students = await _service!.fetchStudents(parentId: parentId);
     } catch (exception) {
       error = exception.toString();
+      // Don't leave a previous user's (e.g. a director's) student list on
+      // screen just because this fetch failed.
+      students = [];
     } finally {
       isLoading = false;
       notifyListeners();

@@ -825,6 +825,324 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notifications'**
   String get notifications;
+
+  /// No description provided for @grades.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades'**
+  String get grades;
+
+  /// No description provided for @noGrades.
+  ///
+  /// In en, this message translates to:
+  /// **'No grades yet'**
+  String get noGrades;
+
+  /// No description provided for @noGradesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades will appear here once a teacher enters them.'**
+  String get noGradesMessage;
+
+  /// No description provided for @studentFallbackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Student #{id}'**
+  String studentFallbackLabel(String id);
+
+  /// No description provided for @teacherMyClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'My Classes'**
+  String get teacherMyClasses;
+
+  /// No description provided for @teacherNoClassesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no classes assigned yet'**
+  String get teacherNoClassesTitle;
+
+  /// No description provided for @teacherNoClassesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will appear once the director assigns you a class.'**
+  String get teacherNoClassesMessage;
+
+  /// No description provided for @classFallbackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class #{classId}'**
+  String classFallbackLabel(String classId);
+
+  /// No description provided for @journalStudentColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get journalStudentColumn;
+
+  /// No description provided for @journalScoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get journalScoreLabel;
+
+  /// No description provided for @journalCommentOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment (optional)'**
+  String get journalCommentOptional;
+
+  /// No description provided for @journalTeacherLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get journalTeacherLabel;
+
+  /// No description provided for @journalNoComment.
+  ///
+  /// In en, this message translates to:
+  /// **'No comment'**
+  String get journalNoComment;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @journalNoStudentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No students found in this class'**
+  String get journalNoStudentsTitle;
+
+  /// No description provided for @journalNoStudentsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will appear once the director assigns students to this class.'**
+  String get journalNoStudentsMessage;
+
+  /// No description provided for @teachers.
+  ///
+  /// In en, this message translates to:
+  /// **'Teachers'**
+  String get teachers;
+
+  /// No description provided for @addNewTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'New teacher'**
+  String get addNewTeacher;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @existingTeachers.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing teachers'**
+  String get existingTeachers;
+
+  /// No description provided for @noTeachers.
+  ///
+  /// In en, this message translates to:
+  /// **'No teachers yet'**
+  String get noTeachers;
+
+  /// No description provided for @noTeachersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a new teacher using the form above.'**
+  String get noTeachersMessage;
+
+  /// No description provided for @assignClassToTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign a class to {name}'**
+  String assignClassToTeacher(String name);
+
+  /// No description provided for @assignClassNoClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a class first.'**
+  String get assignClassNoClasses;
+
+  /// No description provided for @noClassesAssignedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned to any class yet'**
+  String get noClassesAssignedYet;
+
+  /// No description provided for @removeAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeAssignment;
+
+  /// No description provided for @addSubjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add subject'**
+  String get addSubjectTitle;
+
+  /// No description provided for @noTeachersForSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'No teachers registered for this subject yet'**
+  String get noTeachersForSubject;
+
+  /// No description provided for @noSubjectsInClass.
+  ///
+  /// In en, this message translates to:
+  /// **'No subjects added to this class yet'**
+  String get noSubjectsInClass;
+
+  /// No description provided for @addSubjectToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap \"Add subject\" to assign a teacher.'**
+  String get addSubjectToStart;
+
+  /// No description provided for @subjectsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subjects'**
+  String get subjectsLabel;
+
+  /// No description provided for @subjectsAndTeachers.
+  ///
+  /// In en, this message translates to:
+  /// **'Subjects & teachers'**
+  String get subjectsAndTeachers;
+
+  /// No description provided for @viewJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'View journal'**
+  String get viewJournal;
+
+  /// No description provided for @removeAssignmentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this teacher from this subject in the class? Grades they already entered will stay.'**
+  String get removeAssignmentConfirm;
+
+  /// No description provided for @subjectLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get subjectLabel;
+
+  /// No description provided for @assign.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign'**
+  String get assign;
+
+  /// No description provided for @classAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Class assigned'**
+  String get classAssigned;
+
+  /// No description provided for @month1.
+  ///
+  /// In en, this message translates to:
+  /// **'January'**
+  String get month1;
+
+  /// No description provided for @month2.
+  ///
+  /// In en, this message translates to:
+  /// **'February'**
+  String get month2;
+
+  /// No description provided for @month3.
+  ///
+  /// In en, this message translates to:
+  /// **'March'**
+  String get month3;
+
+  /// No description provided for @month4.
+  ///
+  /// In en, this message translates to:
+  /// **'April'**
+  String get month4;
+
+  /// No description provided for @month5.
+  ///
+  /// In en, this message translates to:
+  /// **'May'**
+  String get month5;
+
+  /// No description provided for @month6.
+  ///
+  /// In en, this message translates to:
+  /// **'June'**
+  String get month6;
+
+  /// No description provided for @month7.
+  ///
+  /// In en, this message translates to:
+  /// **'July'**
+  String get month7;
+
+  /// No description provided for @month8.
+  ///
+  /// In en, this message translates to:
+  /// **'August'**
+  String get month8;
+
+  /// No description provided for @month9.
+  ///
+  /// In en, this message translates to:
+  /// **'September'**
+  String get month9;
+
+  /// No description provided for @month10.
+  ///
+  /// In en, this message translates to:
+  /// **'October'**
+  String get month10;
+
+  /// No description provided for @month11.
+  ///
+  /// In en, this message translates to:
+  /// **'November'**
+  String get month11;
+
+  /// No description provided for @month12.
+  ///
+  /// In en, this message translates to:
+  /// **'December'**
+  String get month12;
+
+  /// No description provided for @deleteTeacherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Teacher'**
+  String get deleteTeacherTitle;
+
+  /// No description provided for @deleteTeacherConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this teacher? Their class assignments and entered grades will also be removed.'**
+  String get deleteTeacherConfirm;
+
+  /// No description provided for @average.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get average;
 }
 
 class _AppLocalizationsDelegate

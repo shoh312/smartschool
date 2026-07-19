@@ -7,6 +7,7 @@ class TeacherCreate(BaseModel):
     full_name: str
     email: EmailStr
     password: str
+    subject: Optional[str] = None
 
 
 class TeacherLogin(BaseModel):
@@ -19,6 +20,7 @@ class TeacherResponse(BaseModel):
     school_id: Optional[int] = None
     full_name: str
     email: EmailStr
+    subject: Optional[str] = None
     is_active: bool
 
     class Config:
@@ -41,6 +43,16 @@ class ClassAssignmentResponse(BaseModel):
     class_id: int
     subject: Optional[str] = None
     class_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClassSubjectResponse(BaseModel):
+    id: int
+    subject: Optional[str] = None
+    teacher_id: int
+    teacher_name: str
 
     class Config:
         from_attributes = True

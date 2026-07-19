@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../models/camera_config.dart';
 import '../models/school_class.dart';
 import '../providers/school_provider.dart';
@@ -110,7 +111,7 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -140,7 +141,7 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                 children: [
                   Text(
                     _editingCamera == null ? l10n.addNewCamera : l10n.editCamera,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -228,10 +229,10 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           Text(
             l10n.registeredCameras,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           if (provider.cameras.isEmpty)
@@ -251,21 +252,35 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                     .firstWhere((c) => c?.id == camera.classId, orElse: () => null)
                     ?.name;
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.lgRadius,
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.card,
+                  ),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: camera.isActive
-                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                          : Colors.grey.withOpacity(0.2),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.lgRadius),
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: camera.isActive
+                            ? AppGradients.success
+                            : null,
+                        color: camera.isActive ? null : AppColors.surfaceAlt,
+                        borderRadius: AppRadius.mdRadius,
+                        boxShadow: camera.isActive ? AppShadows.colored(AppColors.success) : null,
+                      ),
+                      alignment: Alignment.center,
                       child: Icon(
                         Icons.videocam_outlined,
-                        color: camera.isActive
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.grey,
+                        color: camera.isActive ? Colors.white : AppColors.textMuted,
                       ),
                     ),
-                    title: Text(camera.name),
+                    title: Text(camera.name, style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text(
                       l10n.cameraListSubtitle(
                         className ?? l10n.unassigned,
@@ -276,11 +291,11 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
                           onPressed: () => _prepareEdit(camera, provider.classes),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                          icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
                           onPressed: () => _delete(camera.id),
                         ),
                       ],

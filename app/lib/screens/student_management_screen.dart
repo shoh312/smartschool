@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../models/school_class.dart';
 import '../models/student.dart';
 import '../providers/school_provider.dart';
@@ -142,7 +143,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -173,7 +174,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                 children: [
                   Text(
                     _editingStudent == null ? l10n.addNewStudent : l10n.editStudent,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -224,27 +225,40 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                       onChanged: (val) => setState(() => _isActive = val),
                     ),
                   const SizedBox(height: 12),
-                  Card(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.tint(AppColors.primary),
+                      borderRadius: AppRadius.mdRadius,
+                      border: Border.all(color: AppColors.primary.withOpacity(0.14)),
+                    ),
                     child: ListTile(
-                      leading: const Icon(Icons.face_retouching_natural),
+                      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: AppRadius.smRadius,
+                        ),
+                        child: const Icon(Icons.face_retouching_natural, color: AppColors.primary),
+                      ),
                       title: Text(
                         _selectedImage == null
                             ? (_editingStudent == null ? l10n.studentFacePhoto : l10n.updatePhotoOptional)
                             : _selectedImage!.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(l10n.requiredForFaceRecognition),
                       trailing: Wrap(
-                        spacing: 8,
+                        spacing: 4,
                         children: [
                           IconButton(
                             tooltip: 'Camera',
-                            icon: const Icon(Icons.photo_camera_outlined),
+                            icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
                             onPressed: () => _pickImage(ImageSource.camera),
                           ),
                           IconButton(
                             tooltip: 'Gallery',
-                            icon: const Icon(Icons.photo_library_outlined),
+                            icon: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
                             onPressed: () => _pickImage(ImageSource.gallery),
                           ),
                         ],
@@ -253,9 +267,25 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                   ),
                   if (provider.error != null) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      provider.error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withOpacity(0.06),
+                        borderRadius: AppRadius.mdRadius,
+                        border: Border.all(color: AppColors.danger.withOpacity(0.16)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              provider.error!,
+                              style: const TextStyle(color: AppColors.danger, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -287,10 +317,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           Text(
             l10n.studentsList,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           if (provider.students.isEmpty && !provider.isLoading)

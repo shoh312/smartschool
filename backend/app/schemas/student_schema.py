@@ -18,6 +18,7 @@ class StudentResponse(BaseModel):
     parent_id: Optional[int] = None
     class_name: Optional[str] = None
     parent_phone: Optional[str] = None
+    parent_name: Optional[str] = None
     first_name: str
     last_name: str
     photo: Optional[str] = None

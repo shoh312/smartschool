@@ -327,7 +327,7 @@ class AppLocalizationsTg extends AppLocalizations {
   }
 
   @override
-  String get unassigned => 'Вобаста نشدهаст';
+  String get unassigned => 'Вобаста нашудааст';
 
   @override
   String get noAttendanceRecords => 'Сабтҳои ҳозирот мавҷуд нест';
@@ -402,4 +402,178 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get notifications => 'Огоҳиҳо';
+
+  @override
+  String get grades => 'Баҳоҳо';
+
+  @override
+  String get noGrades => 'Ҳанӯз баҳо нест';
+
+  @override
+  String get noGradesMessage =>
+      'Баҳоҳо пас аз гузоштани муаллим дар ин ҷо пайдо мешаванд.';
+
+  @override
+  String studentFallbackLabel(String id) {
+    return 'Хонанда #$id';
+  }
+
+  @override
+  String get teacherMyClasses => 'Синфҳои ман';
+
+  @override
+  String get teacherNoClassesTitle =>
+      'Ба шумо ҳанӯз ягон синф вобаста карда нашудааст';
+
+  @override
+  String get teacherNoClassesMessage =>
+      'Ин пас аз он ки директор ба шумо синф вобаста кунад, пайдо мешавад.';
+
+  @override
+  String classFallbackLabel(String classId) {
+    return 'Синфи #$classId';
+  }
+
+  @override
+  String get journalStudentColumn => 'Хонанда';
+
+  @override
+  String get journalScoreLabel => 'Баҳо';
+
+  @override
+  String get journalCommentOptional => 'Шарҳ (ихтиёрӣ)';
+
+  @override
+  String get journalTeacherLabel => 'Муаллим';
+
+  @override
+  String get journalNoComment => 'Бе шарҳ';
+
+  @override
+  String get close => 'Пӯшидан';
+
+  @override
+  String get save => 'Захира кардан';
+
+  @override
+  String get journalNoStudentsTitle => 'Дар ин синф хонанда ёфт нашуд';
+
+  @override
+  String get journalNoStudentsMessage =>
+      'Ин пас аз он ки директор хонандагонро ба ин синф вобаста кунад, пайдо мешавад.';
+
+  @override
+  String get teachers => 'Муаллимон';
+
+  @override
+  String get addNewTeacher => 'Муаллими нав';
+
+  @override
+  String get create => 'Эҷод кардан';
+
+  @override
+  String get existingTeachers => 'Муаллимони мавҷуда';
+
+  @override
+  String get noTeachers => 'Ҳанӯз муаллим нест';
+
+  @override
+  String get noTeachersMessage =>
+      'Бо истифода аз шакли боло муаллими нав илова кунед.';
+
+  @override
+  String assignClassToTeacher(String name) {
+    return 'Ба $name синф вобаста кардан';
+  }
+
+  @override
+  String get assignClassNoClasses => 'Аввал синф эҷод кунед.';
+
+  @override
+  String get noClassesAssignedYet =>
+      'То ҳол ба ягон синф вобаста карда нашудааст';
+
+  @override
+  String get removeAssignment => 'Хориҷ кардан';
+
+  @override
+  String get addSubjectTitle => 'Фан илова кардан';
+
+  @override
+  String get noTeachersForSubject => 'Барои ин фан ҳанӯз муаллим нест';
+
+  @override
+  String get noSubjectsInClass => 'Дар ин синф ҳанӯз фан илова нашудааст';
+
+  @override
+  String get addSubjectToStart =>
+      'Барои вобаста кардани муаллим \"Фан илова кардан\"-ро пахш кунед.';
+
+  @override
+  String get subjectsLabel => 'Фанҳо';
+
+  @override
+  String get subjectsAndTeachers => 'Фанҳо ва муаллимон';
+
+  @override
+  String get viewJournal => 'Кушодани журнал';
+
+  @override
+  String get removeAssignmentConfirm =>
+      'Ин муаллимро аз ин фан дар синф хориҷ кунем? Бахои аллакай гузошташуда мемонанд.';
+
+  @override
+  String get subjectLabel => 'Фан';
+
+  @override
+  String get assign => 'Вобаста кардан';
+
+  @override
+  String get classAssigned => 'Синф вобаста карда шуд';
+
+  @override
+  String get month1 => 'Январ';
+
+  @override
+  String get month2 => 'Феврал';
+
+  @override
+  String get month3 => 'Март';
+
+  @override
+  String get month4 => 'Апрел';
+
+  @override
+  String get month5 => 'Май';
+
+  @override
+  String get month6 => 'Июн';
+
+  @override
+  String get month7 => 'Июл';
+
+  @override
+  String get month8 => 'Август';
+
+  @override
+  String get month9 => 'Сентябр';
+
+  @override
+  String get month10 => 'Октябр';
+
+  @override
+  String get month11 => 'Ноябр';
+
+  @override
+  String get month12 => 'Декабр';
+
+  @override
+  String get deleteTeacherTitle => 'Ҳазфи муаллим';
+
+  @override
+  String get deleteTeacherConfirm =>
+      'Шумо мутмаин ҳастед, ки ин муаллимро ҳазф кардан мехоҳед? Вобастагиҳои синф ва баҳоҳои гузоштаи ӯ низ ҳазф мешаванд.';
+
+  @override
+  String get average => 'Миёна';
 }

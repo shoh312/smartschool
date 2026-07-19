@@ -40,9 +40,14 @@ def parent_notifications(
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    if actor.role == "parent" and actor.parent.id != parent_id:
+    if actor.role == "parent" and parent_id not in actor.parent_ids:
         raise HTTPException(status_code=403, detail="Not your notifications")
 
+    # A parent with children at multiple schools has a sibling Parent row per
+    # school sharing the same phone -- return notifications for all of them,
+    # not just the one row `parent_id` happens to name.
+    parent_ids = actor.parent_ids if actor.role == "parent" else [parent_id]
+
     return db.query(NotificationEvent).filter(
-        NotificationEvent.parent_id == parent_id,
+        NotificationEvent.parent_id.in_(parent_ids),
     ).order_by(NotificationEvent.id.desc()).limit(limit).all()

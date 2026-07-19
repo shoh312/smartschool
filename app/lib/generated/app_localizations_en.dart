@@ -401,4 +401,175 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifications => 'Notifications';
+
+  @override
+  String get grades => 'Grades';
+
+  @override
+  String get noGrades => 'No grades yet';
+
+  @override
+  String get noGradesMessage =>
+      'Grades will appear here once a teacher enters them.';
+
+  @override
+  String studentFallbackLabel(String id) {
+    return 'Student #$id';
+  }
+
+  @override
+  String get teacherMyClasses => 'My Classes';
+
+  @override
+  String get teacherNoClassesTitle => 'You have no classes assigned yet';
+
+  @override
+  String get teacherNoClassesMessage =>
+      'This will appear once the director assigns you a class.';
+
+  @override
+  String classFallbackLabel(String classId) {
+    return 'Class #$classId';
+  }
+
+  @override
+  String get journalStudentColumn => 'Student';
+
+  @override
+  String get journalScoreLabel => 'Grade';
+
+  @override
+  String get journalCommentOptional => 'Comment (optional)';
+
+  @override
+  String get journalTeacherLabel => 'Teacher';
+
+  @override
+  String get journalNoComment => 'No comment';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get journalNoStudentsTitle => 'No students found in this class';
+
+  @override
+  String get journalNoStudentsMessage =>
+      'This will appear once the director assigns students to this class.';
+
+  @override
+  String get teachers => 'Teachers';
+
+  @override
+  String get addNewTeacher => 'New teacher';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get existingTeachers => 'Existing teachers';
+
+  @override
+  String get noTeachers => 'No teachers yet';
+
+  @override
+  String get noTeachersMessage => 'Add a new teacher using the form above.';
+
+  @override
+  String assignClassToTeacher(String name) {
+    return 'Assign a class to $name';
+  }
+
+  @override
+  String get assignClassNoClasses => 'Create a class first.';
+
+  @override
+  String get noClassesAssignedYet => 'Not assigned to any class yet';
+
+  @override
+  String get removeAssignment => 'Remove';
+
+  @override
+  String get addSubjectTitle => 'Add subject';
+
+  @override
+  String get noTeachersForSubject =>
+      'No teachers registered for this subject yet';
+
+  @override
+  String get noSubjectsInClass => 'No subjects added to this class yet';
+
+  @override
+  String get addSubjectToStart => 'Tap \"Add subject\" to assign a teacher.';
+
+  @override
+  String get subjectsLabel => 'Subjects';
+
+  @override
+  String get subjectsAndTeachers => 'Subjects & teachers';
+
+  @override
+  String get viewJournal => 'View journal';
+
+  @override
+  String get removeAssignmentConfirm =>
+      'Remove this teacher from this subject in the class? Grades they already entered will stay.';
+
+  @override
+  String get subjectLabel => 'Subject';
+
+  @override
+  String get assign => 'Assign';
+
+  @override
+  String get classAssigned => 'Class assigned';
+
+  @override
+  String get month1 => 'January';
+
+  @override
+  String get month2 => 'February';
+
+  @override
+  String get month3 => 'March';
+
+  @override
+  String get month4 => 'April';
+
+  @override
+  String get month5 => 'May';
+
+  @override
+  String get month6 => 'June';
+
+  @override
+  String get month7 => 'July';
+
+  @override
+  String get month8 => 'August';
+
+  @override
+  String get month9 => 'September';
+
+  @override
+  String get month10 => 'October';
+
+  @override
+  String get month11 => 'November';
+
+  @override
+  String get month12 => 'December';
+
+  @override
+  String get deleteTeacherTitle => 'Delete Teacher';
+
+  @override
+  String get deleteTeacherConfirm =>
+      'Are you sure you want to delete this teacher? Their class assignments and entered grades will also be removed.';
+
+  @override
+  String get average => 'Average';
 }

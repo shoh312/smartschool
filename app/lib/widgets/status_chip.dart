@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/design_tokens.dart';
 import '../models/attendance.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
@@ -10,13 +11,13 @@ class AttendanceStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final color = switch (status) {
-      AttendanceStatus.present => const Color(0xFF10B981), // Emerald
-      AttendanceStatus.absent => const Color(0xFFEF4444), // Red
-      AttendanceStatus.late => const Color(0xFFF59E0B), // Amber
-      AttendanceStatus.leftSchool => const Color(0xFF6366F1), // Indigo
-      AttendanceStatus.notDetected => Colors.grey,
+      AttendanceStatus.present => AppColors.success,
+      AttendanceStatus.absent => AppColors.danger,
+      AttendanceStatus.late => AppColors.warning,
+      AttendanceStatus.leftSchool => AppColors.primary,
+      AttendanceStatus.notDetected => AppColors.textMuted,
     };
 
     final label = switch (status) {
@@ -31,16 +32,28 @@ class AttendanceStatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.smRadius,
+        border: Border.all(color: color.withOpacity(0.18)),
       ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
       ),
     );
   }

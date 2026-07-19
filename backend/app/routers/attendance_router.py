@@ -27,19 +27,24 @@ def get_attendance_history(
     actor: AuthActor = Depends(get_current_actor),
 ):
     school_id = None
+    parent_ids = None
     if actor.role == "parent":
         if student_id is not None:
             student = db.query(Student).filter(Student.id == student_id).first()
-            if not student or student.parent_id != actor.parent.id:
+            if not student or student.parent_id not in actor.parent_ids:
                 raise HTTPException(status_code=403, detail="Not your student")
-        parent_id = actor.parent.id
+        # `parent_id` (singular) stays in the function signature for the
+        # existing query-param contract, but a parent may have a sibling
+        # Parent row at another school -- fetch across the whole family, not
+        # just this one row.
+        parent_ids = actor.parent_ids
     else:
         school_id = actor.director.school_id
 
     return attendance_history(
         db,
         student_id=student_id,
-        parent_id=parent_id,
+        parent_ids=parent_ids,
         school_id=school_id,
         limit=limit,
     )

@@ -8,6 +8,7 @@ class Grade {
     required this.value,
     required this.gradeDate,
     this.comment,
+    this.teacherName,
   });
 
   final int id;
@@ -18,6 +19,7 @@ class Grade {
   final int value;
   final String? comment;
   final DateTime gradeDate;
+  final String? teacherName;
 
   factory Grade.fromJson(Map<String, dynamic> json) {
     return Grade(
@@ -29,6 +31,7 @@ class Grade {
       value: json['value'] as int,
       comment: json['comment'] as String?,
       gradeDate: DateTime.parse(json['grade_date'] as String),
+      teacherName: json['teacher_name'] as String?,
     );
   }
 

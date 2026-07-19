@@ -12,6 +12,7 @@ from app.routers.notification_router import router as notification_router
 from app.routers.school_router import router as school_router
 from app.routers.schools_admin_router import router as schools_admin_router
 from app.routers.student_router import router as student_router
+from app.routers.student_router import parent_router as parent_student_router
 from app.routers.teacher_router import router as teacher_router
 from app.routers.journal_router import router as journal_router
 from app.routers.websocket_router import router as websocket_router
@@ -25,7 +26,7 @@ from app.models.attendance_model import Attendance
 from app.models.director_model import Director
 from app.models.school_model import School
 from app.models.teacher_model import Teacher, TeacherClass
-from app.models.journal_model import Grade, Homework
+from app.models.journal_model import Grade
 from app.models.notification_model import DeviceToken, NotificationEvent
 from app.background.tasks import attendance_background_loop
 from app.database import SessionLocal
@@ -59,6 +60,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(student_router)
+app.include_router(parent_student_router)
 app.include_router(attendance_router)
 app.include_router(notification_router)
 app.include_router(school_router)

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../models/school_class.dart';
 import '../providers/school_provider.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
+import 'class_subjects_screen.dart';
 
 class ClassManagementScreen extends StatefulWidget {
   const ClassManagementScreen({super.key, this.isIntegrated = false});
@@ -87,7 +89,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -117,7 +119,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
                 children: [
                   Text(
                     _editingClass == null ? l10n.createNewClass : l10n.editClass,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -161,10 +163,10 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           Text(
             l10n.existingClasses,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           if (provider.classes.isEmpty)
@@ -178,30 +180,52 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
             )
           else
             ...provider.classes.map(
-              (schoolClass) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
+              (schoolClass) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.lgRadius,
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: AppShadows.card,
+                ),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.lgRadius),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ClassSubjectsScreen(schoolClass: schoolClass),
+                    ),
+                  ),
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.accent,
+                      borderRadius: AppRadius.mdRadius,
+                      boxShadow: AppShadows.colored(AppColors.accent),
+                    ),
+                    alignment: Alignment.center,
                     child: Text(
                       schoolClass.grade.toString(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                  title: Text(schoolClass.name),
+                  title: Text(schoolClass.name, style: Theme.of(context).textTheme.titleMedium),
                   subtitle: Text(l10n.gradeLabel(schoolClass.grade.toString())),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
                         onPressed: () => _prepareEdit(schoolClass),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                        icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
                         onPressed: () => _delete(schoolClass.id),
                       ),
                     ],

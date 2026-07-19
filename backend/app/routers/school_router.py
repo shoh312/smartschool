@@ -99,10 +99,14 @@ def delete_class(
         raise HTTPException(status_code=404, detail="Class not found")
 
     # Manual cleanup for related records to avoid FK violations
+    from sqlalchemy import text
+
     from app.models.student import Student
     from app.models.camera_model import Camera
     from app.models.attendance_model import Attendance
     from app.models.notification_model import NotificationEvent
+    from app.models.journal_model import Grade
+    from app.models.teacher_model import TeacherClass
 
     # 1. Get all cameras and students in this class
     cameras = db.query(Camera).filter(Camera.class_id == class_id).all()
@@ -127,11 +131,28 @@ def delete_class(
     if attendance_ids:
         db.query(Attendance).filter(Attendance.id.in_(attendance_ids)).delete(synchronize_session=False)
 
-    # 5. Delete students and cameras
+    # 5. Delete grades entered for this class -- a grade keeps the class_id
+    # it was entered under even if the student is later moved to another
+    # class, so match on either: grades tied to this class_id directly
+    # (Grade.class_id is a NOT NULL FK to classes.id), or grades belonging
+    # to a student who is about to be deleted below.
+    db.query(Grade).filter(
+        (Grade.class_id == class_id) | (Grade.student_id.in_(student_ids))
+    ).delete(synchronize_session=False)
+
+    # 6. Delete teacher-class-subject assignments for this class
+    db.query(TeacherClass).filter(TeacherClass.class_id == class_id).delete(synchronize_session=False)
+
+    # 7. "homework" has no ORM model (the feature was removed from the app)
+    # but the table -- and its NOT NULL FK to classes -- is still in the
+    # database.
+    db.execute(text("DELETE FROM homework WHERE class_id = :class_id"), {"class_id": class_id})
+
+    # 8. Delete students and cameras
     db.query(Student).filter(Student.class_id == class_id).delete(synchronize_session=False)
     db.query(Camera).filter(Camera.class_id == class_id).delete(synchronize_session=False)
 
-    # 6. Delete the class
+    # 9. Delete the class
     db.delete(school_class)
     db.commit()
     return {"message": "Class deleted"}

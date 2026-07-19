@@ -402,4 +402,176 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get notifications => 'Уведомления';
+
+  @override
+  String get grades => 'Оценки';
+
+  @override
+  String get noGrades => 'Оценок пока нет';
+
+  @override
+  String get noGradesMessage =>
+      'Оценки появятся здесь, когда учитель их выставит.';
+
+  @override
+  String studentFallbackLabel(String id) {
+    return 'Ученик №$id';
+  }
+
+  @override
+  String get teacherMyClasses => 'Мои классы';
+
+  @override
+  String get teacherNoClassesTitle => 'Вам еще не назначен ни один класс';
+
+  @override
+  String get teacherNoClassesMessage =>
+      'Это появится, когда директор назначит вам класс.';
+
+  @override
+  String classFallbackLabel(String classId) {
+    return 'Класс №$classId';
+  }
+
+  @override
+  String get journalStudentColumn => 'Ученик';
+
+  @override
+  String get journalScoreLabel => 'Оценка';
+
+  @override
+  String get journalCommentOptional => 'Комментарий (необязательно)';
+
+  @override
+  String get journalTeacherLabel => 'Учитель';
+
+  @override
+  String get journalNoComment => 'Без комментария';
+
+  @override
+  String get close => 'Закрыть';
+
+  @override
+  String get save => 'Сохранить';
+
+  @override
+  String get journalNoStudentsTitle => 'В этом классе не найдено учеников';
+
+  @override
+  String get journalNoStudentsMessage =>
+      'Это появится, когда директор назначит учеников в этот класс.';
+
+  @override
+  String get teachers => 'Учителя';
+
+  @override
+  String get addNewTeacher => 'Новый учитель';
+
+  @override
+  String get create => 'Создать';
+
+  @override
+  String get existingTeachers => 'Существующие учителя';
+
+  @override
+  String get noTeachers => 'Пока нет учителей';
+
+  @override
+  String get noTeachersMessage =>
+      'Добавьте нового учителя, используя форму выше.';
+
+  @override
+  String assignClassToTeacher(String name) {
+    return 'Назначить класс для $name';
+  }
+
+  @override
+  String get assignClassNoClasses => 'Сначала создайте класс.';
+
+  @override
+  String get noClassesAssignedYet => 'Пока не назначен ни один класс';
+
+  @override
+  String get removeAssignment => 'Убрать';
+
+  @override
+  String get addSubjectTitle => 'Добавить предмет';
+
+  @override
+  String get noTeachersForSubject => 'По этому предмету пока нет учителей';
+
+  @override
+  String get noSubjectsInClass => 'В этом классе пока нет предметов';
+
+  @override
+  String get addSubjectToStart =>
+      'Нажмите «Добавить предмет», чтобы назначить учителя.';
+
+  @override
+  String get subjectsLabel => 'Предметы';
+
+  @override
+  String get subjectsAndTeachers => 'Предметы и учителя';
+
+  @override
+  String get viewJournal => 'Открыть журнал';
+
+  @override
+  String get removeAssignmentConfirm =>
+      'Убрать этого учителя с этого предмета в классе? Уже выставленные оценки останутся.';
+
+  @override
+  String get subjectLabel => 'Предмет';
+
+  @override
+  String get assign => 'Назначить';
+
+  @override
+  String get classAssigned => 'Класс назначен';
+
+  @override
+  String get month1 => 'Январь';
+
+  @override
+  String get month2 => 'Февраль';
+
+  @override
+  String get month3 => 'Март';
+
+  @override
+  String get month4 => 'Апрель';
+
+  @override
+  String get month5 => 'Май';
+
+  @override
+  String get month6 => 'Июнь';
+
+  @override
+  String get month7 => 'Июль';
+
+  @override
+  String get month8 => 'Август';
+
+  @override
+  String get month9 => 'Сентябрь';
+
+  @override
+  String get month10 => 'Октябрь';
+
+  @override
+  String get month11 => 'Ноябрь';
+
+  @override
+  String get month12 => 'Декабрь';
+
+  @override
+  String get deleteTeacherTitle => 'Удалить учителя';
+
+  @override
+  String get deleteTeacherConfirm =>
+      'Вы уверены, что хотите удалить этого учителя? Его назначения классов и выставленные оценки также будут удалены.';
+
+  @override
+  String get average => 'Средний балл';
 }

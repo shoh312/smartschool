@@ -9,6 +9,7 @@ import '../screens/login_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/notification_screen.dart';
 import '../screens/parent_dashboard_screen.dart';
+import '../screens/school_journal_screen.dart';
 import '../screens/student_details_screen.dart';
 import '../screens/student_management_screen.dart';
 import '../screens/teacher_dashboard_screen.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const students = '/students';
   static const teacherDashboard = '/teacher';
   static const teacherManagement = '/teachers';
+  static const schoolJournal = '/school-journal';
 
   static Map<String, WidgetBuilder> get routes => {
     login: (_) => const LoginScreen(),
@@ -43,5 +45,6 @@ class AppRoutes {
     students: (_) => const StudentManagementScreen(),
     teacherDashboard: (_) => const TeacherDashboardScreen(),
     teacherManagement: (_) => const TeacherManagementScreen(),
+    schoolJournal: (_) => const SchoolJournalScreen(),
   };
 }

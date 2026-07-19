@@ -4,8 +4,8 @@ import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../core/design_tokens.dart';
 import '../models/grade.dart';
-import '../models/student.dart';
-import '../providers/teacher_provider.dart';
+import '../providers/journal_provider.dart';
+import '../providers/student_provider.dart';
 import '../utils/date_formatters.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
@@ -33,53 +33,27 @@ Color _gradeColor(int value) {
   return AppColors.danger;
 }
 
-class ClassRosterScreen extends StatefulWidget {
-  const ClassRosterScreen({
+class ClassJournalScreen extends StatefulWidget {
+  const ClassJournalScreen({
     super.key,
     required this.classId,
     required this.className,
-    this.subject = '',
   });
 
   final int classId;
   final String className;
-  final String subject;
 
   @override
-  State<ClassRosterScreen> createState() => _ClassRosterScreenState();
+  State<ClassJournalScreen> createState() => _ClassJournalScreenState();
 }
 
-class _ClassRosterScreenState extends State<ClassRosterScreen> {
+class _ClassJournalScreenState extends State<ClassJournalScreen> {
   late DateTime _viewedMonth;
+  String? _selectedSubject;
 
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    _viewedMonth = DateTime(now.year, now.month);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TeacherProvider>().loadRoster(widget.classId);
-      context.read<TeacherProvider>().loadClassGrades(
-        widget.classId,
-        widget.subject,
-      );
-    });
-  }
-
-  bool get _isCurrentMonth {
-    final now = DateTime.now();
-    return _viewedMonth.year == now.year && _viewedMonth.month == now.month;
-  }
-
-  void _changeMonth(int delta) {
-    setState(() {
-      _viewedMonth = DateTime(_viewedMonth.year, _viewedMonth.month + delta);
-    });
-  }
-
-  Future<void> _showGradeComment(Student student, Grade grade) async {
+  void _showGradeDetails(String studentName, Grade grade) {
     final l10n = AppLocalizations.of(context)!;
-    await showModalBottomSheet<void>(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -133,7 +107,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          student.fullName,
+                          studentName,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         Text(
@@ -147,6 +121,16 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                 ],
               ),
               const SizedBox(height: 20),
+              Text(
+                l10n.journalTeacherLabel,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                grade.teacherName ?? '-',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
               Text(
                 l10n.journalCommentOptional,
                 style: Theme.of(context).textTheme.labelLarge,
@@ -176,195 +160,57 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
     );
   }
 
-  Future<void> _openGradeDialog(
-    Student student,
-    DateTime date,
-    Grade? existing,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    int value = existing?.value ?? 5;
-    final commentController = TextEditingController(
-      text: existing?.comment ?? '',
-    );
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _viewedMonth = DateTime(now.year, now.month);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<JournalProvider>().loadForClass(widget.classId);
+      context.read<StudentProvider>().loadStudents();
+    });
+  }
 
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.borderStrong,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-                Text(
-                  student.fullName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _dateKey(date),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  l10n.journalScoreLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    for (var option = 1; option <= 10; option++)
-                      _ScoreOption(
-                        value: option,
-                        selected: value == option,
-                        onTap: () => setDialogState(() => value = option),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: commentController,
-                  decoration: InputDecoration(
-                    labelText: l10n.journalCommentOptional,
-                    prefixIcon: const Icon(Icons.chat_bubble_outline, size: 20),
-                  ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    if (existing != null)
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.pop(context, 'delete'),
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          label: Text(l10n.delete),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.danger,
-                            side: const BorderSide(color: AppColors.danger),
-                            minimumSize: const Size.fromHeight(48),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.mdRadius,
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (existing != null) const SizedBox(width: 12),
-                    Expanded(
-                      flex: existing != null ? 1 : 1,
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context, null),
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size.fromHeight(48),
-                        ),
-                        child: Text(l10n.cancel),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(context, 'save'),
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.mdRadius,
-                          ),
-                        ),
-                        child: Text(l10n.save),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  bool get _isCurrentMonth {
+    final now = DateTime.now();
+    return _viewedMonth.year == now.year && _viewedMonth.month == now.month;
+  }
 
-    try {
-      if (action == null || !mounted) return;
-
-      final teacherProvider = context.read<TeacherProvider>();
-      bool success;
-      if (action == 'delete' && existing != null) {
-        success = await teacherProvider.deleteGrade(existing.id);
-      } else if (existing != null) {
-        success = await teacherProvider.updateGrade(
-          gradeId: existing.id,
-          value: value,
-          comment: commentController.text.trim().isEmpty
-              ? null
-              : commentController.text.trim(),
-        );
-      } else {
-        success = await teacherProvider.submitGrade(
-          studentId: student.id,
-          classId: widget.classId,
-          subject: widget.subject,
-          value: value,
-          comment: commentController.text.trim().isEmpty
-              ? null
-              : commentController.text.trim(),
-          gradeDate: date,
-        );
-      }
-
-      if (!mounted) return;
-      if (!success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.errorPrefix(teacherProvider.error ?? '')),
-          ),
-        );
-      }
-    } finally {
-      commentController.dispose();
-    }
+  void _changeMonth(int delta) {
+    setState(() {
+      _viewedMonth = DateTime(_viewedMonth.year, _viewedMonth.month + delta);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final teacherProvider = context.watch<TeacherProvider>();
-    final roster = teacherProvider.roster;
-    final grades = teacherProvider.classGrades;
-    final today = _dateOnly(DateTime.now());
+    final journal = context.watch<JournalProvider>();
+    final roster = context
+        .watch<StudentProvider>()
+        .students
+        .where((student) => student.classId == widget.classId)
+        .toList();
     final theme = Theme.of(context);
+    final today = _dateOnly(DateTime.now());
     final monthLabel = DateFormatters.monthYear(l10n, _viewedMonth);
+
+    final subjects = journal.grades.map((g) => g.subject).toSet().toList()
+      ..sort();
+    final effectiveSubject = subjects.contains(_selectedSubject)
+        ? _selectedSubject
+        : (subjects.isNotEmpty ? subjects.first : null);
+
+    final subjectGrades = effectiveSubject == null
+        ? const <Grade>[]
+        : journal.grades.where((g) => g.subject == effectiveSubject).toList();
 
     final dateColumns = [
       for (var day = 1; day <= _daysInMonth(_viewedMonth); day++)
         DateTime(_viewedMonth.year, _viewedMonth.month, day),
     ];
 
-    final monthGrades = grades.where((grade) {
+    final monthGrades = subjectGrades.where((grade) {
       final date = _dateOnly(grade.gradeDate);
       return date.year == _viewedMonth.year && date.month == _viewedMonth.month;
     }).toList();
@@ -375,31 +221,25 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
               .toStringAsFixed(1);
 
     final gradesByStudentAndDate = <int, Map<String, Grade>>{};
-    for (final grade in grades) {
+    for (final grade in subjectGrades) {
       gradesByStudentAndDate.putIfAbsent(
         grade.studentId,
         () => {},
       )[_dateKey(grade.gradeDate)] = grade;
     }
 
-    final isLoading =
-        teacherProvider.isRosterLoading || teacherProvider.isJournalLoading;
-
     return AppShell(
-      title: '${widget.className} • ${widget.subject}',
+      title: widget.className,
       child: RefreshIndicator(
-        onRefresh: () async {
-          await context.read<TeacherProvider>().loadRoster(widget.classId);
-          await context.read<TeacherProvider>().loadClassGrades(
-            widget.classId,
-            widget.subject,
-          );
-        },
-        child: roster.isEmpty && !isLoading
+        onRefresh: () =>
+            context.read<JournalProvider>().loadForClass(widget.classId),
+        child: journal.isLoading && journal.grades.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : subjects.isEmpty
             ? EmptyState(
-                icon: Icons.groups_outlined,
-                title: l10n.journalNoStudentsTitle,
-                message: l10n.journalNoStudentsMessage,
+                icon: Icons.grade_outlined,
+                title: l10n.noGrades,
+                message: l10n.noGradesMessage,
               )
             : Column(
                 children: [
@@ -439,7 +279,22 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final subject in subjects)
+                          ChoiceChip(
+                            label: Text(subject),
+                            selected: subject == effectiveSubject,
+                            onSelected: (_) =>
+                                setState(() => _selectedSubject = subject),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
@@ -451,20 +306,18 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                       child: Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.chevron_left),
+                            icon: const Icon(Icons.chevron_left_rounded),
                             onPressed: () => _changeMonth(-1),
                           ),
                           Expanded(
                             child: Text(
                               monthLabel,
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: theme.textTheme.titleMedium,
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.chevron_right),
+                            icon: const Icon(Icons.chevron_right_rounded),
                             onPressed: _isCurrentMonth
                                 ? null
                                 : () => _changeMonth(1),
@@ -473,9 +326,13 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                       ),
                     ),
                   ),
-                  if (isLoading && roster.isEmpty)
-                    const Expanded(
-                      child: Center(child: CircularProgressIndicator()),
+                  if (roster.isEmpty)
+                    Expanded(
+                      child: EmptyState(
+                        icon: Icons.groups_outlined,
+                        title: l10n.noStudents,
+                        message: l10n.studentsAssignedWillAppear,
+                      ),
                     )
                   else
                     Expanded(
@@ -519,10 +376,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                               l10n.journalStudentColumn,
                                               style: theme.textTheme.labelLarge
                                                   ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: theme
-                                                        .colorScheme
-                                                        .primary,
+                                                    color: AppColors.primary,
                                                   ),
                                             ),
                                           ),
@@ -546,12 +400,16 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                             ),
                                             child: Row(
                                               children: [
-                                                CircleAvatar(
-                                                  radius: 14,
-                                                  backgroundColor: theme
-                                                      .colorScheme
-                                                      .primary
-                                                      .withOpacity(0.1),
+                                                Container(
+                                                  width: 28,
+                                                  height: 28,
+                                                  decoration: BoxDecoration(
+                                                    gradient: AppGradients.tint(
+                                                      AppColors.primary,
+                                                    ),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  alignment: Alignment.center,
                                                   child: Text(
                                                     entry
                                                             .value
@@ -562,13 +420,11 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                                               .value
                                                               .firstName[0]
                                                               .toUpperCase(),
-                                                    style: TextStyle(
+                                                    style: const TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
-                                                          FontWeight.bold,
-                                                      color: theme
-                                                          .colorScheme
-                                                          .primary,
+                                                          FontWeight.w700,
+                                                      color: AppColors.primary,
                                                     ),
                                                   ),
                                                 ),
@@ -586,7 +442,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                                           fontWeight:
                                                               FontWeight.w600,
                                                           color: AppColors
-                                                            .textPrimary,
+                                                              .textPrimary,
                                                         ),
                                                   ),
                                                 ),
@@ -610,53 +466,26 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                                   height: _kRowHeight,
                                                   isToday: date == today,
                                                   isWeekend: _isWeekend(date),
-                                                  child: date == today
-                                                      ? Container(
-                                                          width: 26,
-                                                          height: 26,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                color: theme
-                                                                    .colorScheme
-                                                                    .primary,
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                              ),
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child: Text(
-                                                            '${date.day}',
-                                                            style:
-                                                                const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  fontSize: 12,
-                                                                ),
-                                                          ),
-                                                        )
-                                                      : Text(
-                                                          '${date.day}',
-                                                          style: theme
-                                                              .textTheme
-                                                              .labelMedium
-                                                              ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color:
-                                                                    _isWeekend(
-                                                                      date,
-                                                                    )
-                                                                    ? AppColors
-                                                                          .textMuted
-                                                                    : theme
-                                                                          .colorScheme
-                                                                          .onSurfaceVariant,
-                                                              ),
+                                                  child: Text(
+                                                    '${date.day}',
+                                                    style: theme
+                                                        .textTheme
+                                                        .labelMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              date == today
+                                                              ? FontWeight.bold
+                                                              : FontWeight.w600,
+                                                          color: date == today
+                                                              ? AppColors
+                                                                    .primary
+                                                              : _isWeekend(date)
+                                                              ? AppColors
+                                                                    .textMuted
+                                                              : AppColors
+                                                                    .textSecondary,
                                                         ),
+                                                  ),
                                                 ),
                                             ],
                                           ),
@@ -665,37 +494,20 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                             Row(
                                               children: [
                                                 for (final date in dateColumns)
-                                                  _GradeCell(
+                                                  _ReadOnlyGradeCell(
                                                     grade:
                                                         gradesByStudentAndDate[entry
                                                             .value
                                                             .id]?[_dateKey(
                                                           date,
                                                         )],
-                                                    enabled: date == today,
                                                     isWeekend: _isWeekend(date),
                                                     zebra: entry.key.isOdd,
-                                                    onTap: () {
-                                                      final existing =
-                                                          gradesByStudentAndDate[entry
-                                                              .value
-                                                              .id]?[_dateKey(
-                                                            date,
-                                                          )];
-                                                      if (date == today) {
-                                                        _openGradeDialog(
-                                                          entry.value,
-                                                          date,
-                                                          existing,
-                                                        );
-                                                      } else if (existing !=
-                                                          null) {
-                                                        _showGradeComment(
-                                                          entry.value,
-                                                          existing,
-                                                        );
-                                                      }
-                                                    },
+                                                    onTap: (grade) =>
+                                                        _showGradeDetails(
+                                                          entry.value.fullName,
+                                                          grade,
+                                                        ),
                                                   ),
                                               ],
                                             ),
@@ -736,17 +548,16 @@ class _HeaderCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       width: width,
       height: height,
       alignment: alignment,
       decoration: BoxDecoration(
         color: isToday
-            ? theme.colorScheme.primary.withOpacity(0.08)
+            ? AppColors.primary.withOpacity(0.08)
             : isWeekend
             ? AppColors.surfaceAlt
-            : theme.colorScheme.primary.withOpacity(0.04),
+            : AppColors.primary.withOpacity(0.03),
         border: const Border(
           bottom: BorderSide(color: AppColors.border, width: 1.5),
         ),
@@ -756,108 +567,44 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-class _ScoreOption extends StatelessWidget {
-  const _ScoreOption({
-    required this.value,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final int value;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _gradeColor(value);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: selected ? color : color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? color : color.withOpacity(0.25),
-            width: selected ? 2 : 1,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          value.toString(),
-          style: TextStyle(
-            color: selected ? Colors.white : color,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GradeCell extends StatelessWidget {
-  const _GradeCell({
+class _ReadOnlyGradeCell extends StatelessWidget {
+  const _ReadOnlyGradeCell({
     required this.grade,
-    required this.enabled,
     required this.isWeekend,
     required this.zebra,
     required this.onTap,
   });
 
   final Grade? grade;
-  final bool enabled;
   final bool isWeekend;
   final bool zebra;
-  final VoidCallback onTap;
+  final ValueChanged<Grade> onTap;
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = enabled
-        ? Theme.of(context).colorScheme.primary.withOpacity(0.04)
-        : isWeekend
+    final backgroundColor = isWeekend
         ? AppColors.surfaceAlt
         : zebra
-        ? AppColors.surfaceAlt
+        ? AppColors.surfaceAlt.withOpacity(0.6)
         : AppColors.surface;
 
-    final cellChild = Center(
+    final grade = this.grade;
+
+    final cell = Center(
       child: grade == null
-          ? enabled
-                ? Icon(
-                    Icons.add_rounded,
-                    size: 18,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.4),
-                  )
-                : null
+          ? null
           : Container(
               width: 30,
               height: 30,
               decoration: BoxDecoration(
-                color: _gradeColor(
-                  grade!.value,
-                ).withOpacity(enabled ? 1 : 0.15),
-                borderRadius: BorderRadius.circular(9),
-                boxShadow: enabled
-                    ? [
-                        BoxShadow(
-                          color: _gradeColor(grade!.value).withOpacity(0.35),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
+                color: _gradeColor(grade.value).withOpacity(0.15),
+                borderRadius: AppRadius.smRadius,
               ),
               alignment: Alignment.center,
               child: Text(
-                grade!.value.toString(),
+                grade.value.toString(),
                 style: TextStyle(
-                  color: enabled ? Colors.white : _gradeColor(grade!.value),
+                  color: _gradeColor(grade.value),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -872,13 +619,13 @@ class _GradeCell extends StatelessWidget {
         color: backgroundColor,
         border: const Border(top: BorderSide(color: AppColors.border)),
       ),
-      child: (enabled || grade != null)
-          ? InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(9),
-              child: cellChild,
-            )
-          : cellChild,
+      child: grade == null
+          ? cell
+          : InkWell(
+              onTap: () => onTap(grade),
+              borderRadius: AppRadius.smRadius,
+              child: cell,
+            ),
     );
   }
 }

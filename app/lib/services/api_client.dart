@@ -36,6 +36,10 @@ class ApiClient {
     return _send('PUT', path, body: body, isFormData: isFormData);
   }
 
+  Future<dynamic> patch(String path, {Object? body}) async {
+    return _send('PATCH', path, body: body);
+  }
+
   Future<dynamic> delete(String path) async {
     return _send('DELETE', path);
   }
@@ -108,15 +112,27 @@ class ApiClient {
                 ? body
                 : jsonEncode(body),
       ),
+      'PATCH' => await _httpClient.patch(
+        uri,
+        headers: headers,
+        body: body == null ? null : jsonEncode(body),
+      ),
       'DELETE' => await _httpClient.delete(uri, headers: headers),
       _ => throw UnsupportedError(method),
     };
 
-    final decoded = response.body.isEmpty ? null : jsonDecode(response.body);
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty ? null : jsonDecode(response.body);
+    } on FormatException {
+      decoded = null;
+    }
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final detail = decoded is Map<String, dynamic> ? decoded['detail'] : null;
       throw ApiException(
-        detail?.toString() ?? 'Request failed',
+        detail?.toString() ??
+            (response.body.isNotEmpty ? response.body : 'Request failed'),
         statusCode: response.statusCode,
       );
     }

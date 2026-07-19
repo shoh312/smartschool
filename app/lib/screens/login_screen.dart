@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart' as my_auth;
 import '../routes/app_routes.dart';
@@ -94,49 +95,62 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppGradients.canvas),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.08),
+                        gradient: AppGradients.primary,
                         shape: BoxShape.circle,
+                        boxShadow: AppShadows.colored(AppColors.primary),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.school_rounded,
-                        size: 64,
-                        color: theme.colorScheme.primary,
+                        size: 56,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                   Text(
                     l10n.title,
                     style: theme.textTheme.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
                     l10n.login_desc,
                     style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 48),
-                  
+                  const SizedBox(height: 36),
+
+                  Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: AppRadius.xlRadius,
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.raised,
+                    ),
+                    child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      color: AppColors.surfaceAlt,
+                      borderRadius: AppRadius.mdRadius,
                     ),
                     child: SegmentedButton<AppRole>(
                       segments: AppRole.values
@@ -230,8 +244,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 40),
-                  
+                  const SizedBox(height: 28),
+
                   ElevatedButton(
                     onPressed: isLoading ? null : _submit,
                     style: theme.elevatedButtonTheme.style,
@@ -243,8 +257,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : Text(l10n.signIn),
                   ),
+                  ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
-                  
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -266,6 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
+                ),
               ),
             ),
           ),

@@ -13,6 +13,7 @@ import '../services/token_storage.dart';
 import '../websocket/attendance_socket_service.dart';
 import 'attendance_provider.dart';
 import 'auth_provider.dart';
+import 'director_nav_provider.dart';
 import 'journal_provider.dart';
 import 'language_provider.dart';
 import 'notification_provider.dart';
@@ -26,6 +27,7 @@ List<SingleChildWidget> buildAppProviders() {
     Provider(create: (_) => TokenStorage()),
     // ... (rest of providers)
     ChangeNotifierProvider(create: (_) => LanguageProvider()),
+    ChangeNotifierProvider(create: (_) => DirectorNavProvider()),
     ProxyProvider<TokenStorage, ApiClient>(
       update: (_, storage, __) => ApiClient(tokenStorage: storage),
     ),

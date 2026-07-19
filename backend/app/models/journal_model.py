@@ -31,24 +31,6 @@ class Grade(Base):
     school_class = relationship("Class")
     teacher = relationship("Teacher")
 
-
-class Homework(Base):
-
-    __tablename__ = "homework"
-
-    id = Column(Integer, primary_key=True, index=True)
-
-    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False, index=True)
-
-    teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=False, index=True)
-
-    subject = Column(String, nullable=False)
-
-    description = Column(Text, nullable=False)
-
-    due_date = Column(Date)
-
-    created_at = Column(TIMESTAMP, server_default=func.now())
-
-    school_class = relationship("Class")
-    teacher = relationship("Teacher")
+    @property
+    def teacher_name(self) -> str | None:
+        return self.teacher.full_name if self.teacher else None

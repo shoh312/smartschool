@@ -7,6 +7,7 @@ class Student {
     this.parentId,
     this.className,
     this.parentPhone,
+    this.parentName,
     this.photo,
     this.isActive = true,
   });
@@ -18,6 +19,7 @@ class Student {
   final String lastName;
   final String? className;
   final String? parentPhone;
+  final String? parentName;
   final String? photo;
   final bool isActive;
 
@@ -30,6 +32,7 @@ class Student {
       parentId: json['parent_id'] as int?,
       className: json['class_name'] as String?,
       parentPhone: json['parent_phone'] as String?,
+      parentName: json['parent_name'] as String?,
       firstName: json['first_name'] as String? ?? '',
       lastName: json['last_name'] as String? ?? '',
       photo: json['photo'] as String?,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/date_formatters.dart';
@@ -53,17 +54,38 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final record = provider.history[index];
-                return Card(
+                return Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.lgRadius,
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppShadows.card,
+                  ),
                   child: ListTile(
-                    leading: const Icon(Icons.event_available_outlined),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.tint(AppColors.primary),
+                        borderRadius: AppRadius.mdRadius,
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.event_available_outlined,
+                        color: AppColors.primary,
+                      ),
+                    ),
                     title: Text(
                       DateFormatters.shortDate(record.attendanceDate),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     subtitle: Text(
                       l10n.inTimeOutTime(
                         DateFormatters.time(record.timeIn),
                         DateFormatters.time(record.timeOut),
                       ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     trailing: AttendanceStatusChip(status: record.status),
                   ),

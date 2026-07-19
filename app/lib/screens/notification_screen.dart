@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../models/notification_event.dart';
 import '../providers/auth_provider.dart';
 import '../providers/notification_provider.dart';
@@ -46,30 +47,48 @@ class NotificationScreen extends StatelessWidget {
                           separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final item = notificationProvider.notifications[index];
-                            return Card(
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: AppRadius.lgRadius,
+                                border: Border.all(color: AppColors.border),
+                                boxShadow: AppShadows.card,
+                              ),
                               child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                 leading: Container(
-                                  padding: const EdgeInsets.all(8),
+                                  width: 44,
+                                  height: 44,
+                                  alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                    shape: BoxShape.circle,
+                                    gradient: AppGradients.tint(AppColors.primary),
+                                    borderRadius: AppRadius.mdRadius,
                                   ),
-                                  child: Icon(
-                                    Icons.notifications_active_outlined,
-                                    color: Theme.of(context).colorScheme.primary,
+                                  child: const Icon(
+                                    Icons.notifications_active_rounded,
+                                    color: AppColors.primary,
                                     size: 20,
                                   ),
                                 ),
                                 title: Text(
                                   item.title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: Theme.of(context).textTheme.titleMedium,
                                 ),
-                                subtitle: Text(item.body),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 3),
+                                  child: Text(
+                                    item.body,
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ),
                                 trailing: Text(
                                   item.createdAt != null
                                       ? DateFormatters.time(item.createdAt!)
                                       : '',
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textMuted,
+                                      ),
                                 ),
                               ),
                             );

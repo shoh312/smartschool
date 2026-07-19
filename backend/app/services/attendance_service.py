@@ -198,16 +198,16 @@ def mark_left_school_students(
 def attendance_history(
     db: Session,
     student_id: int | None = None,
-    parent_id: int | None = None,
+    parent_ids: list[int] | None = None,
     school_id: int | None = None,
     limit: int = 100,
 ) -> list[Attendance]:
     query = db.query(Attendance)
     joined_student = False
 
-    if parent_id is not None:
+    if parent_ids is not None:
         query = query.join(Student, Student.id == Attendance.student_id).filter(
-            Student.parent_id == parent_id
+            Student.parent_id.in_(parent_ids)
         )
         joined_student = True
     if school_id is not None:

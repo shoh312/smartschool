@@ -11,6 +11,7 @@ from app.models.director_model import Director
 from app.models.notification_model import DeviceToken
 from app.models.parent_model import Parent
 from app.utils.config import settings
+from app.utils.phone import normalize_phone
 from app.utils.security import (
     create_jwt_access_token,
     hash_password,
@@ -55,8 +56,30 @@ def verify_access_token(token: str) -> int:
         ) from exc
 
 
+def get_parent_family_ids(db: Session, parent: Parent) -> list[int]:
+    """All Parent rows sharing this parent's phone number, across every school.
+
+    A parent's phone is the only login credential, and Parent rows are scoped
+    one-per-school (see student_router.py's director_create_student), so a
+    parent with children at two different schools ends up with two separate
+    Parent rows sharing the same phone. Anywhere that authorizes or fetches
+    "this parent's own data" (students, grades, attendance, notifications)
+    should check/query against this whole set, not a single parent.id, or a
+    multi-school parent only ever sees one school's worth of data.
+    """
+    rows = db.query(Parent.id).filter(Parent.phone == parent.phone).all()
+    return [row[0] for row in rows]
+
+
 def login_parent(db: Session, phone: str, firebase_token: str | None, platform: str | None):
-    parent = db.query(Parent).filter(Parent.phone == phone).first()
+    # NOTE: parent login is phone-only with no school selection step, and
+    # Parent.phone is now scoped per-school at creation time (see
+    # student_router.py), so a parent with children in two different schools
+    # ends up with two separate Parent rows sharing the same phone. This
+    # `.first()` only surfaces one of them -- a known limitation, not a
+    # cross-school data leak (each row still only sees its own school's
+    # students). A real fix needs a school-selection step in the login flow.
+    parent = db.query(Parent).filter(Parent.phone == normalize_phone(phone)).first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
 
@@ -76,14 +99,14 @@ def login_parent(db: Session, phone: str, firebase_token: str | None, platform: 
 
 
 def check_or_register_parent(db: Session, phone: str):
-    parent = db.query(Parent).filter(Parent.phone == phone).first()
+    parent = db.query(Parent).filter(Parent.phone == normalize_phone(phone)).first()
     if parent:
         return {"status": "login", "parent_id": parent.id}
     return {"status": "register"}
 
 
 def complete_parent_registration(db: Session, phone: str, full_name: str, firebase_token: str | None, platform: str | None):
-    parent = Parent(phone=phone, full_name=full_name)
+    parent = Parent(phone=normalize_phone(phone), full_name=full_name)
     db.add(parent)
     db.commit()
     db.refresh(parent)

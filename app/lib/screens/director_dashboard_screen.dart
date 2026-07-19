@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/design_tokens.dart';
 import '../models/attendance.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/student_provider.dart';
@@ -85,50 +86,98 @@ class _DirectorDashboardScreenState extends State<DirectorDashboardScreen> {
               );
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           Text(
             l10n.quickActions,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          const SizedBox(height: 14),
+          Row(
             children: [
-              _DashboardAction(
-                icon: Icons.analytics_outlined,
-                label: l10n.history,
-                route: AppRoutes.attendanceHistory,
+              Expanded(
+                child: _DashboardAction(
+                  icon: Icons.analytics_outlined,
+                  label: l10n.history,
+                  route: AppRoutes.attendanceHistory,
+                  color: AppColors.info,
+                ),
               ),
-              _DashboardAction(
-                icon: Icons.live_tv,
-                label: l10n.liveStream,
-                route: AppRoutes.liveAttendance,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DashboardAction(
+                  icon: Icons.live_tv_rounded,
+                  label: l10n.liveStream,
+                  route: AppRoutes.liveAttendance,
+                  color: AppColors.danger,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DashboardAction(
+                  icon: Icons.grade_outlined,
+                  label: l10n.grades,
+                  route: AppRoutes.schoolJournal,
+                  color: AppColors.warning,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           Text(
             l10n.recentActivity,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           if (live.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Center(child: Text(l10n.noAttendanceRecorded)),
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppRadius.lgRadius,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Center(
+                child: Text(
+                  l10n.noAttendanceRecorded,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               ),
             )
           else
             ...live.take(10).map(
-                  (item) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
+                  (item) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: AppRadius.lgRadius,
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.card,
+                    ),
                     child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text(item.fullName[0]),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.primary,
+                          borderRadius: AppRadius.mdRadius,
+                        ),
+                        child: Center(
+                          child: Text(
+                            item.fullName.isEmpty ? '?' : item.fullName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
                       ),
-                      title: Text(item.fullName),
+                      title: Text(
+                        item.fullName,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                       subtitle: Text(l10n.cameraLabel(item.cameraId?.toString() ?? '-')),
                       trailing: AttendanceStatusChip(status: item.status),
                     ),
@@ -174,18 +223,51 @@ class _DashboardAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.route,
+    required this.color,
   });
 
   final IconData icon;
   final String label;
   final String route;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.tonalIcon(
-      onPressed: () => Navigator.pushNamed(context, route),
-      icon: Icon(icon),
-      label: Text(label),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: AppRadius.lgRadius,
+      child: InkWell(
+        borderRadius: AppRadius.lgRadius,
+        onTap: () => Navigator.pushNamed(context, route),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.lgRadius,
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppShadows.card,
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: AppGradients.tint(color),
+                  borderRadius: AppRadius.mdRadius,
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

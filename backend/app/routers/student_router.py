@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 
 from app.database import get_db
-from app.deps import get_current_director
+from app.deps import get_current_director, get_current_parent
 from app.models.class_model import Class
 from app.models.director_model import Director
 from app.models.parent_model import Parent
@@ -12,6 +12,8 @@ from app.schemas.student_schema import (
     StudentCreate,
     StudentResponse
 )
+from app.services.auth_service import get_parent_family_ids
+from app.utils.phone import normalize_phone
 
 from fastapi import Form, UploadFile, File
 import shutil
@@ -22,6 +24,45 @@ from app.ai.face_engine import (
 )
 
 router = APIRouter(tags=["students"], dependencies=[Depends(get_current_director)])
+
+# A separate router (no director-only dependency) for the parent-facing
+# "my children" endpoint -- the main router above requires a director.
+parent_router = APIRouter(tags=["students"])
+
+
+@parent_router.get("/students/me", response_model=list[StudentResponse])
+def get_my_students(
+    db: Session = Depends(get_db),
+    parent: Parent = Depends(get_current_parent),
+):
+    # A parent with children at two different schools has a sibling Parent
+    # row per school sharing the same phone -- return every school's
+    # children, not just the ones under this exact logged-in row.
+    family_ids = get_parent_family_ids(db, parent)
+
+    rows = db.query(Student, Class).filter(
+        Student.parent_id.in_(family_ids)
+    ).outerjoin(
+        Class,
+        Student.class_id == Class.id
+    ).order_by(Student.id.desc()).all()
+
+    return [
+        {
+            "id": student.id,
+            "class_id": student.class_id,
+            "parent_id": student.parent_id,
+            "class_name": school_class.name if school_class else None,
+            "parent_phone": parent.phone,
+            "parent_name": parent.full_name,
+            "first_name": student.first_name,
+            "last_name": student.last_name,
+            "photo": student.photo,
+            "face_encoding": student.face_encoding,
+            "is_active": student.is_active,
+        }
+        for student, school_class in rows
+    ]
 
 # ==================================================
 # CREATE STUDENT
@@ -94,6 +135,7 @@ def get_students(
             "parent_id": student.parent_id,
             "class_name": school_class.name if school_class else None,
             "parent_phone": parent.phone if parent else None,
+            "parent_name": parent.full_name if parent else None,
             "first_name": student.first_name,
             "last_name": student.last_name,
             "photo": student.photo,
@@ -128,14 +170,20 @@ def director_create_student(
 
         raise HTTPException(status_code=404, detail="Class not found")
 
-    normalized_phone = parent_phone.strip()
+    normalized_phone = normalize_phone(parent_phone)
 
     if not normalized_phone:
 
         raise HTTPException(status_code=400, detail="Parent phone is required")
 
+    # Scope the lookup to this school -- a phone match belonging to a
+    # different school must not be reused, or a new student here would get
+    # silently attached to another school's parent account (and its
+    # /students/me would start returning both schools' children mixed
+    # together).
     parent = db.query(Parent).filter(
-        Parent.phone == normalized_phone
+        Parent.phone == normalized_phone,
+        Parent.school_id == director.school_id,
     ).first()
 
     if not parent:
@@ -206,6 +254,7 @@ def director_create_student(
         "parent_id": new_student.parent_id,
         "class_name": school_class.name,
         "parent_phone": parent.phone,
+        "parent_name": parent.full_name,
         "first_name": new_student.first_name,
         "last_name": new_student.last_name,
         "photo": new_student.photo,
@@ -289,9 +338,12 @@ def update_student(
     if not school_class:
         raise HTTPException(status_code=404, detail="Class not found")
 
-    # Handle parent
-    normalized_phone = parent_phone.strip()
-    parent = db.query(Parent).filter(Parent.phone == normalized_phone).first()
+    # Handle parent -- scoped to this school, see director_create_student for why.
+    normalized_phone = normalize_phone(parent_phone)
+    parent = db.query(Parent).filter(
+        Parent.phone == normalized_phone,
+        Parent.school_id == director.school_id,
+    ).first()
     if not parent:
         parent = Parent(
             school_id=director.school_id,
@@ -329,6 +381,7 @@ def update_student(
         "parent_id": student.parent_id,
         "class_name": school_class.name,
         "parent_phone": parent.phone,
+        "parent_name": parent.full_name,
         "first_name": student.first_name,
         "last_name": student.last_name,
         "photo": student.photo,
@@ -353,19 +406,23 @@ def delete_student(
     # Explicitly delete associated records in correct order to avoid FK violations
     from app.models.attendance_model import Attendance
     from app.models.notification_model import NotificationEvent
-    
+    from app.models.journal_model import Grade
+
     # 1. Delete notifications related to the student's attendances
     attendance_ids = [a.id for a in db.query(Attendance).filter(Attendance.student_id == student_id).all()]
     if attendance_ids:
         db.query(NotificationEvent).filter(NotificationEvent.attendance_id.in_(attendance_ids)).delete(synchronize_session=False)
-    
+
     # 2. Delete notifications directly related to the student
     db.query(NotificationEvent).filter(NotificationEvent.student_id == student_id).delete(synchronize_session=False)
-    
+
     # 3. Delete attendance records
     db.query(Attendance).filter(Attendance.student_id == student_id).delete(synchronize_session=False)
-    
-    # 4. Delete the student
+
+    # 4. Delete grades entered for this student
+    db.query(Grade).filter(Grade.student_id == student_id).delete(synchronize_session=False)
+
+    # 5. Delete the student
     db.delete(student)
     db.commit()
     return {"message": "Student deleted"}

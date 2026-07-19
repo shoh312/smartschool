@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smartschool_app/generated/app_localizations.dart';
 
+import '../core/design_tokens.dart';
 import '../providers/teacher_provider.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
@@ -26,9 +28,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<TeacherProvider>();
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return AppShell(
-      title: 'Mening sinflarim',
+      title: l10n.teacherMyClasses,
       child: RefreshIndicator(
         onRefresh: () => context.read<TeacherProvider>().loadMyClasses(),
         child: provider.isLoading && provider.myClasses.isEmpty
@@ -36,8 +39,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             : provider.myClasses.isEmpty
             ? EmptyState(
                 icon: Icons.school_outlined,
-                title: 'Sizga hali sinf biriktirilmagan',
-                message: 'Direktor sizni biror sinfga biriktirgach, bu yerda ko\'rinadi.',
+                title: l10n.teacherNoClassesTitle,
+                message: l10n.teacherNoClassesMessage,
               )
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
@@ -45,23 +48,44 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final assignment = provider.myClasses[index];
-                  return Card(
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                        child: Icon(Icons.class_outlined, color: theme.colorScheme.primary),
-                      ),
-                      title: Text(assignment.className ?? 'Sinf #${assignment.classId}'),
-                      subtitle: Text(assignment.subject ?? '-'),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ClassRosterScreen(
-                            classId: assignment.classId,
-                            className: assignment.className ?? 'Sinf #${assignment.classId}',
-                            subject: assignment.subject ?? '',
+                  final className = assignment.className ??
+                      l10n.classFallbackLabel(assignment.classId.toString());
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: AppRadius.lgRadius,
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.card,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClassRosterScreen(
+                              classId: assignment.classId,
+                              className: className,
+                              subject: assignment.subject ?? '',
+                            ),
                           ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          leading: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: AppGradients.primary,
+                              borderRadius: AppRadius.mdRadius,
+                              boxShadow: AppShadows.colored(AppColors.primary),
+                            ),
+                            child: const Icon(Icons.class_outlined, color: Colors.white, size: 22),
+                          ),
+                          title: Text(className, style: theme.textTheme.titleMedium),
+                          subtitle: Text(assignment.subject ?? '-'),
+                          trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
                         ),
                       ),
                     ),

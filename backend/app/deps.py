@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from fastapi import Depends, Header, HTTPException, WebSocket, status
 from sqlalchemy.orm import Session
@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.director_model import Director
 from app.models.parent_model import Parent
 from app.models.teacher_model import Teacher
-from app.services.auth_service import verify_access_token
+from app.services.auth_service import get_parent_family_ids, verify_access_token
 from app.utils.security import decode_jwt_access_token
 
 
@@ -96,6 +96,11 @@ class AuthActor:
     director: Director | None = None
     parent: Parent | None = None
     teacher: Teacher | None = None
+    # For role="parent": every Parent row sharing this parent's phone number
+    # (one row per school they have children in). Always includes at least
+    # `parent.id`. Endpoints authorizing/fetching "this parent's own data"
+    # should check membership here, not a single `parent.id`.
+    parent_ids: list[int] = field(default_factory=list)
 
 
 def get_current_actor(
@@ -135,7 +140,11 @@ def get_current_actor(
     if parent_id is not None:
         parent = db.query(Parent).filter(Parent.id == parent_id).first()
         if parent:
-            return AuthActor(role="parent", parent=parent)
+            return AuthActor(
+                role="parent",
+                parent=parent,
+                parent_ids=get_parent_family_ids(db, parent),
+            )
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

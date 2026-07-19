@@ -7,12 +7,13 @@ class StudentService {
   final ApiClient _apiClient;
 
   Future<List<Student>> fetchStudents({int? parentId}) async {
-    final data = await _apiClient.get('/students') as List<dynamic>;
-    final students = data
+    // Parents only have access to their own /students/me; /students is a
+    // director-only endpoint that lists the whole school.
+    final path = parentId != null ? '/students/me' : '/students';
+    final data = await _apiClient.get(path) as List<dynamic>;
+    return data
         .map((item) => Student.fromJson(item as Map<String, dynamic>))
         .toList();
-    if (parentId == null) return students;
-    return students.where((student) => student.parentId == parentId).toList();
   }
 
   Future<Student> createStudent(Student student) async {

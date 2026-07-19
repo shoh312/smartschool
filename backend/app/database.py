@@ -53,13 +53,19 @@ def ensure_database_schema():
         "ALTER TABLE directors ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN NOT NULL DEFAULT false",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS phone VARCHAR",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS subject VARCHAR",
+        "CREATE INDEX IF NOT EXISTS ix_teachers_subject ON teachers (subject)",
+        # Phone numbers used to be stored as typed ("+992...", "992...", with
+        # spaces/dashes), so the same parent could end up split across two
+        # rows depending on formatting. Normalize to digits-only so parent
+        # login/lookup by phone matches regardless of how it was entered.
+        "UPDATE parents SET phone = regexp_replace(phone, '[^0-9]', '', 'g') WHERE phone IS NOT NULL",
         "CREATE INDEX IF NOT EXISTS ix_classes_school_id ON classes (school_id)",
         "CREATE INDEX IF NOT EXISTS ix_students_school_id ON students (school_id)",
         "CREATE INDEX IF NOT EXISTS ix_parents_school_id ON parents (school_id)",
         "CREATE INDEX IF NOT EXISTS ix_cameras_school_id ON cameras (school_id)",
         "CREATE INDEX IF NOT EXISTS ix_grades_student_id ON grades (student_id)",
         "CREATE INDEX IF NOT EXISTS ix_grades_class_id ON grades (class_id)",
-        "CREATE INDEX IF NOT EXISTS ix_homework_class_id ON homework (class_id)",
         "CREATE INDEX IF NOT EXISTS ix_teacher_classes_teacher_id ON teacher_classes (teacher_id)",
         "CREATE INDEX IF NOT EXISTS ix_teacher_classes_class_id ON teacher_classes (class_id)",
     ]

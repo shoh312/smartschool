@@ -3,6 +3,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.models.notification_model import DeviceToken, NotificationEvent
+from app.models.parent_model import Parent
+from app.services.auth_service import get_parent_family_ids
 from app.utils.config import settings
 
 try:
@@ -55,8 +57,19 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
         db.commit()
         return event
 
+    # A device's Firebase token is registered against whichever Parent row
+    # was active at login time, but a parent with children at two schools
+    # has a sibling Parent row (same phone, different school) that this
+    # event might belong to instead -- look up tokens across the whole
+    # family so a school-B attendance event still reaches a device that
+    # only ever logged in and registered its token under school-A's row.
+    # DeviceToken.token is unique, so a token can't just be duplicated onto
+    # every sibling row at registration time.
+    parent = db.query(Parent).filter(Parent.id == event.parent_id).first()
+    family_ids = get_parent_family_ids(db, parent) if parent else [event.parent_id]
+
     tokens = db.query(DeviceToken).filter(
-        DeviceToken.parent_id == event.parent_id,
+        DeviceToken.parent_id.in_(family_ids),
         DeviceToken.is_active == True,
     ).all()
 

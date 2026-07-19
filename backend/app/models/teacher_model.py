@@ -15,6 +15,8 @@ class Teacher(Base):
 
     full_name = Column(String, nullable=False)
 
+    subject = Column(String, index=True)
+
     email = Column(String, unique=True, nullable=False, index=True)
 
     hashed_password = Column(String, nullable=False)
@@ -29,7 +31,7 @@ class Teacher(Base):
 
 
 class TeacherClass(Base):
-    """Which classes a teacher is allowed to enter grades/homework for."""
+    """Which classes a teacher is allowed to enter grades for."""
 
     __tablename__ = "teacher_classes"
 
