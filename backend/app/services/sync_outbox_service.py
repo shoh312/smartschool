@@ -1,11 +1,35 @@
 from datetime import date, datetime
 
+from sqlalchemy import event
 from sqlalchemy.orm import Session
 
 from app.models.class_model import Class
 from app.models.parent_model import Parent
 from app.models.student import Student
 from app.models.sync_outbox_model import SyncOutboxEntry
+from app.realtime import wake_sync_worker
+
+
+@event.listens_for(Session, "before_commit")
+def _mark_pending_sync_wake(session: Session) -> None:
+    # `session.new` is only populated up to the point the flush/commit
+    # clears it, so this has to run in before_commit (not after_commit,
+    # where it'd already be empty) -- stash the result on session.info to
+    # read back once the commit has actually landed.
+    if any(isinstance(obj, SyncOutboxEntry) for obj in session.new):
+        session.info["_wake_sync_after_commit"] = True
+
+
+@event.listens_for(Session, "after_commit")
+def _wake_sync_worker_after_commit(session: Session) -> None:
+    # Waking the drain loop only after the transaction that added the
+    # SyncOutboxEntry has actually committed -- not at enqueue time, before
+    # the caller's own db.commit() -- avoids a race where the loop wakes,
+    # queries, finds nothing yet (row not durable/visible), and falls all
+    # the way back to the POLL_INTERVAL_SECONDS timeout anyway, defeating
+    # the point of waking it early at all.
+    if session.info.pop("_wake_sync_after_commit", False):
+        wake_sync_worker()
 
 
 def _iso(value):
@@ -52,7 +76,10 @@ def _resolve_parent_and_class(db: Session, student: Student):
 def _enqueue(db: Session, entity_type: str, entity_id: int, operation: str, payload: dict) -> None:
     # Add-only, no commit -- the caller's own db.commit() (right after this
     # call, alongside the source-of-truth write) is what makes this durable.
-    # See SyncOutboxEntry's docstring for why that ordering matters.
+    # See SyncOutboxEntry's docstring for why that ordering matters. The
+    # drain loop's wake-up is triggered by the after_commit session event
+    # below (not here) -- see its comment for why it can't happen at
+    # enqueue time.
     db.add(
         SyncOutboxEntry(
             entity_type=entity_type,

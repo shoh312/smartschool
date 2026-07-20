@@ -9,8 +9,8 @@ import '../providers/school_provider.dart';
 import '../utils/date_formatters.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
-import '../widgets/mjpeg_player.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/ws_stream_player.dart';
 import '../core/constants.dart';
 import '../core/design_tokens.dart';
 
@@ -212,8 +212,8 @@ class _LiveVideoViewState extends State<_LiveVideoView>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            MjpegPlayer(
-              url: AppConstants.liveStreamUrl(cameraId: widget.cameraId),
+            WsStreamPlayer(
+              url: AppConstants.liveStreamWebsocketUrl(cameraId: widget.cameraId),
             ),
             AnimatedOpacity(
               opacity: _controlsVisible ? 1 : 0,

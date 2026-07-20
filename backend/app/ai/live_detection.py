@@ -1,6 +1,9 @@
+import concurrent.futures
 import cv2
+import hashlib
 import numpy as np
 import insightface
+import threading
 import time
 from datetime import datetime
 
@@ -45,13 +48,79 @@ def _get_insight_app():
     return _insight_app
 
 
+# All cameras share one insightface model instance (loading it per-camera
+# would multiply memory/startup cost). It's a single ONNX runtime session,
+# so concurrent .get() calls from two cameras' detection workers at once
+# aren't safe -- this lock serializes just the inference call itself, not
+# frame capture, so it never blocks the live view.
+_insight_lock = threading.Lock()
+
+
 def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     if denom == 0:
         return 0.0
     return float(np.dot(a, b) / denom)
 
-FRAME_SKIP = 10
+
+def _detect_faces_and_save(frame, known_encodings, known_students, camera_id: int) -> None:
+    """Runs on a dedicated per-camera worker thread (see `detection_executor`
+    in `_run_camera_once`) so the CPU-heavy insightface call never blocks
+    that camera's frame-capture loop. Opens its own DB session -- a
+    SQLAlchemy session isn't safe to share with the capture loop's session,
+    which keeps running concurrently on the main camera thread.
+    """
+    # Smaller input -> less compute -> shorter GIL-holding stretch per call
+    # (roughly (0.35/0.5)^2, about half) -- see FRAME_SKIP's comment for why
+    # that matters here. Faces are still easily detectable at this size for
+    # someone standing at normal classroom-camera distance.
+    small_frame = cv2.resize(frame, (0, 0), fx=0.35, fy=0.35)
+
+    insight = _get_insight_app()
+    with _insight_lock:
+        detected_faces = insight.get(small_frame)
+
+    if not detected_faces or not known_encodings:
+        return
+
+    db = SessionLocal()
+    try:
+        for face in detected_faces:
+            embedding = face.embedding
+            scores = [_cosine_similarity(embedding, enc) for enc in known_encodings]
+            best_idx = int(np.argmax(scores))
+            best_score = scores[best_idx]
+
+            if best_score < SIMILARITY_THRESHOLD:
+                continue
+
+            student = known_students[best_idx]
+            save_attendance(
+                db, student.id,
+                camera_id=camera_id,
+                confidence=best_score
+            )
+            print(f"[+] Camera {camera_id}: detected -> {student.first_name} (score: {best_score:.2f})")
+    finally:
+        db.close()
+
+# insightface's buffalo_l model always outputs a 512-d embedding. A handful
+# of students in this DB were registered by an older face-encoding pipeline
+# (128-d, dlib-based) before the project switched to insightface -- comparing
+# a 512-d live embedding against one of those crashes the whole detection
+# thread (np.dot shape mismatch), which then silently drops every other
+# student's comparison too and freezes the live stream until the watcher
+# restarts the thread. Filter those out in load_students() instead of
+# crashing on them.
+EMBEDDING_DIM = 512
+
+# Each detection call briefly holds Python's GIL during insightface
+# inference, which can stall unrelated API requests on the same process by
+# up to ~2s if they land during that window. A higher skip runs inference
+# less often (fewer stalls) at the cost of slightly less frequent
+# recognition attempts -- still plenty for a person standing in frame for a
+# few seconds.
+FRAME_SKIP = 20
 
 DETECT_SECONDS = 10
 
@@ -82,6 +151,14 @@ def load_students(db: Session):
                     )
                 )
             )
+
+            if encoding.shape[0] != EMBEDDING_DIM:
+                print(
+                    f"[!] Student {student.id} ({student.first_name} {student.last_name}): "
+                    f"face encoding has {encoding.shape[0]} dims, expected {EMBEDDING_DIM} "
+                    "(stale/incompatible encoding) -- skipping until re-registered"
+                )
+                continue
 
             known_encodings.append(
                 encoding
@@ -290,9 +367,6 @@ def start_detection(camera_source=CAMERA_SOURCE, camera_id=None):
 
 # START DETECTION
 
-import threading
-import concurrent.futures
-
 _detection_threads: list[threading.Thread] = []
 
 def _run_camera(camera_id: int, camera_source: str):
@@ -369,9 +443,17 @@ def _run_camera_once(camera_id: int, camera_source: str):
     detect_start_time = time.time()
     next_detection_time = 0.0
 
+    # One detection in flight at a time for this camera -- see the dispatch
+    # site below for why (never blocks frame capture; skips rather than
+    # queues if the previous detection is still running).
+    detection_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    detection_future: concurrent.futures.Future | None = None
+
     print(f"[+] Camera {camera_id}: schedule={start_str}-{end_str}, detect={detect_seconds}s, wait={wait_seconds//60}m, started={'in-schedule' if detection_enabled else 'outside-schedule'}")
 
     consecutive_read_failures = 0
+    last_frame_hash = None
+    same_frame_count = 0
     while True:
         for _ in range(3):
             cap.grab()
@@ -385,9 +467,28 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 print(f"[-] Camera {camera_id}: lost stream, reconnecting ({camera_source})")
                 cap.release()
                 db.close()
+                detection_executor.shutdown(wait=False)
                 return
             continue
         consecutive_read_failures = 0
+
+        # A live feed's frames are never byte-identical across reads (sensor
+        # noise, compression artifacts) -- if the exact same bytes come back
+        # repeatedly, the decoder has silently stalled while still reporting
+        # ret=True (a soft freeze), which the read-failure counter above
+        # can't see. Detect it separately and force the same reconnect path.
+        frame_hash = hashlib.md5(frame.tobytes()).digest()
+        if frame_hash == last_frame_hash:
+            same_frame_count += 1
+            if same_frame_count >= 90:
+                print(f"[-] Camera {camera_id}: frozen stream, reconnecting ({camera_source})")
+                cap.release()
+                db.close()
+                detection_executor.shutdown(wait=False)
+                return
+        else:
+            same_frame_count = 0
+            last_frame_hash = frame_hash
 
         stream_manager.update_frame(frame, camera_id=camera_id)
         now = time.time()
@@ -417,30 +518,20 @@ def _run_camera_once(camera_id: int, camera_source: str):
             continue
         frame_count += 1
 
-        small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
-
-        insight = _get_insight_app()
-        detected_faces = insight.get(small_frame)
-
-        for face in detected_faces:
-            if not known_encodings:
-                continue
-
-            embedding = face.embedding
-            scores = [_cosine_similarity(embedding, enc) for enc in known_encodings]
-            best_idx = int(np.argmax(scores))
-            best_score = scores[best_idx]
-
-            if best_score < SIMILARITY_THRESHOLD:
-                continue
-
-            student = known_students[best_idx]
-            save_attendance(
-                db, student.id,
-                camera_id=camera_id,
-                confidence=best_score
+        # Face recognition is CPU-heavy (hundreds of ms per call) -- running
+        # it inline here used to block this same loop's frame capture, so
+        # the live view visibly froze/stuttered for the whole detect
+        # window. Hand it to a dedicated worker instead and keep grabbing
+        # frames immediately; if the previous detection hasn't finished yet,
+        # skip this one rather than queue a backlog or block waiting for it.
+        if detection_future is None or detection_future.done():
+            detection_future = detection_executor.submit(
+                _detect_faces_and_save,
+                frame.copy(),
+                known_encodings,
+                known_students,
+                camera_id,
             )
-            print(f"[+] Camera {camera_id}: detected -> {student.first_name} (score: {best_score:.2f})")
 
         if elapsed >= detect_seconds:
             detection_enabled = False

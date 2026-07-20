@@ -89,6 +89,14 @@ def create_grade(
     enqueue_grade_event(db, grade, operation="upsert")
     db.commit()
     db.refresh(grade)
+    # Set from the already-loaded `teacher` param (must be after commit --
+    # commit's default expire_on_commit marks every attribute, relationships
+    # included, for a fresh reload on next access) instead of letting
+    # response serialization lazy-load grade.teacher (-> teacher_name
+    # property) via a brand new query on the way out. That extra query was
+    # adding multi-second latency whenever it landed behind a lock (see the
+    # sibling fix in update_grade for the same pattern).
+    grade.teacher = teacher
     return grade
 
 
@@ -167,6 +175,9 @@ def update_grade(
     enqueue_grade_event(db, grade, operation="upsert")
     db.commit()
     db.refresh(grade)
+    # See the matching comment in create_grade -- avoids a lazy-loaded
+    # grade.teacher query during response serialization.
+    grade.teacher = teacher
     return grade
 
 

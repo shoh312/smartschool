@@ -70,10 +70,35 @@ async def drain_outbox_once(db) -> None:
 
 
 async def sync_background_loop():
+    import app.realtime as realtime
+
     while True:
+        # Clear BEFORE draining, not after: a wake-up that arrives while
+        # drain_outbox_once is still running must survive to the wait()
+        # below (where it resolves instantly) instead of being wiped by a
+        # clear() that runs right after drain finishes -- that ordering
+        # silently swallowed the signal and fell all the way back to the
+        # POLL_INTERVAL_SECONDS timeout every time, defeating the point of
+        # having a wake-up at all.
+        event = realtime.sync_wake_event
+        if event is not None:
+            event.clear()
+
         db = SessionLocal()
         try:
             await drain_outbox_once(db)
         finally:
             db.close()
-        await asyncio.sleep(POLL_INTERVAL_SECONDS)
+
+        # Wait for either the next poll tick (catches retries whose backoff
+        # has elapsed) or an immediate wake-up signaled by enqueue_*_event
+        # right when something new is queued -- whichever comes first, so a
+        # fresh grade/attendance/enrollment syncs in well under a second
+        # instead of waiting up to POLL_INTERVAL_SECONDS.
+        if event is not None:
+            try:
+                await asyncio.wait_for(event.wait(), timeout=POLL_INTERVAL_SECONDS)
+            except asyncio.TimeoutError:
+                pass
+        else:
+            await asyncio.sleep(POLL_INTERVAL_SECONDS)

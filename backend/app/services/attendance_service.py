@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.attendance_model import Attendance
 from app.models.student import Student
 from app.notifications.firebase import create_notification_event
+from app.realtime import broadcast_attendance_update
 from app.services.sync_outbox_service import enqueue_attendance_event
 from app.utils.config import settings
 
@@ -80,6 +81,7 @@ def record_detection(
         enqueue_attendance_event(db, attendance, operation="upsert")
         db.commit()
         db.refresh(attendance)
+        broadcast_attendance_update()
         return attendance
 
     attendance = Attendance(
@@ -112,6 +114,7 @@ def record_detection(
             attendance_id=attendance.id,
         )
 
+    broadcast_attendance_update()
     return attendance
 
 

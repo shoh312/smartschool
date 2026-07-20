@@ -25,16 +25,17 @@ async def attendance_websocket(
 @router.websocket("/ws/stream")
 async def stream_websocket(
     websocket: WebSocket,
+    camera_id: int = 0,
     _director=Depends(get_current_director_ws),
 ):
     await websocket.accept()
     try:
         last_frame: bytes | None = None
         while True:
-            frame = await stream_manager.get_frame()
+            frame = await stream_manager.get_frame(camera_id=camera_id)
             if frame is not None and frame is not last_frame:
                 await websocket.send_bytes(frame)
                 last_frame = frame
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
     except WebSocketDisconnect:
         pass

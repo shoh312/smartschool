@@ -81,6 +81,13 @@ def root():
 
 @app.on_event("startup")
 async def start_background_tasks():
+    from app.realtime import set_main_loop
+
+    # Lets the sync camera-detection thread and FastAPI's sync-endpoint
+    # threadpool schedule work (websocket broadcasts, waking the sync
+    # worker) onto this loop -- see app/realtime.py.
+    set_main_loop(asyncio.get_running_loop())
+
     asyncio.create_task(attendance_background_loop())
     asyncio.create_task(sync_background_loop())
     asyncio.create_task(start_discovery_responder())

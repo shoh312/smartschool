@@ -21,6 +21,12 @@ class AppConstants {
   static String liveStreamUrl({int cameraId = 0}) =>
       '$apiBaseUrl/stream/frame?camera_id=$cameraId';
 
+  /// Pushed frames instead of HTTP polling -- the server sends a new frame
+  /// the instant one is available (checked every 50ms) rather than the
+  /// client asking every 200ms and often getting the same bytes back.
+  static String liveStreamWebsocketUrl({int cameraId = 0}) =>
+      '${apiBaseUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://')}/ws/stream?camera_id=$cameraId';
+
   /// The Public Server: a fixed, non-LAN-discovered address (unlike
   /// [apiBaseUrl]) that only the parent role talks to, so student photos and
   /// video -- which only ever live on the school's local network -- are
