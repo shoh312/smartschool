@@ -22,7 +22,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         # registered it yet.
         raise HTTPException(
             status_code=404,
-            detail="Bu raqam hali hech qanday maktabda ro'yxatdan o'tmagan. Farzandingiz maktabiga murojaat qiling.",
+            detail="phone_not_registered",
         )
 
     return {

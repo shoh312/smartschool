@@ -63,6 +63,18 @@ class AppLocalizationsTg extends AppLocalizations {
   String get language => 'Забон';
 
   @override
+  String get appearance => 'Намуди зоҳирӣ';
+
+  @override
+  String get themeLight => 'Равшан';
+
+  @override
+  String get themeDark => 'Торик';
+
+  @override
+  String get themeSystem => 'Мувофиқи система';
+
+  @override
   String get logout => 'Баромад';
 
   @override
@@ -72,6 +84,33 @@ class AppLocalizationsTg extends AppLocalizations {
   String errorPrefix(String error) {
     return 'Хатогӣ: $error';
   }
+
+  @override
+  String get networkErrorMessage =>
+      'Пайваст ба сервер имконнопазир шуд. Пайвасти интернет ё фаъол буданти серверро санҷед.';
+
+  @override
+  String get serverErrorMessage =>
+      'Сервер хатогӣ баргардонд. Лутфан дубора кӯшиш кунед.';
+
+  @override
+  String get unknownErrorMessage =>
+      'Хатогие рӯй дод. Лутфан дубора кӯшиш кунед.';
+
+  @override
+  String get phoneNotRegisteredMessage =>
+      'Ин рақами телефон ҳанӯз дар ҳеч мактабе сабти ном нашудааст. Лутфан ба мактаби фарзандатон муроҷиат кунед.';
+
+  @override
+  String get invalidCredentialsMessage =>
+      'Почтаи электронӣ ё парол нодуруст аст.';
+
+  @override
+  String get accountInactiveMessage =>
+      'Ҳисоби шумо фаъол нест. Лутфан ба администратор муроҷиат кунед.';
+
+  @override
+  String get invalidCurrentPasswordMessage => 'Пароли ҷорӣ нодуруст аст.';
 
   @override
   String get needSupport => 'Кӯмак лозим аст? ';
@@ -84,6 +123,9 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get roleParent => 'Волидайн';
+
+  @override
+  String get roleTeacher => 'Муаллим';
 
   @override
   String get createAccount => 'Эҷоди ҳисоб';
@@ -135,6 +177,9 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get recentActivity => 'Фаъолияти охирин';
+
+  @override
+  String get attendanceByClass => 'Ҳозирӣ аз рӯи синфҳо';
 
   @override
   String get noAttendanceRecorded => 'Имрӯз то ҳол ҳозирот сабт нашудааст';
@@ -395,6 +440,11 @@ class AppLocalizationsTg extends AppLocalizations {
   }
 
   @override
+  String classAttendanceRatio(String className, int arrived, int total) {
+    return '$className • $arrived/$total омаданд';
+  }
+
+  @override
   String get directorDashboard => 'Панели директор';
 
   @override
@@ -576,4 +626,198 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get average => 'Миёна';
+
+  @override
+  String get weekday1 => 'Дш';
+
+  @override
+  String get weekday2 => 'Сш';
+
+  @override
+  String get weekday3 => 'Чш';
+
+  @override
+  String get weekday4 => 'Пш';
+
+  @override
+  String get weekday5 => 'Ҷм';
+
+  @override
+  String get weekday6 => 'Шб';
+
+  @override
+  String get weekday7 => 'Як';
+
+  @override
+  String get attendanceJournal => 'Журнали ҳозирот';
+
+  @override
+  String get lastSeenLabel => 'Дафъаи охир дида шуд';
+
+  @override
+  String get noAttendanceThisMonth => 'Дар ин моҳ ягон қайди ҳозирӣ нест';
+
+  @override
+  String get noCameraForClassTitle => 'Барои ин синф камера нест';
+
+  @override
+  String get noCameraForClassMessage =>
+      'Дар \"Идоракунии камераҳо\" ба ин синф камера вобаста кунед, то ҳолати зиндаи онро бинед.';
+
+  @override
+  String get studentNotAssignedToClass =>
+      'Ин талаба ҳанӯз ба синф вобаста карда нашудааст';
+
+  @override
+  String get cameraNotAvailable =>
+      'Дар ин дастгоҳ гирифтани сурат бо камера дастрас нест. \"Галерея\"-ро истифода баред.';
+
+  @override
+  String get rooms => 'Синфхонаҳо';
+
+  @override
+  String get roomManagement => 'Идоракунии синфхонаҳо';
+
+  @override
+  String get addNewRoom => 'Синфхонаи нав';
+
+  @override
+  String get editRoom => 'Таҳрири синфхона';
+
+  @override
+  String get roomNameLabel => 'Номи синфхона';
+
+  @override
+  String get assignToRoom => 'Вобаста кардан ба синфхона';
+
+  @override
+  String get positions => 'Сменаҳо';
+
+  @override
+  String get addPosition => 'Илова кардани смена';
+
+  @override
+  String get positionClassLabel => 'Синф';
+
+  @override
+  String get registeredRooms => 'Синфхонаҳои мавҷуда';
+
+  @override
+  String get noRooms => 'Ҳанӯз синфхона нест';
+
+  @override
+  String get roomsWillAppear => 'Синфхонаҳо дар ин ҷо пайдо мешаванд.';
+
+  @override
+  String get deleteRoomTitle => 'Ҳазфи синфхона';
+
+  @override
+  String get deleteRoomConfirm =>
+      'Шумо мутмаин ҳастед, ки ин синфхонаро ҳазф кардан мехоҳед?';
+
+  @override
+  String get roomHasCamerasError =>
+      'Аввал камераҳои ин синфхонаро ба ҷои дигар гузаронед ё ҳазф кунед.';
+
+  @override
+  String cameraListSubtitleRoom(String roomName, String waitDuration) {
+    return 'Синфхона: $roomName • Танаффус: $waitDurationд';
+  }
+
+  @override
+  String roomPositionSubtitle(
+    String className,
+    String startTime,
+    String endTime,
+  ) {
+    return '$className: $startTime–$endTime';
+  }
+
+  @override
+  String analyticsScreenTitle(String className) {
+    return '$className - Таҳлил';
+  }
+
+  @override
+  String get noDataTitle => 'Маълумот нест';
+
+  @override
+  String get noAttendanceDataLast30Days =>
+      'Барои 30 рӯзи охир маълумоти ҳозирот мавҷуд нест';
+
+  @override
+  String get perStudentDetails => 'Маълумот аз рӯи ҳар як хонанда';
+
+  @override
+  String get hoursLabel => 'Соатҳо';
+
+  @override
+  String get thirtyDayTimeline => 'Хронологияи 30 рӯз';
+
+  @override
+  String get noTimetableSubjectsTitle => 'Дар ҷадвал фан нест';
+
+  @override
+  String get noTimetableSubjectsMessage =>
+      'Аввал ба ҷадвали ин синф дарсҳо илова кунед.';
+
+  @override
+  String get tapToAssignTeacher => 'Барои таъини муаллим пахш кунед';
+
+  @override
+  String get timetableLabel => 'Ҷадвал';
+
+  @override
+  String totalHoursPerWeek(String hours) {
+    return 'Ҳамагӣ: $hours соат/ҳафта';
+  }
+
+  @override
+  String get noLessonsForDay => 'Барои ин рӯз дарс нест';
+
+  @override
+  String get addLesson => 'Илова кардани дарс';
+
+  @override
+  String get minutesUnit => 'дақ';
+
+  @override
+  String get cameraOptionTooltip => 'Камера';
+
+  @override
+  String get galleryOptionTooltip => 'Галерея';
+
+  @override
+  String get noFrame => 'Кадр нест';
+
+  @override
+  String get selectMonth => 'Моҳро интихоб кунед';
+
+  @override
+  String get generatePdfReport => 'Сохтани ҳисоботи PDF';
+
+  @override
+  String get pdfReportEyebrow => 'ҲИСОБОТИ ҲОЗИРӢ';
+
+  @override
+  String get pdfNoDataForMonth =>
+      'Барои моҳи интихобшуда маълумоти ҳозирӣ нест';
+
+  @override
+  String get columnPresentDays => 'Рӯзҳои ҳозирӣ';
+
+  @override
+  String get columnLateDays => 'Рӯзҳои дер';
+
+  @override
+  String get columnAbsentDays => 'Рӯзҳои ғоиб';
+
+  @override
+  String get columnPresentHours => 'Соатҳои ҳозирӣ';
+
+  @override
+  String get columnAbsentHours => 'Соатҳои ғоиб';
+
+  @override
+  String get columnRate => 'Фоиз';
 }

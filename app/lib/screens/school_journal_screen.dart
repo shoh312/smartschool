@@ -67,7 +67,7 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                           child: MetricCard(
                             label: l10n.classes,
                             value: provider.classes.length.toString(),
-                            icon: Icons.class_outlined,
+                            imageAsset: 'assets/icons/classes.png',
                             color: theme.colorScheme.primary,
                           ),
                         ),
@@ -76,8 +76,8 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                           child: MetricCard(
                             label: l10n.students,
                             value: students.length.toString(),
-                            icon: Icons.groups_outlined,
-                            color: AppColors.success,
+                            imageAsset: 'assets/icons/students.png',
+                            color: context.colors.success,
                           ),
                         ),
                       ],
@@ -88,9 +88,9 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                     Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.colors.border),
                         boxShadow: AppShadows.card,
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -115,14 +115,14 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                gradient: AppGradients.tint(AppColors.accent),
+                                gradient: AppGradients.tint(context.colors.accent),
                                 borderRadius: AppRadius.mdRadius,
                               ),
                               alignment: Alignment.center,
                               child: Text(
                                 schoolClass.grade.toString(),
-                                style: const TextStyle(
-                                  color: AppColors.accent,
+                                style: TextStyle(
+                                  color: context.colors.accent,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -136,9 +136,9 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                               '${studentCountByClass[schoolClass.id] ?? 0} ${l10n.students}',
                               style: theme.textTheme.bodySmall,
                             ),
-                            trailing: const Icon(
+                            trailing: Icon(
                               Icons.chevron_right_rounded,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                             ),
                           ),
                         ),

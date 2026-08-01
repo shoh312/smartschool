@@ -208,6 +208,30 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get language;
 
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
   /// No description provided for @logout.
   ///
   /// In en, this message translates to:
@@ -225,6 +249,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error: {error}'**
   String errorPrefix(String error);
+
+  /// No description provided for @networkErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the server. Check your internet connection or make sure the server is running.'**
+  String get networkErrorMessage;
+
+  /// No description provided for @serverErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The server returned an error. Please try again.'**
+  String get serverErrorMessage;
+
+  /// No description provided for @unknownErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get unknownErrorMessage;
+
+  /// No description provided for @phoneNotRegisteredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone number is not registered at any school yet. Please contact your child\'s school.'**
+  String get phoneNotRegisteredMessage;
+
+  /// No description provided for @invalidCredentialsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password.'**
+  String get invalidCredentialsMessage;
+
+  /// No description provided for @accountInactiveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is inactive. Please contact your administrator.'**
+  String get accountInactiveMessage;
+
+  /// No description provided for @invalidCurrentPasswordMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is incorrect.'**
+  String get invalidCurrentPasswordMessage;
 
   /// No description provided for @needSupport.
   ///
@@ -249,6 +315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Parent'**
   String get roleParent;
+
+  /// No description provided for @roleTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get roleTeacher;
 
   /// No description provided for @createAccount.
   ///
@@ -345,6 +417,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recent Activity'**
   String get recentActivity;
+
+  /// No description provided for @attendanceByClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance by Class'**
+  String get attendanceByClass;
 
   /// No description provided for @noAttendanceRecorded.
   ///
@@ -808,6 +886,12 @@ abstract class AppLocalizations {
   /// **'Class: {className}'**
   String classTileLabel(String className);
 
+  /// No description provided for @classAttendanceRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'{className} • {arrived}/{total} arrived'**
+  String classAttendanceRatio(String className, int arrived, int total);
+
   /// No description provided for @directorDashboard.
   ///
   /// In en, this message translates to:
@@ -1143,6 +1227,358 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Average'**
   String get average;
+
+  /// No description provided for @weekday1.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get weekday1;
+
+  /// No description provided for @weekday2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get weekday2;
+
+  /// No description provided for @weekday3.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get weekday3;
+
+  /// No description provided for @weekday4.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get weekday4;
+
+  /// No description provided for @weekday5.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get weekday5;
+
+  /// No description provided for @weekday6.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get weekday6;
+
+  /// No description provided for @weekday7.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get weekday7;
+
+  /// No description provided for @attendanceJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance journal'**
+  String get attendanceJournal;
+
+  /// No description provided for @lastSeenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen'**
+  String get lastSeenLabel;
+
+  /// No description provided for @noAttendanceThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance records this month'**
+  String get noAttendanceThisMonth;
+
+  /// No description provided for @noCameraForClassTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera for this class'**
+  String get noCameraForClassTitle;
+
+  /// No description provided for @noCameraForClassMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign a camera to this class in Camera Management to see its live status.'**
+  String get noCameraForClassMessage;
+
+  /// No description provided for @studentNotAssignedToClass.
+  ///
+  /// In en, this message translates to:
+  /// **'This student isn\'t assigned to a class yet'**
+  String get studentNotAssignedToClass;
+
+  /// No description provided for @cameraNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera capture isn\'t available on this device. Use Gallery instead.'**
+  String get cameraNotAvailable;
+
+  /// No description provided for @rooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms'**
+  String get rooms;
+
+  /// No description provided for @roomManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Room Management'**
+  String get roomManagement;
+
+  /// No description provided for @addNewRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Room'**
+  String get addNewRoom;
+
+  /// No description provided for @editRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Room'**
+  String get editRoom;
+
+  /// No description provided for @roomNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Room Name'**
+  String get roomNameLabel;
+
+  /// No description provided for @assignToRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign to Room'**
+  String get assignToRoom;
+
+  /// No description provided for @positions.
+  ///
+  /// In en, this message translates to:
+  /// **'Positions'**
+  String get positions;
+
+  /// No description provided for @addPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Position'**
+  String get addPosition;
+
+  /// No description provided for @positionClassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get positionClassLabel;
+
+  /// No description provided for @registeredRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered Rooms'**
+  String get registeredRooms;
+
+  /// No description provided for @noRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'No rooms'**
+  String get noRooms;
+
+  /// No description provided for @roomsWillAppear.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms will appear here.'**
+  String get roomsWillAppear;
+
+  /// No description provided for @deleteRoomTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Room'**
+  String get deleteRoomTitle;
+
+  /// No description provided for @deleteRoomConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this room?'**
+  String get deleteRoomConfirm;
+
+  /// No description provided for @roomHasCamerasError.
+  ///
+  /// In en, this message translates to:
+  /// **'Reassign or remove this room\'s cameras before deleting it.'**
+  String get roomHasCamerasError;
+
+  /// No description provided for @cameraListSubtitleRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room: {roomName} • Wait: {waitDuration}m'**
+  String cameraListSubtitleRoom(String roomName, String waitDuration);
+
+  /// No description provided for @roomPositionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{className}: {startTime}–{endTime}'**
+  String roomPositionSubtitle(
+    String className,
+    String startTime,
+    String endTime,
+  );
+
+  /// No description provided for @analyticsScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{className} - Analytics'**
+  String analyticsScreenTitle(String className);
+
+  /// No description provided for @noDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get noDataTitle;
+
+  /// No description provided for @noAttendanceDataLast30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance data for last 30 days'**
+  String get noAttendanceDataLast30Days;
+
+  /// No description provided for @perStudentDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-Student Details'**
+  String get perStudentDetails;
+
+  /// No description provided for @hoursLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get hoursLabel;
+
+  /// No description provided for @thirtyDayTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'30-Day Timeline'**
+  String get thirtyDayTimeline;
+
+  /// No description provided for @noTimetableSubjectsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No timetable subjects'**
+  String get noTimetableSubjectsTitle;
+
+  /// No description provided for @noTimetableSubjectsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add lessons to this class timetable first.'**
+  String get noTimetableSubjectsMessage;
+
+  /// No description provided for @tapToAssignTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to assign teacher'**
+  String get tapToAssignTeacher;
+
+  /// No description provided for @timetableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable'**
+  String get timetableLabel;
+
+  /// No description provided for @totalHoursPerWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Total: {hours} h/week'**
+  String totalHoursPerWeek(String hours);
+
+  /// No description provided for @noLessonsForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No lessons for this day'**
+  String get noLessonsForDay;
+
+  /// No description provided for @addLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Lesson'**
+  String get addLesson;
+
+  /// No description provided for @minutesUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get minutesUnit;
+
+  /// No description provided for @cameraOptionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get cameraOptionTooltip;
+
+  /// No description provided for @galleryOptionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get galleryOptionTooltip;
+
+  /// No description provided for @noFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'No frame'**
+  String get noFrame;
+
+  /// No description provided for @selectMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Select month'**
+  String get selectMonth;
+
+  /// No description provided for @generatePdfReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate PDF Report'**
+  String get generatePdfReport;
+
+  /// No description provided for @pdfReportEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'ATTENDANCE REPORT'**
+  String get pdfReportEyebrow;
+
+  /// No description provided for @pdfNoDataForMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance data for the selected month'**
+  String get pdfNoDataForMonth;
+
+  /// No description provided for @columnPresentDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Present days'**
+  String get columnPresentDays;
+
+  /// No description provided for @columnLateDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Late days'**
+  String get columnLateDays;
+
+  /// No description provided for @columnAbsentDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent days'**
+  String get columnAbsentDays;
+
+  /// No description provided for @columnPresentHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Present hours'**
+  String get columnPresentHours;
+
+  /// No description provided for @columnAbsentHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent hours'**
+  String get columnAbsentHours;
+
+  /// No description provided for @columnRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get columnRate;
 }
 
 class _AppLocalizationsDelegate

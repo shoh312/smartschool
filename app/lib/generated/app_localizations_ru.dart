@@ -63,6 +63,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get language => 'Язык';
 
   @override
+  String get appearance => 'Внешний вид';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeSystem => 'Как в системе';
+
+  @override
   String get logout => 'Выйти';
 
   @override
@@ -72,6 +84,30 @@ class AppLocalizationsRu extends AppLocalizations {
   String errorPrefix(String error) {
     return 'Ошибка: $error';
   }
+
+  @override
+  String get networkErrorMessage =>
+      'Не удалось подключиться к серверу. Проверьте подключение к интернету или убедитесь, что сервер запущен.';
+
+  @override
+  String get serverErrorMessage => 'Сервер вернул ошибку. Попробуйте снова.';
+
+  @override
+  String get unknownErrorMessage => 'Что-то пошло не так. Попробуйте снова.';
+
+  @override
+  String get phoneNotRegisteredMessage =>
+      'Этот номер телефона еще не зарегистрирован ни в одной школе. Обратитесь в школу вашего ребенка.';
+
+  @override
+  String get invalidCredentialsMessage => 'Неверный email или пароль.';
+
+  @override
+  String get accountInactiveMessage =>
+      'Ваша учетная запись неактивна. Обратитесь к администратору.';
+
+  @override
+  String get invalidCurrentPasswordMessage => 'Текущий пароль неверен.';
 
   @override
   String get needSupport => 'Нужна помощь? ';
@@ -84,6 +120,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get roleParent => 'Родитель';
+
+  @override
+  String get roleTeacher => 'Учитель';
 
   @override
   String get createAccount => 'Создать аккаунт';
@@ -135,6 +174,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get recentActivity => 'Последние действия';
+
+  @override
+  String get attendanceByClass => 'Посещаемость по классам';
 
   @override
   String get noAttendanceRecorded =>
@@ -395,6 +437,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String classAttendanceRatio(String className, int arrived, int total) {
+    return '$className • $arrived/$total пришли';
+  }
+
+  @override
   String get directorDashboard => 'Панель директора';
 
   @override
@@ -574,4 +621,198 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get average => 'Средний балл';
+
+  @override
+  String get weekday1 => 'Пн';
+
+  @override
+  String get weekday2 => 'Вт';
+
+  @override
+  String get weekday3 => 'Ср';
+
+  @override
+  String get weekday4 => 'Чт';
+
+  @override
+  String get weekday5 => 'Пт';
+
+  @override
+  String get weekday6 => 'Сб';
+
+  @override
+  String get weekday7 => 'Вс';
+
+  @override
+  String get attendanceJournal => 'Журнал посещаемости';
+
+  @override
+  String get lastSeenLabel => 'Последний раз замечен';
+
+  @override
+  String get noAttendanceThisMonth =>
+      'В этом месяце нет записей о посещаемости';
+
+  @override
+  String get noCameraForClassTitle => 'Для этого класса нет камеры';
+
+  @override
+  String get noCameraForClassMessage =>
+      'Назначьте камеру этому классу в разделе «Управление камерами», чтобы видеть его статус в реальном времени.';
+
+  @override
+  String get studentNotAssignedToClass => 'Этот ученик ещё не назначен в класс';
+
+  @override
+  String get cameraNotAvailable =>
+      'Съёмка с камеры недоступна на этом устройстве. Используйте «Галерею».';
+
+  @override
+  String get rooms => 'Кабинеты';
+
+  @override
+  String get roomManagement => 'Управление кабинетами';
+
+  @override
+  String get addNewRoom => 'Добавить кабинет';
+
+  @override
+  String get editRoom => 'Редактировать кабинет';
+
+  @override
+  String get roomNameLabel => 'Название кабинета';
+
+  @override
+  String get assignToRoom => 'Привязать к кабинету';
+
+  @override
+  String get positions => 'Смены';
+
+  @override
+  String get addPosition => 'Добавить смену';
+
+  @override
+  String get positionClassLabel => 'Класс';
+
+  @override
+  String get registeredRooms => 'Зарегистрированные кабинеты';
+
+  @override
+  String get noRooms => 'Нет кабинетов';
+
+  @override
+  String get roomsWillAppear => 'Кабинеты появятся здесь.';
+
+  @override
+  String get deleteRoomTitle => 'Удалить кабинет';
+
+  @override
+  String get deleteRoomConfirm =>
+      'Вы уверены, что хотите удалить этот кабинет?';
+
+  @override
+  String get roomHasCamerasError =>
+      'Сначала переназначьте или удалите камеры этого кабинета.';
+
+  @override
+  String cameraListSubtitleRoom(String roomName, String waitDuration) {
+    return 'Кабинет: $roomName • Пауза: $waitDurationм';
+  }
+
+  @override
+  String roomPositionSubtitle(
+    String className,
+    String startTime,
+    String endTime,
+  ) {
+    return '$className: $startTime–$endTime';
+  }
+
+  @override
+  String analyticsScreenTitle(String className) {
+    return '$className - Аналитика';
+  }
+
+  @override
+  String get noDataTitle => 'Нет данных';
+
+  @override
+  String get noAttendanceDataLast30Days =>
+      'Нет данных о посещаемости за последние 30 дней';
+
+  @override
+  String get perStudentDetails => 'Данные по каждому ученику';
+
+  @override
+  String get hoursLabel => 'Часы';
+
+  @override
+  String get thirtyDayTimeline => 'Хронология за 30 дней';
+
+  @override
+  String get noTimetableSubjectsTitle => 'Нет предметов в расписании';
+
+  @override
+  String get noTimetableSubjectsMessage =>
+      'Сначала добавьте уроки в расписание этого класса.';
+
+  @override
+  String get tapToAssignTeacher => 'Нажмите, чтобы назначить учителя';
+
+  @override
+  String get timetableLabel => 'Расписание';
+
+  @override
+  String totalHoursPerWeek(String hours) {
+    return 'Всего: $hours ч/нед';
+  }
+
+  @override
+  String get noLessonsForDay => 'На этот день нет уроков';
+
+  @override
+  String get addLesson => 'Добавить урок';
+
+  @override
+  String get minutesUnit => 'мин';
+
+  @override
+  String get cameraOptionTooltip => 'Камера';
+
+  @override
+  String get galleryOptionTooltip => 'Галерея';
+
+  @override
+  String get noFrame => 'Нет кадра';
+
+  @override
+  String get selectMonth => 'Выберите месяц';
+
+  @override
+  String get generatePdfReport => 'Создать PDF-отчёт';
+
+  @override
+  String get pdfReportEyebrow => 'ОТЧЁТ О ПОСЕЩАЕМОСТИ';
+
+  @override
+  String get pdfNoDataForMonth =>
+      'Нет данных о посещаемости за выбранный месяц';
+
+  @override
+  String get columnPresentDays => 'Дней присутствовал';
+
+  @override
+  String get columnLateDays => 'Дней опоздал';
+
+  @override
+  String get columnAbsentDays => 'Дней отсутствовал';
+
+  @override
+  String get columnPresentHours => 'Часов присутствовал';
+
+  @override
+  String get columnAbsentHours => 'Часов отсутствовал';
+
+  @override
+  String get columnRate => 'Процент';
 }

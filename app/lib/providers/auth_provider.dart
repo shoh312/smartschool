@@ -4,6 +4,7 @@ import '../models/app_role.dart';
 import '../services/auth_service.dart';
 import '../services/parent_auth_service.dart';
 import '../services/token_storage.dart';
+import '../utils/error_formatter.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthService? _authService;
@@ -86,7 +87,7 @@ class AuthProvider extends ChangeNotifier {
       await action();
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;

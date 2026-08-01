@@ -6,6 +6,7 @@ import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../models/teacher.dart';
 import '../providers/teacher_admin_provider.dart';
+import '../utils/error_formatter.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 
@@ -58,7 +59,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            l10n.errorPrefix(context.read<TeacherAdminProvider>().error ?? ''),
+            l10n.errorPrefix(humanReadableError(context.read<TeacherAdminProvider>().error, l10n)),
           ),
         ),
       );
@@ -79,7 +80,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
+            child: Text(l10n.delete, style: TextStyle(color: context.colors.danger)),
           ),
         ],
       ),
@@ -193,9 +194,9 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                 (teacher) => Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                     boxShadow: AppShadows.card,
                   ),
                   child: ListTile(
@@ -207,7 +208,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                       decoration: BoxDecoration(
                         gradient: AppGradients.primary,
                         borderRadius: AppRadius.mdRadius,
-                        boxShadow: AppShadows.colored(AppColors.primary),
+                        boxShadow: AppShadows.colored(context.colors.primary),
                       ),
                       alignment: Alignment.center,
                       child: Text(
@@ -223,9 +224,9 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                     ),
                     trailing: IconButton(
                       tooltip: l10n.delete,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.delete_outline,
-                        color: AppColors.danger,
+                        color: context.colors.danger,
                       ),
                       onPressed: () => _delete(teacher),
                     ),

@@ -4,10 +4,13 @@ import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../core/design_tokens.dart';
 import '../models/app_role.dart';
+import '../models/grade.dart';
 import '../models/student.dart';
 import '../providers/auth_provider.dart';
 import '../providers/journal_provider.dart';
-import '../routes/app_routes.dart';
+import '../screens/class_live_attendance_screen.dart';
+import '../screens/student_attendance_journal_screen.dart';
+import '../screens/student_journal_screen.dart';
 import '../utils/date_formatters.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
@@ -27,14 +30,15 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   Widget build(BuildContext context) {
     final student = ModalRoute.of(context)!.settings.arguments as Student?;
     final l10n = AppLocalizations.of(context)!;
+    final auth = context.read<AuthProvider>();
+    final parentId = auth.role == AppRole.parent ? auth.parentId : null;
 
     if (student != null && !_requested) {
       _requested = true;
-      final auth = context.read<AuthProvider>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<JournalProvider>().loadForStudent(
           student.id,
-          parentId: auth.role == AppRole.parent ? auth.parentId : null,
+          parentId: parentId,
         );
       });
     }
@@ -43,6 +47,24 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
 
     return AppShell(
       title: student?.fullName ?? l10n.students,
+      actions: student == null
+          ? const []
+          : [
+              IconButton(
+                tooltip: l10n.viewJournal,
+                icon: const Icon(Icons.menu_book_outlined),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentJournalScreen(
+                      studentId: student.id,
+                      studentName: student.fullName,
+                      parentId: parentId,
+                    ),
+                  ),
+                ),
+              ),
+            ],
       child: student == null
           ? Center(child: Text(l10n.studentNotFound))
           : ListView(
@@ -51,9 +73,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                     boxShadow: AppShadows.card,
                   ),
                   child: Row(
@@ -107,24 +129,35 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 ),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
-                  onPressed: () =>
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.attendanceHistory,
-                        arguments: {'studentId': student.id},
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentAttendanceJournalScreen(
+                        studentId: student.id,
+                        studentName: student.fullName,
+                        parentId: parentId,
                       ),
-                  icon: const Icon(Icons.history),
+                    ),
+                  ),
+                  icon: Image.asset('assets/icons/history.png', width: 20, height: 20),
                   label: Text(l10n.viewAttendanceHistoryButton),
                 ),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
-                  onPressed: () =>
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.liveAttendance,
-                        arguments: {'studentId': student.id},
-                      ),
-                  icon: const Icon(Icons.sensors),
+                  onPressed: student.classId == null
+                      ? () => ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.studentNotAssignedToClass)),
+                          )
+                      : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ClassLiveAttendanceScreen(
+                                classId: student.classId!,
+                                className: student.className ?? '-',
+                              ),
+                            ),
+                          ),
+                  icon: Image.asset('assets/icons/live_stream.png', width: 20, height: 20),
                   label: Text(l10n.viewLiveStatusButton),
                 ),
                 const SizedBox(height: 24),
@@ -137,7 +170,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   const Center(child: CircularProgressIndicator())
                 else if (journal.grades.isEmpty)
                   EmptyState(
-                    icon: Icons.grade_outlined,
+                    imageAsset: 'assets/icons/grades.png',
                     title: l10n.noGrades,
                     message: l10n.noGradesMessage,
                   )
@@ -149,8 +182,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                           child: MetricCard(
                             label: l10n.grades,
                             value: journal.grades.length.toString(),
-                            icon: Icons.edit_note_outlined,
-                            color: AppColors.success,
+                            imageAsset: 'assets/icons/grades.png',
+                            color: context.colors.success,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -163,8 +196,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                                             .reduce((a, b) => a + b) /
                                         journal.grades.length)
                                     .toStringAsFixed(1),
-                            icon: Icons.insights_outlined,
-                            color: AppColors.warning,
+                            imageAsset: 'assets/icons/average.png',
+                            color: context.colors.warning,
                           ),
                         ),
                       ],
@@ -175,12 +208,13 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                     (grade) => Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.colors.border),
                         boxShadow: AppShadows.card,
                       ),
                       child: ListTile(
+                        onTap: () => _showGradeDetails(context, grade),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         leading: Container(
                           width: 40,
@@ -219,9 +253,118 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   }
 
   Color _gradeColor(int value) {
-    if (value >= 9) return AppColors.success;
-    if (value >= 7) return AppColors.info;
-    if (value >= 5) return AppColors.warning;
-    return AppColors.danger;
+    if (value >= 9) return context.colors.success;
+    if (value >= 7) return context.colors.info;
+    if (value >= 5) return context.colors.warning;
+    return context.colors.danger;
+  }
+
+  void _showGradeDetails(BuildContext context, Grade grade) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: context.colors.borderStrong,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: _gradeColor(grade.value).withOpacity(0.15),
+                      borderRadius: AppRadius.mdRadius,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      grade.value.toString(),
+                      style: TextStyle(
+                        color: _gradeColor(grade.value),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          grade.subject,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        Text(
+                          DateFormatters.shortDate(grade.gradeDate),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: context.colors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                l10n.journalTeacherLabel,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                grade.teacherName ?? '-',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.journalCommentOptional,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                (grade.comment == null || grade.comment!.isEmpty)
+                    ? l10n.journalNoComment
+                    : grade.comment!,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.mdRadius,
+                  ),
+                ),
+                child: Text(l10n.close),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

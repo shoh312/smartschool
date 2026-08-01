@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/student.dart';
 import '../services/student_service.dart';
+import '../utils/error_formatter.dart';
 
 class StudentProvider extends ChangeNotifier {
   StudentService? _service;
@@ -21,7 +22,7 @@ class StudentProvider extends ChangeNotifier {
     try {
       students = await _service!.fetchStudents(parentId: parentId);
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       // Don't leave a previous user's (e.g. a director's) student list on
       // screen just because this fetch failed.
       students = [];
@@ -58,7 +59,7 @@ class StudentProvider extends ChangeNotifier {
       students = [created, ...students];
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;
@@ -94,7 +95,7 @@ class StudentProvider extends ChangeNotifier {
       }
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;
@@ -111,7 +112,7 @@ class StudentProvider extends ChangeNotifier {
       students.removeWhere((s) => s.id == id);
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;

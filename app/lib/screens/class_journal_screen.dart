@@ -26,11 +26,11 @@ int _daysInMonth(DateTime month) =>
 bool _isWeekend(DateTime date) =>
     date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
 
-Color _gradeColor(int value) {
-  if (value >= 9) return AppColors.success;
-  if (value >= 7) return AppColors.info;
-  if (value >= 5) return AppColors.warning;
-  return AppColors.danger;
+Color _gradeColor(BuildContext context, int value) {
+  if (value >= 9) return context.colors.success;
+  if (value >= 7) return context.colors.info;
+  if (value >= 5) return context.colors.warning;
+  return context.colors.danger;
 }
 
 class ClassJournalScreen extends StatefulWidget {
@@ -63,8 +63,8 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
         ),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: context.colors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
@@ -77,7 +77,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.borderStrong,
+                    color: context.colors.borderStrong,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -88,14 +88,14 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: _gradeColor(grade.value).withOpacity(0.15),
+                      color: _gradeColor(context, grade.value).withOpacity(0.15),
                       borderRadius: AppRadius.mdRadius,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       grade.value.toString(),
                       style: TextStyle(
-                        color: _gradeColor(grade.value),
+                        color: _gradeColor(context, grade.value),
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                       ),
@@ -113,7 +113,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                         Text(
                           _dateKey(grade.gradeDate),
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppColors.textSecondary),
+                              ?.copyWith(color: context.colors.textSecondary),
                         ),
                       ],
                     ),
@@ -252,7 +252,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: MetricCard(
                               label: l10n.students,
                               value: roster.length.toString(),
-                              icon: Icons.groups_outlined,
+                              imageAsset: 'assets/icons/students.png',
                               color: theme.colorScheme.primary,
                             ),
                           ),
@@ -261,8 +261,8 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: MetricCard(
                               label: l10n.grades,
                               value: monthGrades.length.toString(),
-                              icon: Icons.edit_note_outlined,
-                              color: AppColors.success,
+                              imageAsset: 'assets/icons/grades.png',
+                              color: context.colors.success,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -270,8 +270,8 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: MetricCard(
                               label: l10n.average,
                               value: averageLabel,
-                              icon: Icons.insights_outlined,
-                              color: AppColors.warning,
+                              imageAsset: 'assets/icons/average.png',
+                              color: context.colors.warning,
                             ),
                           ),
                         ],
@@ -298,9 +298,9 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.colors.border),
                         boxShadow: AppShadows.card,
                       ),
                       child: Row(
@@ -352,9 +352,9 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: Container(
                               clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: context.colors.surface,
                                 borderRadius: AppRadius.lgRadius,
-                                border: Border.all(color: AppColors.border),
+                                border: Border.all(color: context.colors.border),
                                 boxShadow: AppShadows.card,
                               ),
                               child: Row(
@@ -376,7 +376,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                               l10n.journalStudentColumn,
                                               style: theme.textTheme.labelLarge
                                                   ?.copyWith(
-                                                    color: AppColors.primary,
+                                                    color: context.colors.primary,
                                                   ),
                                             ),
                                           ),
@@ -390,11 +390,11 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: entry.key.isOdd
-                                                  ? AppColors.surfaceAlt
-                                                  : AppColors.surface,
-                                              border: const Border(
+                                                  ? context.colors.surfaceAlt
+                                                  : context.colors.surface,
+                                              border: Border(
                                                 top: BorderSide(
-                                                  color: AppColors.border,
+                                                  color: context.colors.border,
                                                 ),
                                               ),
                                             ),
@@ -405,7 +405,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                                   height: 28,
                                                   decoration: BoxDecoration(
                                                     gradient: AppGradients.tint(
-                                                      AppColors.primary,
+                                                      context.colors.primary,
                                                     ),
                                                     shape: BoxShape.circle,
                                                   ),
@@ -420,11 +420,11 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                                               .value
                                                               .firstName[0]
                                                               .toUpperCase(),
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
                                                           FontWeight.w700,
-                                                      color: AppColors.primary,
+                                                      color: context.colors.primary,
                                                     ),
                                                   ),
                                                 ),
@@ -441,7 +441,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                                         ?.copyWith(
                                                           fontWeight:
                                                               FontWeight.w600,
-                                                          color: AppColors
+                                                          color: context.colors
                                                               .textPrimary,
                                                         ),
                                                   ),
@@ -477,12 +477,12 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                                               ? FontWeight.bold
                                                               : FontWeight.w600,
                                                           color: date == today
-                                                              ? AppColors
+                                                              ? context.colors
                                                                     .primary
                                                               : _isWeekend(date)
-                                                              ? AppColors
+                                                              ? context.colors
                                                                     .textMuted
-                                                              : AppColors
+                                                              : context.colors
                                                                     .textSecondary,
                                                         ),
                                                   ),
@@ -554,12 +554,12 @@ class _HeaderCell extends StatelessWidget {
       alignment: alignment,
       decoration: BoxDecoration(
         color: isToday
-            ? AppColors.primary.withOpacity(0.08)
+            ? context.colors.primary.withOpacity(0.08)
             : isWeekend
-            ? AppColors.surfaceAlt
-            : AppColors.primary.withOpacity(0.03),
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1.5),
+            ? context.colors.surfaceAlt
+            : context.colors.primary.withOpacity(0.03),
+        border: Border(
+          bottom: BorderSide(color: context.colors.border, width: 1.5),
         ),
       ),
       child: child,
@@ -583,10 +583,10 @@ class _ReadOnlyGradeCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final backgroundColor = isWeekend
-        ? AppColors.surfaceAlt
+        ? context.colors.surfaceAlt
         : zebra
-        ? AppColors.surfaceAlt.withOpacity(0.6)
-        : AppColors.surface;
+        ? context.colors.surfaceAlt.withOpacity(0.6)
+        : context.colors.surface;
 
     final grade = this.grade;
 
@@ -597,14 +597,14 @@ class _ReadOnlyGradeCell extends StatelessWidget {
               width: 30,
               height: 30,
               decoration: BoxDecoration(
-                color: _gradeColor(grade.value).withOpacity(0.15),
+                color: _gradeColor(context, grade.value).withOpacity(0.15),
                 borderRadius: AppRadius.smRadius,
               ),
               alignment: Alignment.center,
               child: Text(
                 grade.value.toString(),
                 style: TextStyle(
-                  color: _gradeColor(grade.value),
+                  color: _gradeColor(context, grade.value),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -617,7 +617,7 @@ class _ReadOnlyGradeCell extends StatelessWidget {
       height: _kRowHeight,
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: const Border(top: BorderSide(color: AppColors.border)),
+        border: Border(top: BorderSide(color: context.colors.border)),
       ),
       child: grade == null
           ? cell

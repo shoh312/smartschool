@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/class_subject_assignment.dart';
 import '../models/teacher.dart';
 import '../services/teacher_service.dart';
+import '../utils/error_formatter.dart';
 
 /// Director-side management of teachers and their class assignments.
 class TeacherAdminProvider extends ChangeNotifier {
@@ -27,7 +28,7 @@ class TeacherAdminProvider extends ChangeNotifier {
     try {
       teachers = await _service!.listTeachers();
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -53,7 +54,7 @@ class TeacherAdminProvider extends ChangeNotifier {
       teachers = [created, ...teachers];
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;
@@ -76,7 +77,7 @@ class TeacherAdminProvider extends ChangeNotifier {
           .toList();
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;
@@ -100,7 +101,7 @@ class TeacherAdminProvider extends ChangeNotifier {
       );
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       return false;
     } finally {
       isLoading = false;
@@ -124,7 +125,7 @@ class TeacherAdminProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       notifyListeners();
       return false;
     }
@@ -140,7 +141,7 @@ class TeacherAdminProvider extends ChangeNotifier {
     try {
       classSubjects = await _service!.classSubjects(classId);
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isClassSubjectsLoading = false;
       notifyListeners();
@@ -154,7 +155,7 @@ class TeacherAdminProvider extends ChangeNotifier {
     try {
       subjectTeachers = await _service!.listTeachers(subject: subject);
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isSubjectTeachersLoading = false;
       notifyListeners();

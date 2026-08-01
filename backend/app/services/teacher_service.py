@@ -38,10 +38,10 @@ def authenticate_teacher(db: Session, email: str, password: str) -> Teacher:
     if not teacher or not verify_password(password, teacher.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="invalid_credentials",
         )
     if not teacher.is_active:
-        raise HTTPException(status_code=403, detail="Teacher account is inactive")
+        raise HTTPException(status_code=403, detail="account_inactive")
     return teacher
 
 
@@ -71,6 +71,11 @@ def assign_class(db: Session, teacher: Teacher, class_id: int, subject: str, sch
     ).first()
     if existing:
         return existing
+
+    db.query(TeacherClass).filter(
+        TeacherClass.class_id == class_id,
+        TeacherClass.subject == subject,
+    ).delete(synchronize_session=False)
 
     assignment = TeacherClass(teacher_id=teacher.id, class_id=class_id, subject=subject)
     db.add(assignment)

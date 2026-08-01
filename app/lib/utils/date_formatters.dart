@@ -31,4 +31,17 @@ class DateFormatters {
     };
     return '$name ${month.year}';
   }
+
+  /// [weekday] follows DateTime.weekday: 1 = Monday .. 7 = Sunday.
+  static String weekdayShort(AppLocalizations l10n, int weekday) {
+    return switch (weekday) {
+      1 => l10n.weekday1,
+      2 => l10n.weekday2,
+      3 => l10n.weekday3,
+      4 => l10n.weekday4,
+      5 => l10n.weekday5,
+      6 => l10n.weekday6,
+      _ => l10n.weekday7,
+    };
+  }
 }

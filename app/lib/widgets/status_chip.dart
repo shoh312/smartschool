@@ -13,11 +13,11 @@ class AttendanceStatusChip extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     final color = switch (status) {
-      AttendanceStatus.present => AppColors.success,
-      AttendanceStatus.absent => AppColors.danger,
-      AttendanceStatus.late => AppColors.warning,
-      AttendanceStatus.leftSchool => AppColors.primary,
-      AttendanceStatus.notDetected => AppColors.textMuted,
+      AttendanceStatus.present => context.colors.success,
+      AttendanceStatus.absent => context.colors.danger,
+      AttendanceStatus.late => context.colors.warning,
+      AttendanceStatus.leftSchool => context.colors.primary,
+      AttendanceStatus.notDetected => context.colors.textMuted,
     };
 
     final label = switch (status) {

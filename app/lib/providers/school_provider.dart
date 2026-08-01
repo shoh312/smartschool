@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/camera_config.dart';
 import '../models/school_class.dart';
 import '../services/school_service.dart';
+import '../utils/error_formatter.dart';
 
 class SchoolProvider extends ChangeNotifier {
   SchoolService? _service;
@@ -24,7 +25,7 @@ class SchoolProvider extends ChangeNotifier {
       classes = await _service!.fetchClasses();
       cameras = await _service!.fetchCameras();
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();

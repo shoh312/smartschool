@@ -21,10 +21,6 @@ class CameraManagementScreen extends StatefulWidget {
 class _CameraManagementScreenState extends State<CameraManagementScreen> {
   final _nameController = TextEditingController();
   final _rtspController = TextEditingController();
-  final _startController = TextEditingController(text: '08:00');
-  final _endController = TextEditingController(text: '16:00');
-  final _detectController = TextEditingController(text: '10');
-  final _waitController = TextEditingController(text: '20');
   SchoolClass? _selectedClass;
   CameraConfig? _editingCamera;
 
@@ -40,10 +36,6 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
   void dispose() {
     _nameController.dispose();
     _rtspController.dispose();
-    _startController.dispose();
-    _endController.dispose();
-    _detectController.dispose();
-    _waitController.dispose();
     super.dispose();
   }
 
@@ -52,10 +44,6 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
       _editingCamera = camera;
       _nameController.text = camera.name;
       _rtspController.text = camera.rtspUrl ?? '';
-      _startController.text = camera.detectionStartTime ?? '08:00';
-      _endController.text = camera.detectionEndTime ?? '16:00';
-      _detectController.text = camera.detectDurationSeconds.toString();
-      _waitController.text = camera.waitDurationMinutes.toString();
       _selectedClass = classes.cast<SchoolClass?>().firstWhere(
             (c) => c?.id == camera.classId,
             orElse: () => null,
@@ -68,10 +56,6 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
       _editingCamera = null;
       _nameController.clear();
       _rtspController.clear();
-      _startController.text = '08:00';
-      _endController.text = '16:00';
-      _detectController.text = '10';
-      _waitController.text = '20';
       _selectedClass = null;
     });
   }
@@ -83,10 +67,6 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
       classId: _selectedClass?.id,
       rtspUrl: _rtspController.text.trim(),
       isActive: _editingCamera?.isActive ?? true,
-      detectionStartTime: _startController.text.trim(),
-      detectionEndTime: _endController.text.trim(),
-      detectDurationSeconds: int.tryParse(_detectController.text.trim()) ?? 10,
-      waitDurationMinutes: int.tryParse(_waitController.text.trim()) ?? 20,
     );
 
     if (_editingCamera == null) {
@@ -111,7 +91,7 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
+            child: Text(l10n.delete, style: TextStyle(color: context.colors.danger)),
           ),
         ],
       ),
@@ -167,44 +147,6 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                     controller: _rtspController,
                     decoration: InputDecoration(labelText: l10n.rtspUrl),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _startController,
-                          decoration: InputDecoration(labelText: l10n.startTime),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _endController,
-                          decoration: InputDecoration(labelText: l10n.endTime),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _detectController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(labelText: l10n.detectSec),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _waitController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(labelText: l10n.waitMin),
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -255,9 +197,9 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                     boxShadow: AppShadows.card,
                   ),
                   child: ListTile(
@@ -270,32 +212,27 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                         gradient: camera.isActive
                             ? AppGradients.success
                             : null,
-                        color: camera.isActive ? null : AppColors.surfaceAlt,
+                        color: camera.isActive ? null : context.colors.surfaceAlt,
                         borderRadius: AppRadius.mdRadius,
-                        boxShadow: camera.isActive ? AppShadows.colored(AppColors.success) : null,
+                        boxShadow: camera.isActive ? AppShadows.colored(context.colors.success) : null,
                       ),
                       alignment: Alignment.center,
                       child: Icon(
                         Icons.videocam_outlined,
-                        color: camera.isActive ? Colors.white : AppColors.textMuted,
+                        color: camera.isActive ? Colors.white : context.colors.textMuted,
                       ),
                     ),
                     title: Text(camera.name, style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(
-                      l10n.cameraListSubtitle(
-                        className ?? l10n.unassigned,
-                        camera.waitDurationMinutes.toString(),
-                      ),
-                    ),
+                    subtitle: Text(className ?? l10n.unassigned),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
+                          icon: Icon(Icons.edit_outlined, size: 20, color: context.colors.textMuted),
                           onPressed: () => _prepareEdit(camera, provider.classes),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
+                          icon: Icon(Icons.delete_outline, size: 20, color: context.colors.danger),
                           onPressed: () => _delete(camera.id),
                         ),
                       ],

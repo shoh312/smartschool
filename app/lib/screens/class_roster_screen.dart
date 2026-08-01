@@ -7,6 +7,7 @@ import '../models/grade.dart';
 import '../models/student.dart';
 import '../providers/teacher_provider.dart';
 import '../utils/date_formatters.dart';
+import '../utils/error_formatter.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/metric_card.dart';
@@ -26,11 +27,11 @@ int _daysInMonth(DateTime month) =>
 bool _isWeekend(DateTime date) =>
     date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
 
-Color _gradeColor(int value) {
-  if (value >= 9) return AppColors.success;
-  if (value >= 7) return AppColors.info;
-  if (value >= 5) return AppColors.warning;
-  return AppColors.danger;
+Color _gradeColor(BuildContext context, int value) {
+  if (value >= 9) return context.colors.success;
+  if (value >= 7) return context.colors.info;
+  if (value >= 5) return context.colors.warning;
+  return context.colors.danger;
 }
 
 class ClassRosterScreen extends StatefulWidget {
@@ -89,8 +90,8 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
         ),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: context.colors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
@@ -103,7 +104,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.borderStrong,
+                    color: context.colors.borderStrong,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -114,14 +115,14 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: _gradeColor(grade.value).withOpacity(0.15),
+                      color: _gradeColor(context, grade.value).withOpacity(0.15),
                       borderRadius: AppRadius.mdRadius,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       grade.value.toString(),
                       style: TextStyle(
-                        color: _gradeColor(grade.value),
+                        color: _gradeColor(context, grade.value),
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                       ),
@@ -139,7 +140,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                         Text(
                           _dateKey(grade.gradeDate),
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppColors.textSecondary),
+                              ?.copyWith(color: context.colors.textSecondary),
                         ),
                       ],
                     ),
@@ -198,8 +199,8 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
           ),
           child: Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
+            decoration: BoxDecoration(
+              color: context.colors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
             child: Column(
@@ -212,7 +213,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.borderStrong,
+                      color: context.colors.borderStrong,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -226,7 +227,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                   _dateKey(date),
                   style: Theme.of(
                     context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                  ).textTheme.bodySmall?.copyWith(color: context.colors.textSecondary),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -265,8 +266,8 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                           icon: const Icon(Icons.delete_outline, size: 18),
                           label: Text(l10n.delete),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.danger,
-                            side: const BorderSide(color: AppColors.danger),
+                            foregroundColor: context.colors.danger,
+                            side: BorderSide(color: context.colors.danger),
                             minimumSize: const Size.fromHeight(48),
                             shape: RoundedRectangleBorder(
                               borderRadius: AppRadius.mdRadius,
@@ -340,7 +341,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
       if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.errorPrefix(teacherProvider.error ?? '')),
+            content: Text(l10n.errorPrefix(humanReadableError(teacherProvider.error, l10n))),
           ),
         );
       }
@@ -412,7 +413,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: MetricCard(
                               label: l10n.students,
                               value: roster.length.toString(),
-                              icon: Icons.groups_outlined,
+                              imageAsset: 'assets/icons/students.png',
                               color: theme.colorScheme.primary,
                             ),
                           ),
@@ -421,8 +422,8 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: MetricCard(
                               label: l10n.grades,
                               value: monthGrades.length.toString(),
-                              icon: Icons.edit_note_outlined,
-                              color: AppColors.success,
+                              imageAsset: 'assets/icons/grades.png',
+                              color: context.colors.success,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -430,8 +431,8 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: MetricCard(
                               label: l10n.average,
                               value: averageLabel,
-                              icon: Icons.insights_outlined,
-                              color: AppColors.warning,
+                              imageAsset: 'assets/icons/average.png',
+                              color: context.colors.warning,
                             ),
                           ),
                         ],
@@ -443,9 +444,9 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.colors.border),
                         boxShadow: AppShadows.card,
                       ),
                       child: Row(
@@ -495,9 +496,9 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: Container(
                               clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: context.colors.surface,
                                 borderRadius: AppRadius.lgRadius,
-                                border: Border.all(color: AppColors.border),
+                                border: Border.all(color: context.colors.border),
                                 boxShadow: AppShadows.card,
                               ),
                               child: Row(
@@ -536,11 +537,11 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: entry.key.isOdd
-                                                  ? AppColors.surfaceAlt
-                                                  : AppColors.surface,
-                                              border: const Border(
+                                                  ? context.colors.surfaceAlt
+                                                  : context.colors.surface,
+                                              border: Border(
                                                 top: BorderSide(
-                                                  color: AppColors.border,
+                                                  color: context.colors.border,
                                                 ),
                                               ),
                                             ),
@@ -585,7 +586,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                                         ?.copyWith(
                                                           fontWeight:
                                                               FontWeight.w600,
-                                                          color: AppColors
+                                                          color: context.colors
                                                             .textPrimary,
                                                         ),
                                                   ),
@@ -650,7 +651,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                                                                     _isWeekend(
                                                                       date,
                                                                     )
-                                                                    ? AppColors
+                                                                    ? context.colors
                                                                           .textMuted
                                                                     : theme
                                                                           .colorScheme
@@ -745,10 +746,10 @@ class _HeaderCell extends StatelessWidget {
         color: isToday
             ? theme.colorScheme.primary.withOpacity(0.08)
             : isWeekend
-            ? AppColors.surfaceAlt
+            ? context.colors.surfaceAlt
             : theme.colorScheme.primary.withOpacity(0.04),
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1.5),
+        border: Border(
+          bottom: BorderSide(color: context.colors.border, width: 1.5),
         ),
       ),
       child: child,
@@ -769,7 +770,7 @@ class _ScoreOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _gradeColor(value);
+    final color = _gradeColor(context, value);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -819,10 +820,10 @@ class _GradeCell extends StatelessWidget {
     final backgroundColor = enabled
         ? Theme.of(context).colorScheme.primary.withOpacity(0.04)
         : isWeekend
-        ? AppColors.surfaceAlt
+        ? context.colors.surfaceAlt
         : zebra
-        ? AppColors.surfaceAlt
-        : AppColors.surface;
+        ? context.colors.surfaceAlt
+        : context.colors.surface;
 
     final cellChild = Center(
       child: grade == null
@@ -840,13 +841,14 @@ class _GradeCell extends StatelessWidget {
               height: 30,
               decoration: BoxDecoration(
                 color: _gradeColor(
+                  context,
                   grade!.value,
                 ).withOpacity(enabled ? 1 : 0.15),
                 borderRadius: BorderRadius.circular(9),
                 boxShadow: enabled
                     ? [
                         BoxShadow(
-                          color: _gradeColor(grade!.value).withOpacity(0.35),
+                          color: _gradeColor(context, grade!.value).withOpacity(0.35),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -857,7 +859,7 @@ class _GradeCell extends StatelessWidget {
               child: Text(
                 grade!.value.toString(),
                 style: TextStyle(
-                  color: enabled ? Colors.white : _gradeColor(grade!.value),
+                  color: enabled ? Colors.white : _gradeColor(context, grade!.value),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -870,7 +872,7 @@ class _GradeCell extends StatelessWidget {
       height: _kRowHeight,
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: const Border(top: BorderSide(color: AppColors.border)),
+        border: Border(top: BorderSide(color: context.colors.border)),
       ),
       child: (enabled || grade != null)
           ? InkWell(

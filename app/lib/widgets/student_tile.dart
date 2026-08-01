@@ -25,9 +25,9 @@ class StudentTile extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: AppRadius.lgRadius,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
         boxShadow: AppShadows.card,
       ),
       clipBehavior: Clip.antiAlias,
@@ -47,7 +47,7 @@ class StudentTile extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: AppGradients.primary,
                 borderRadius: AppRadius.mdRadius,
-                boxShadow: AppShadows.colored(AppColors.primary),
+                boxShadow: AppShadows.colored(context.colors.primary),
               ),
               child: Center(
                 child: Text(
@@ -76,15 +76,15 @@ class StudentTile extends StatelessWidget {
               children: [
                 if (onEdit != null)
                   IconButton(
-                    icon: const Icon(Icons.edit_note_rounded, size: 22, color: AppColors.textMuted),
+                    icon: Icon(Icons.edit_note_rounded, size: 22, color: context.colors.textMuted),
                     onPressed: onEdit,
                   ),
                 if (onDelete != null)
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, size: 22, color: AppColors.danger),
+                    icon: Icon(Icons.delete_outline_rounded, size: 22, color: context.colors.danger),
                     onPressed: onDelete,
                   ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                Icon(Icons.chevron_right_rounded, color: context.colors.textMuted),
               ],
             ),
           ),

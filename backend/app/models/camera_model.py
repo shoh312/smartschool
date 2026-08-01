@@ -17,10 +17,7 @@ class Camera(Base):
 
     school_id = Column(Integer, ForeignKey("schools.id"), index=True)
 
-    class_id = Column(
-        Integer,
-        ForeignKey("classes.id")
-    )
+    class_id = Column(Integer, ForeignKey("classes.id"), index=True, nullable=True)
 
     name = Column(String)
 
@@ -28,18 +25,10 @@ class Camera(Base):
 
     rtsp_url = Column(String)
 
-    detection_start_time = Column(String)
-
-    detection_end_time = Column(String)
-
-    detect_duration_seconds = Column(Integer)
-
-    wait_duration_minutes = Column(Integer)
-
     is_active = Column(
         Boolean,
         default=True
     )
 
     attendances = relationship("Attendance", back_populates="camera", cascade="all, delete-orphan")
-    school_class = relationship("Class", back_populates="cameras")
+    school_class = relationship("Class")

@@ -7,6 +7,7 @@ import 'package:smartschool_app/generated/app_localizations.dart';
 import '../routes/app_routes.dart';
 import '../screens/splash_screen.dart';
 import '../providers/language_provider.dart';
+import '../providers/theme_provider.dart';
 import 'theme.dart';
 
 class SmartSchoolApp extends StatelessWidget {
@@ -15,12 +16,15 @@ class SmartSchoolApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final langProvider = context.watch<LanguageProvider>();
-    
+    final themeProvider = context.watch<ThemeProvider>();
+
     return MaterialApp(
       key: ValueKey(langProvider.locale.languageCode),
       title: 'SmartSchool',
       debugShowCheckedModeBanner: false,
       theme: SmartSchoolTheme.light(),
+      darkTheme: SmartSchoolTheme.dark(),
+      themeMode: themeProvider.mode,
       locale: langProvider.locale,
       localizationsDelegates: [
         AppLocalizations.delegate,

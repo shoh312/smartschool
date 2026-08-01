@@ -5,14 +5,19 @@ import '../core/design_tokens.dart';
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
-    required this.icon,
+    this.icon,
+    this.imageAsset,
     required this.title,
     required this.message,
     this.onAction,
     this.actionLabel,
-  });
+  }) : assert(icon != null || imageAsset != null, 'Provide icon or imageAsset');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Path to a custom PNG illustration (e.g. 'assets/icons/not_notifications.png'),
+  /// shown instead of [icon] when set.
+  final String? imageAsset;
   final String title;
   final String message;
   final VoidCallback? onAction;
@@ -28,18 +33,21 @@ class EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: AppGradients.tint(AppColors.primary),
-              shape: BoxShape.circle,
+          if (imageAsset != null)
+            Image.asset(imageAsset!, width: 96, height: 96)
+          else
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: AppGradients.tint(context.colors.primary),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 44,
+                color: context.colors.primary,
+              ),
             ),
-            child: Icon(
-              icon,
-              size: 44,
-              color: AppColors.primary,
-            ),
-          ),
           const SizedBox(height: 20),
           Text(
             title,
@@ -50,7 +58,7 @@ class EmptyState extends StatelessWidget {
           Text(
             message,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -59,7 +67,7 @@ class EmptyState extends StatelessWidget {
             FilledButton(
               onPressed: onAction,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: context.colors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(

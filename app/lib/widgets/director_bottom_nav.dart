@@ -26,16 +26,16 @@ class DirectorBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final items = [
-      _NavItemData(Icons.dashboard_outlined, Icons.dashboard_rounded, l10n.dashboard),
-      _NavItemData(Icons.videocam_outlined, Icons.videocam_rounded, l10n.live),
-      _NavItemData(Icons.business_outlined, Icons.business_rounded, l10n.manage),
-      _NavItemData(Icons.settings_outlined, Icons.settings_rounded, l10n.settings),
-      _NavItemData(Icons.notifications_outlined, Icons.notifications_rounded, l10n.alerts),
+      _NavItemData.image('assets/icons/dashboard.png', l10n.dashboard),
+      _NavItemData.image('assets/icons/live_stream.png', l10n.live),
+      _NavItemData.image('assets/icons/management.png', l10n.manage),
+      _NavItemData.image('assets/icons/settings_nav.png', l10n.settings),
+      _NavItemData.image('assets/icons/alerts.png', l10n.alerts),
     ];
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -69,10 +69,19 @@ class DirectorBottomNav extends StatelessWidget {
 }
 
 class _NavItemData {
-  const _NavItemData(this.icon, this.selectedIcon, this.label);
+  const _NavItemData(this.icon, this.selectedIcon, this.label) : imageAsset = null;
+  const _NavItemData.image(this.imageAsset, this.label)
+      : icon = null,
+        selectedIcon = null;
 
-  final IconData icon;
-  final IconData selectedIcon;
+  final IconData? icon;
+  final IconData? selectedIcon;
+
+  /// Full-color PNG tab artwork -- shown instead of [icon]/[selectedIcon]
+  /// when set. These come pre-colored (no separate outlined/filled variant
+  /// like Material icons), so selection is conveyed via opacity instead of
+  /// swapping icon or color.
+  final String? imageAsset;
   final String label;
 }
 
@@ -137,7 +146,7 @@ class _TelegramNavItemState extends State<_TelegramNavItem>
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.selected ? AppColors.primary : AppColors.textMuted;
+    final color = widget.selected ? context.colors.primary : context.colors.textMuted;
 
     return Material(
       color: Colors.transparent,
@@ -151,11 +160,23 @@ class _TelegramNavItemState extends State<_TelegramNavItem>
           children: [
             ScaleTransition(
               scale: _scale,
-              child: Icon(
-                widget.selected ? widget.data.selectedIcon : widget.data.icon,
-                color: color,
-                size: 24,
-              ),
+              child: widget.data.imageAsset != null
+                  ? AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: widget.selected ? 1.0 : 0.82,
+                      child: Image.asset(
+                        widget.data.imageAsset!,
+                        width: 30,
+                        height: 30,
+                      ),
+                    )
+                  : Icon(
+                      widget.selected
+                          ? widget.data.selectedIcon
+                          : widget.data.icon,
+                      color: color,
+                      size: 24,
+                    ),
             ),
             AnimatedSize(
               duration: const Duration(milliseconds: 200),

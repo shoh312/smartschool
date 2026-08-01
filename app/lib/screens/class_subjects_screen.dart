@@ -2,23 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
-import '../core/constants.dart';
 import '../core/design_tokens.dart';
+import '../models/class_subject_assignment.dart';
 import '../models/school_class.dart';
 import '../providers/student_provider.dart';
 import '../providers/teacher_admin_provider.dart';
+import '../utils/error_formatter.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/metric_card.dart';
 import 'class_journal_screen.dart';
 
-const List<Color> _kSubjectPalette = [
-  AppColors.primary,
-  AppColors.accent,
-  AppColors.success,
-  AppColors.warning,
-  AppColors.info,
-];
+List<Color> _subjectPalette(BuildContext context) => [
+      context.colors.primary,
+      context.colors.accent,
+      context.colors.success,
+      context.colors.warning,
+      context.colors.info,
+    ];
 
 class ClassSubjectsScreen extends StatefulWidget {
   const ClassSubjectsScreen({super.key, required this.schoolClass});
@@ -33,6 +34,23 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
   int get classId => widget.schoolClass.id;
   String get className => widget.schoolClass.name;
 
+  List<String> get _timetableSubjects {
+    final subjects = <String>[];
+    final seen = <String>{};
+    for (final entries in widget.schoolClass.timetable.values) {
+      for (final entry in entries) {
+        final subject = entry.subject.trim();
+        if (subject.isEmpty || seen.contains(subject)) {
+          continue;
+        }
+        seen.add(subject);
+        subjects.add(subject);
+      }
+    }
+    subjects.sort();
+    return subjects;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,17 +60,21 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
     });
   }
 
-  Future<void> _openAddSubjectDialog() async {
+  Future<void> _openAssignTeacherDialog(
+    String subject,
+    ClassSubjectAssignment? currentAssignment,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final provider = context.read<TeacherAdminProvider>();
-    String? pickedSubject;
-    int? pickedTeacherId;
+    int? pickedTeacherId = currentAssignment?.teacherId;
+
+    provider.loadTeachersBySubject(subject);
 
     await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(l10n.addSubjectTitle),
+          title: Text(subject),
           content: SizedBox(
             width: 360,
             child: SingleChildScrollView(
@@ -61,72 +83,45 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l10n.subjectLabel,
+                    l10n.teachers,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final subject in AppConstants.schoolSubjects)
-                        ChoiceChip(
-                          label: Text(subject),
-                          selected: subject == pickedSubject,
-                          onSelected: (_) {
-                            setDialogState(() {
-                              pickedSubject = subject;
-                              pickedTeacherId = null;
-                            });
-                            provider.loadTeachersBySubject(subject);
-                          },
-                        ),
-                    ],
-                  ),
-                  if (pickedSubject != null) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      l10n.teachers,
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Consumer<TeacherAdminProvider>(
-                      builder: (context, provider, _) {
-                        if (provider.isSubjectTeachersLoading) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        if (provider.subjectTeachers.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              l10n.noTeachersForSubject,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          );
-                        }
-                        return Column(
-                          children: [
-                            for (final teacher in provider.subjectTeachers)
-                              RadioListTile<int>(
-                                contentPadding: EdgeInsets.zero,
-                                dense: true,
-                                title: Text(teacher.fullName),
-                                subtitle: Text(teacher.email),
-                                value: teacher.id,
-                                groupValue: pickedTeacherId,
-                                onChanged: (value) => setDialogState(
-                                  () => pickedTeacherId = value,
-                                ),
-                              ),
-                          ],
+                  Consumer<TeacherAdminProvider>(
+                    builder: (context, provider, _) {
+                      if (provider.isSubjectTeachersLoading) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
                         );
-                      },
-                    ),
-                  ],
+                      }
+                      if (provider.subjectTeachers.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            l10n.noTeachersForSubject,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: context.colors.textSecondary),
+                          ),
+                        );
+                      }
+                      return Column(
+                        children: [
+                          for (final teacher in provider.subjectTeachers)
+                            RadioListTile<int>(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              title: Text(teacher.fullName),
+                              subtitle: Text(teacher.email),
+                              value: teacher.id,
+                              groupValue: pickedTeacherId,
+                              onChanged: (value) =>
+                                  setDialogState(() => pickedTeacherId = value),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -137,13 +132,13 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
               child: Text(l10n.cancel),
             ),
             FilledButton(
-              onPressed: (pickedSubject == null || pickedTeacherId == null)
+              onPressed: pickedTeacherId == null
                   ? null
                   : () async {
                       final success = await provider.assignClass(
                         teacherId: pickedTeacherId!,
                         classId: classId,
-                        subject: pickedSubject!,
+                        subject: subject,
                       );
                       if (context.mounted) Navigator.pop(context);
                       if (success) {
@@ -152,7 +147,9 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              l10n.errorPrefix(provider.error ?? ''),
+                              l10n.errorPrefix(
+                                humanReadableError(provider.error, l10n),
+                              ),
                             ),
                           ),
                         );
@@ -182,7 +179,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               l10n.delete,
-              style: const TextStyle(color: AppColors.danger),
+              style: TextStyle(color: context.colors.danger),
             ),
           ),
         ],
@@ -199,7 +196,11 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
 
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.errorPrefix(provider.error ?? ''))),
+        SnackBar(
+          content: Text(
+            l10n.errorPrefix(humanReadableError(provider.error, l10n)),
+          ),
+        ),
       );
     }
   }
@@ -214,11 +215,20 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
         .students
         .where((student) => student.classId == classId)
         .length;
-    final subjectCount = provider.classSubjects.length;
-    final teacherCount = provider.classSubjects
+    final timetableSubjects = _timetableSubjects;
+    final assignmentsBySubject = <String, ClassSubjectAssignment>{};
+    for (final assignment in provider.classSubjects) {
+      final subject = assignment.subject?.trim();
+      if (subject == null || subject.isEmpty) continue;
+      assignmentsBySubject[subject] = assignment;
+    }
+    final subjectCount = timetableSubjects.length;
+    final teacherCount = assignmentsBySubject.values
         .map((assignment) => assignment.teacherId)
         .toSet()
         .length;
+    final teacherAdminProvider = context.read<TeacherAdminProvider>();
+    final studentProvider = context.read<StudentProvider>();
 
     return AppShell(
       title: className,
@@ -229,20 +239,16 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ClassJournalScreen(
-                classId: classId,
-                className: className,
-              ),
+              builder: (context) =>
+                  ClassJournalScreen(classId: classId, className: className),
             ),
           ),
         ),
       ],
       child: RefreshIndicator(
         onRefresh: () async {
-          await context.read<TeacherAdminProvider>().loadClassSubjects(
-            classId,
-          );
-          await context.read<StudentProvider>().loadStudents();
+          await teacherAdminProvider.loadClassSubjects(classId);
+          await studentProvider.loadStudents();
         },
         child: provider.isClassSubjectsLoading && provider.classSubjects.isEmpty
             ? const Center(child: CircularProgressIndicator())
@@ -254,7 +260,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                     decoration: BoxDecoration(
                       gradient: AppGradients.primary,
                       borderRadius: AppRadius.lgRadius,
-                      boxShadow: AppShadows.colored(AppColors.primary),
+                      boxShadow: AppShadows.colored(context.colors.primary),
                     ),
                     child: Row(
                       children: [
@@ -262,7 +268,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             borderRadius: AppRadius.mdRadius,
                           ),
                           alignment: Alignment.center,
@@ -293,7 +299,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                                   widget.schoolClass.grade.toString(),
                                 ),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withOpacity(0.85),
+                                  color: Colors.white.withValues(alpha: 0.85),
                                 ),
                               ),
                             ],
@@ -310,7 +316,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           child: MetricCard(
                             label: l10n.students,
                             value: studentCount.toString(),
-                            icon: Icons.groups_outlined,
+                            imageAsset: 'assets/icons/students.png',
                             color: theme.colorScheme.primary,
                           ),
                         ),
@@ -319,8 +325,8 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           child: MetricCard(
                             label: l10n.subjectsLabel,
                             value: subjectCount.toString(),
-                            icon: Icons.menu_book_outlined,
-                            color: AppColors.accent,
+                            imageAsset: 'assets/icons/subjects.png',
+                            color: context.colors.accent,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -328,8 +334,8 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           child: MetricCard(
                             label: l10n.teachers,
                             value: teacherCount.toString(),
-                            icon: Icons.school_outlined,
-                            color: AppColors.success,
+                            imageAsset: 'assets/icons/teachers.png',
+                            color: context.colors.success,
                           ),
                         ),
                       ],
@@ -341,29 +347,32 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                     style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
-                  if (provider.classSubjects.isEmpty)
+                  if (timetableSubjects.isEmpty)
                     SizedBox(
                       height: 220,
                       child: EmptyState(
                         icon: Icons.menu_book_outlined,
-                        title: l10n.noSubjectsInClass,
-                        message: l10n.addSubjectToStart,
+                        title: l10n.noTimetableSubjectsTitle,
+                        message: l10n.noTimetableSubjectsMessage,
                       ),
                     )
                   else
-                    ...provider.classSubjects.asMap().entries.map((entry) {
-                      final assignment = entry.value;
-                      final color =
-                          _kSubjectPalette[entry.key % _kSubjectPalette.length];
+                    ...timetableSubjects.asMap().entries.map((entry) {
+                      final subject = entry.value;
+                      final assignment = assignmentsBySubject[subject];
+                      final palette = _subjectPalette(context);
+                      final color = palette[entry.key % palette.length];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.colors.surface,
                           borderRadius: AppRadius.lgRadius,
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.colors.border),
                           boxShadow: AppShadows.card,
                         ),
                         child: ListTile(
+                          onTap: () =>
+                              _openAssignTeacherDialog(subject, assignment),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
@@ -386,55 +395,63 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                             ),
                           ),
                           title: Text(
-                            assignment.subject ?? '',
+                            subject,
                             style: theme.textTheme.titleMedium,
                           ),
-                          subtitle: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 9,
-                                backgroundColor: color.withOpacity(0.15),
-                                child: Text(
-                                  assignment.teacherName.isEmpty
-                                      ? '?'
-                                      : assignment.teacherName[0]
-                                            .toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: color,
+                          subtitle: assignment == null
+                              ? Text(
+                                  l10n.tapToAssignTeacher,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: context.colors.textSecondary,
+                                  ),
+                                )
+                              : Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 9,
+                                      backgroundColor: color.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      child: Text(
+                                        assignment.teacherName.isEmpty
+                                            ? '?'
+                                            : assignment.teacherName[0]
+                                                  .toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: color,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        assignment.teacherName,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                          trailing: assignment == null
+                              ? Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  color: color,
+                                )
+                              : IconButton(
+                                  tooltip: l10n.removeAssignment,
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    color: context.colors.danger,
+                                  ),
+                                  onPressed: () => _confirmRemove(
+                                    assignment.teacherId,
+                                    assignment.id,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  assignment.teacherName,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            tooltip: l10n.removeAssignment,
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: AppColors.danger,
-                            ),
-                            onPressed: () => _confirmRemove(
-                              assignment.teacherId,
-                              assignment.id,
-                            ),
-                          ),
                         ),
                       );
                     }),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _openAddSubjectDialog,
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(l10n.addSubjectTitle),
-                  ),
                 ],
               ),
       ),

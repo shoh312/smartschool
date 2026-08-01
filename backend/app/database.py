@@ -68,6 +68,13 @@ def ensure_database_schema():
         "CREATE INDEX IF NOT EXISTS ix_grades_class_id ON grades (class_id)",
         "CREATE INDEX IF NOT EXISTS ix_teacher_classes_teacher_id ON teacher_classes (teacher_id)",
         "CREATE INDEX IF NOT EXISTS ix_teacher_classes_class_id ON teacher_classes (class_id)",
+        "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS class_id INTEGER REFERENCES classes(id)",
+        "CREATE INDEX IF NOT EXISTS ix_cameras_class_id ON cameras (class_id)",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS start_time VARCHAR",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS end_time VARCHAR",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS detect_duration_seconds INTEGER",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS wait_duration_minutes INTEGER",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS timetable JSON",
     ]
 
     with engine.begin() as connection:
@@ -102,3 +109,32 @@ def ensure_default_school_and_backfill() -> int:
             )
 
         return school_id
+
+
+def ensure_rooms_backfill() -> None:
+    """Migrate data from old Room/RoomPosition model to Class fields and
+    Camera.class_id. Copies room_position data into class columns and sets
+    camera.class_id from the active room_position's class_id.
+    """
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "UPDATE classes c "
+                "SET start_time = rp.start_time, "
+                "    end_time = rp.end_time, "
+                "    detect_duration_seconds = rp.detect_duration_seconds, "
+                "    wait_duration_minutes = rp.wait_duration_minutes "
+                "FROM room_positions rp "
+                "JOIN rooms r ON r.id = rp.room_id "
+                "WHERE rp.class_id = c.id AND c.position IS NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE cameras cam "
+                "SET class_id = rp.class_id "
+                "FROM rooms r "
+                "JOIN room_positions rp ON rp.room_id = r.id "
+                "WHERE cam.room_id = r.id AND cam.class_id IS NULL"
+            )
+        )

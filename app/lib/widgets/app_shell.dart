@@ -47,7 +47,7 @@ class AppShell extends StatelessWidget {
                   child: IconButton(
                     tooltip: l10n.signOutTooltip,
                     style: IconButton.styleFrom(
-                      backgroundColor: AppColors.surfaceAlt,
+                      backgroundColor: context.colors.surfaceAlt,
                       shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
                     ),
                     icon: const Icon(Icons.logout_rounded, size: 20),

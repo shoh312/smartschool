@@ -4,12 +4,19 @@ import threading
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import engine, Base, ensure_database_schema, ensure_default_school_and_backfill
+from app.database import (
+    engine,
+    Base,
+    ensure_database_schema,
+    ensure_default_school_and_backfill,
+    ensure_rooms_backfill,
+)
 
 from app.routers.auth_router import router as auth_router
 from app.routers.attendance_router import router as attendance_router
 from app.routers.notification_router import router as notification_router
 from app.routers.school_router import router as school_router
+
 from app.routers.schools_admin_router import router as schools_admin_router
 from app.routers.student_router import router as student_router
 from app.routers.student_router import parent_router as parent_student_router
@@ -23,6 +30,7 @@ from app.models.student import Student
 from app.models.class_model import Class
 from app.models.parent_model import Parent
 from app.models.camera_model import Camera
+
 from app.models.attendance_model import Attendance
 from app.models.director_model import Director
 from app.models.school_model import School
@@ -40,6 +48,7 @@ from app.ai.live_detection import start_detection_background
 Base.metadata.create_all(bind=engine)
 ensure_database_schema()
 default_school_id = ensure_default_school_and_backfill()
+ensure_rooms_backfill()
 
 seed_db = SessionLocal()
 try:
@@ -67,6 +76,7 @@ app.include_router(parent_student_router)
 app.include_router(attendance_router)
 app.include_router(notification_router)
 app.include_router(school_router)
+
 app.include_router(schools_admin_router)
 app.include_router(teacher_router)
 app.include_router(journal_router)

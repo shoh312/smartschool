@@ -20,7 +20,7 @@ class Settings:
     )
     jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
     jwt_access_token_minutes = int(os.getenv("JWT_ACCESS_TOKEN_MINUTES", "1440"))
-    public_server_url = os.getenv("PUBLIC_SERVER_URL", "http://localhost:8100")
+    public_server_url = os.getenv("PUBLIC_SERVER_URL", "http://localhost:8200")
     public_server_api_key = os.getenv("PUBLIC_SERVER_API_KEY", "")
 
 

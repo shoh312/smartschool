@@ -147,10 +147,10 @@ def authenticate_director(db: Session, email: str, password: str) -> Director:
     if not director or not verify_password(password, director.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="invalid_credentials",
         )
     if not director.is_active:
-        raise HTTPException(status_code=403, detail="Director account is inactive")
+        raise HTTPException(status_code=403, detail="account_inactive")
     return director
 
 
@@ -201,6 +201,6 @@ def ensure_default_director(db: Session, default_school_id: int | None = None) -
 
 def change_director_password(db: Session, director: Director, current_password: str, new_password: str) -> None:
     if not verify_password(current_password, director.hashed_password):
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
+        raise HTTPException(status_code=401, detail="invalid_current_password")
     director.hashed_password = hash_password(new_password)
     db.commit()

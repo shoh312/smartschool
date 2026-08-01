@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/attendance.dart';
 import '../services/attendance_service.dart';
+import '../utils/error_formatter.dart';
 import '../websocket/attendance_socket_service.dart';
 
 class AttendanceProvider extends ChangeNotifier {
@@ -32,7 +33,7 @@ class AttendanceProvider extends ChangeNotifier {
         parentId: parentId,
       );
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -46,7 +47,7 @@ class AttendanceProvider extends ChangeNotifier {
     try {
       live = await _service!.liveStatus(classId: classId);
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -69,7 +70,7 @@ class AttendanceProvider extends ChangeNotifier {
         notifyListeners();
       },
       onError: (Object exception) {
-        error = exception.toString();
+        error = classifyError(exception);
         notifyListeners();
       },
     );

@@ -5,32 +5,55 @@ import 'package:google_fonts/google_fonts.dart';
 import 'design_tokens.dart';
 
 class SmartSchoolTheme {
-  static ThemeData light() {
-    const primary = AppColors.primary;
-    const background = AppColors.background;
-    const surface = AppColors.surface;
-    const textMain = AppColors.textPrimary;
-    const textSecondary = AppColors.textSecondary;
+  static ThemeData light() => _build(AppColorScheme.light, Brightness.light);
 
-    final baseTextTheme = GoogleFonts.interTextTheme();
+  static ThemeData dark() => _build(AppColorScheme.dark, Brightness.dark);
+
+  static ThemeData _build(AppColorScheme colors, Brightness brightness) {
+    final primary = colors.primary;
+    final background = colors.background;
+    final surface = colors.surface;
+    final textMain = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final isLight = brightness == Brightness.light;
+
+    final baseTextTheme = GoogleFonts.interTextTheme(
+      isLight ? ThemeData.light().textTheme : ThemeData.dark().textTheme,
+    );
+
+    final colorScheme = isLight
+        ? ColorScheme.light(
+            primary: primary,
+            onPrimary: Colors.white,
+            primaryContainer: colors.primaryLight,
+            secondary: colors.accent,
+            onSecondary: Colors.white,
+            surface: surface,
+            onSurface: textMain,
+            surfaceContainerHighest: colors.surfaceAlt,
+            error: colors.danger,
+            outline: colors.border,
+          )
+        : ColorScheme.dark(
+            primary: primary,
+            onPrimary: Colors.black,
+            primaryContainer: colors.primaryDark,
+            secondary: colors.accent,
+            onSecondary: Colors.black,
+            surface: surface,
+            onSurface: textMain,
+            surfaceContainerHighest: colors.surfaceAlt,
+            error: colors.danger,
+            outline: colors.border,
+          );
 
     return ThemeData(
-      brightness: Brightness.light,
+      brightness: brightness,
+      extensions: [colors],
       primaryColor: primary,
       scaffoldBackgroundColor: background,
       splashFactory: InkSparkle.splashFactory,
-      colorScheme: const ColorScheme.light(
-        primary: primary,
-        onPrimary: Colors.white,
-        primaryContainer: AppColors.primaryLight,
-        secondary: AppColors.accent,
-        onSecondary: Colors.white,
-        surface: surface,
-        onSurface: textMain,
-        surfaceContainerHighest: AppColors.surfaceAlt,
-        error: AppColors.danger,
-        outline: AppColors.border,
-      ),
+      colorScheme: colorScheme,
       fontFamily: GoogleFonts.inter().fontFamily,
       appBarTheme: AppBarTheme(
         backgroundColor: background,
@@ -38,15 +61,15 @@ class SmartSchoolTheme {
         foregroundColor: textMain,
         elevation: 0,
         centerTitle: false,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w800,
           color: textMain,
           letterSpacing: -0.4,
         ),
-        iconTheme: const IconThemeData(color: textMain),
-        actionsIconTheme: const IconThemeData(color: textMain),
+        iconTheme: IconThemeData(color: textMain),
+        actionsIconTheme: IconThemeData(color: textMain),
       ),
       cardTheme: CardThemeData(
         color: surface,
@@ -55,12 +78,12 @@ class SmartSchoolTheme {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.lgRadius,
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: colors.border),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceAlt,
+        fillColor: colors.surfaceAlt,
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: AppRadius.mdRadius,
@@ -72,30 +95,30 @@ class SmartSchoolTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.mdRadius,
-          borderSide: const BorderSide(color: primary, width: 1.6),
+          borderSide: BorderSide(color: primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadius.mdRadius,
-          borderSide: const BorderSide(color: AppColors.danger, width: 1.4),
+          borderSide: BorderSide(color: colors.danger, width: 1.4),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: AppRadius.mdRadius,
-          borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
+          borderSide: BorderSide(color: colors.danger, width: 1.6),
         ),
-        labelStyle: const TextStyle(color: textSecondary, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w400),
-        prefixIconColor: AppColors.textMuted,
-        suffixIconColor: AppColors.textMuted,
+        labelStyle: TextStyle(color: textSecondary, fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(color: colors.textMuted, fontWeight: FontWeight.w400),
+        prefixIconColor: colors.textMuted,
+        suffixIconColor: colors.textMuted,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return AppColors.textMuted.withOpacity(0.3);
+              return colors.textMuted.withOpacity(0.3);
             }
             return primary;
           }),
-          foregroundColor: const WidgetStatePropertyAll(Colors.white),
+          foregroundColor: WidgetStatePropertyAll(isLight ? Colors.white : Colors.black),
           overlayColor: WidgetStatePropertyAll(Colors.white.withOpacity(0.08)),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(56)),
           elevation: const WidgetStatePropertyAll(0),
@@ -116,7 +139,7 @@ class SmartSchoolTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: textMain,
           minimumSize: const Size.fromHeight(56),
-          side: const BorderSide(color: AppColors.border, width: 1.4),
+          side: BorderSide(color: colors.border, width: 1.4),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
@@ -137,9 +160,9 @@ class SmartSchoolTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
-          backgroundColor: AppColors.surfaceAlt,
+          backgroundColor: colors.surfaceAlt,
           selectedBackgroundColor: primary,
-          selectedForegroundColor: Colors.white,
+          selectedForegroundColor: isLight ? Colors.white : Colors.black,
           foregroundColor: textSecondary,
           side: BorderSide.none,
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
@@ -147,10 +170,10 @@ class SmartSchoolTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceAlt,
+        backgroundColor: colors.surfaceAlt,
         selectedColor: primary.withOpacity(0.12),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, color: textMain, fontSize: 12.5),
-        secondaryLabelStyle: const TextStyle(fontWeight: FontWeight.w600, color: primary),
+        labelStyle: TextStyle(fontWeight: FontWeight.w600, color: textMain, fontSize: 12.5),
+        secondaryLabelStyle: TextStyle(fontWeight: FontWeight.w600, color: primary),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
         side: BorderSide.none,
@@ -172,7 +195,7 @@ class SmartSchoolTheme {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(color: selected ? primary : AppColors.textMuted, size: 24);
+          return IconThemeData(color: selected ? primary : colors.textMuted, size: 24);
         }),
       ),
       tabBarTheme: TabBarThemeData(
@@ -212,27 +235,30 @@ class SmartSchoolTheme {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: textMain,
+        // Deliberately a fixed dark chip in both themes for consistent contrast
+        // with its always-white text, rather than following textPrimary (which
+        // would turn near-white -- and unreadable -- in dark mode).
+        backgroundColor: const Color(0xFF1F2937),
         contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
         elevation: 4,
       ),
-      dividerTheme: const DividerThemeData(
-        color: AppColors.border,
+      dividerTheme: DividerThemeData(
+        color: colors.border,
         thickness: 1,
         space: 1,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: primary,
-        linearTrackColor: AppColors.surfaceAlt,
-        circularTrackColor: AppColors.surfaceAlt,
+        linearTrackColor: colors.surfaceAlt,
+        circularTrackColor: colors.surfaceAlt,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: const WidgetStatePropertyAll(Colors.white),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return primary;
-          return AppColors.borderStrong;
+          return colors.borderStrong;
         }),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
@@ -242,16 +268,16 @@ class SmartSchoolTheme {
           if (states.contains(WidgetState.selected)) return primary;
           return Colors.transparent;
         }),
-        side: const BorderSide(color: AppColors.borderStrong, width: 1.6),
+        side: BorderSide(color: colors.borderStrong, width: 1.6),
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return primary;
-          return AppColors.borderStrong;
+          return colors.borderStrong;
         }),
       ),
       listTileTheme: ListTileThemeData(
-        iconColor: AppColors.textMuted,
+        iconColor: colors.textMuted,
         textColor: textMain,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
       ),
@@ -326,12 +352,10 @@ class SmartSchoolTheme {
         labelSmall: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: AppColors.textMuted,
+          color: colors.textMuted,
           letterSpacing: 0.4,
         ),
       ),
     );
   }
-
-  static ThemeData dark() => light(); // For now, keep it light as requested
 }

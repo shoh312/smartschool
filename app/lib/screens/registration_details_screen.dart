@@ -33,7 +33,7 @@ class _RegistrationDetailsScreenState extends State<RegistrationDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: Text(l10n.createAccount),
         leading: IconButton(
@@ -53,7 +53,7 @@ class _RegistrationDetailsScreenState extends State<RegistrationDetailsScreen> {
                 decoration: BoxDecoration(
                   gradient: AppGradients.primary,
                   shape: BoxShape.circle,
-                  boxShadow: AppShadows.colored(AppColors.primary),
+                  boxShadow: AppShadows.colored(context.colors.primary),
                 ),
                 child: const Icon(Icons.person_add_alt_1_rounded, size: 40, color: Colors.white),
               ),
@@ -74,9 +74,9 @@ class _RegistrationDetailsScreenState extends State<RegistrationDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.colors.surface,
                 borderRadius: AppRadius.xlRadius,
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.colors.border),
                 boxShadow: AppShadows.raised,
               ),
               child: Column(
@@ -104,7 +104,7 @@ class _RegistrationDetailsScreenState extends State<RegistrationDetailsScreen> {
             const SizedBox(height: 24),
             Text(
               l10n.termsAndPrivacy,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              style: theme.textTheme.bodySmall?.copyWith(color: context.colors.textMuted),
               textAlign: TextAlign.center,
             ),
           ],

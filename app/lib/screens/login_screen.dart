@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
@@ -6,7 +7,12 @@ import '../core/design_tokens.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart' as my_auth;
 import '../routes/app_routes.dart';
+import '../utils/error_formatter.dart';
+import '../widgets/flag_badge.dart';
+import '../widgets/language_picker_sheet.dart';
 import 'registration_details_screen.dart';
+
+const String _tajikistanPhonePrefix = '+992';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +24,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _phoneController = TextEditingController(text: '+992');
+  final _phoneController = TextEditingController();
   AppRole _role = AppRole.parent;
   bool _isAuthenticating = false;
 
@@ -51,8 +57,8 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
     } else {
       // Parent Login - Bypassing OTP
-      final phoneNumber = _phoneController.text.trim();
-      if (phoneNumber.length < 9) {
+      final phoneNumber = '$_tajikistanPhonePrefix${_phoneController.text.trim()}';
+      if (_phoneController.text.trim().length < 9) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.invalidPhoneError)),
         );
@@ -76,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.errorPrefix(e.toString()))),
+            SnackBar(content: Text(l10n.errorPrefix(humanReadableError(e, l10n)))),
           );
         }
       } finally {
@@ -95,10 +101,24 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.canvas),
-        child: SafeArea(
-          child: Center(
+      backgroundColor: context.colors.background,
+      body: SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  tooltip: l10n.language,
+                  icon: const Icon(Icons.language_rounded),
+                  style: IconButton.styleFrom(
+                    backgroundColor: context.colors.surface,
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
+                  ),
+                  onPressed: () => showLanguagePickerSheet(context),
+                ),
+              ),
+              Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
               child: ConstrainedBox(
@@ -113,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: BoxDecoration(
                         gradient: AppGradients.primary,
                         shape: BoxShape.circle,
-                        boxShadow: AppShadows.colored(AppColors.primary),
+                        boxShadow: AppShadows.colored(context.colors.primary),
                       ),
                       child: const Icon(
                         Icons.school_rounded,
@@ -139,9 +159,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.colors.surface,
                       borderRadius: AppRadius.xlRadius,
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.colors.border),
                       boxShadow: AppShadows.raised,
                     ),
                     child: Column(
@@ -149,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceAlt,
+                      color: context.colors.surfaceAlt,
                       borderRadius: AppRadius.mdRadius,
                     ),
                     child: SegmentedButton<AppRole>(
@@ -160,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               label: Text(switch (role) {
                                 AppRole.director => l10n.roleDirector,
                                 AppRole.parent => l10n.roleParent,
-                                AppRole.teacher => 'Oʻqituvchi',
+                                AppRole.teacher => l10n.roleTeacher,
                               }),
                               icon: Icon(switch (role) {
                                 AppRole.director =>
@@ -208,14 +228,51 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Column(
                             key: const ValueKey('parent_fields'),
                             children: [
-                              TextField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                decoration: InputDecoration(
-                                  labelText: l10n.phone,
-                                  hintText: '+992 92 840 1115',
-                                  prefixIcon: const Icon(Icons.phone_iphone_rounded, size: 20),
-                                ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 56,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    decoration: BoxDecoration(
+                                      color: context.colors.surfaceAlt,
+                                      borderRadius: AppRadius.mdRadius,
+                                      border: Border.all(color: context.colors.border),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const FlagBadge(countryCode: 'tj', width: 26, height: 18),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _tajikistanPhonePrefix,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: context.colors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _phoneController,
+                                      autofocus: true,
+                                      keyboardType: TextInputType.phone,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(9),
+                                      ],
+                                      decoration: InputDecoration(
+                                        labelText: l10n.phone,
+                                        hintText: '92 840 1115',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -236,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              auth.error!,
+                              humanReadableError(auth.error, l10n),
                               style: TextStyle(color: theme.colorScheme.error, fontSize: 14),
                             ),
                           ),
@@ -287,8 +344,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+            ],
+          ),
         ),
-      ),
     );
   }
 }

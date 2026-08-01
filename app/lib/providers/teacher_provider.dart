@@ -5,6 +5,7 @@ import '../models/grade.dart';
 import '../models/student.dart';
 import '../services/journal_service.dart';
 import '../services/teacher_service.dart';
+import '../utils/error_formatter.dart';
 
 /// Session state for a logged-in teacher: their assigned classes, class
 /// roster, and the grade journal for whichever class/subject is open.
@@ -32,7 +33,7 @@ class TeacherProvider extends ChangeNotifier {
     try {
       myClasses = await _teacherService!.myClasses();
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -50,7 +51,7 @@ class TeacherProvider extends ChangeNotifier {
     try {
       roster = await _teacherService!.classRoster(classId);
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isRosterLoading = false;
       notifyListeners();
@@ -68,7 +69,7 @@ class TeacherProvider extends ChangeNotifier {
         subject: subject,
       );
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isJournalLoading = false;
       notifyListeners();
@@ -97,7 +98,7 @@ class TeacherProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       notifyListeners();
       return false;
     }
@@ -122,7 +123,7 @@ class TeacherProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       notifyListeners();
       return false;
     }
@@ -136,7 +137,7 @@ class TeacherProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
       notifyListeners();
       return false;
     }

@@ -10,6 +10,7 @@ import '../providers/student_provider.dart';
 import '../routes/app_routes.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/language_picker_sheet.dart';
 import '../widgets/student_tile.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
@@ -78,8 +79,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
       title: l10n.parentDashboard,
       actions: [
         IconButton(
+          tooltip: l10n.language,
+          icon: const Icon(Icons.language_rounded),
+          onPressed: () => showLanguagePickerSheet(context),
+        ),
+        IconButton(
           tooltip: l10n.notifications,
-          icon: const Icon(Icons.notifications_outlined),
+          icon: Image.asset('assets/icons/alerts.png', width: 24, height: 24),
           onPressed: () =>
               Navigator.pushNamed(context, AppRoutes.notifications),
         ),
@@ -93,7 +99,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             ? const Center(child: CircularProgressIndicator())
             : students.students.isEmpty
             ? EmptyState(
-                icon: Icons.family_restroom,
+                imageAsset: 'assets/icons/students.png',
                 title: l10n.noChildrenLinked,
                 message: l10n.assignedStudentsWillAppear,
               )
@@ -107,9 +113,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       children: [
                         Expanded(
                           child: _ParentActionTile(
-                            icon: Icons.history_rounded,
+                            imageAsset: 'assets/icons/history.png',
                             label: l10n.attendanceHistory,
-                            color: AppColors.info,
+                            color: context.colors.info,
                             onTap: () => Navigator.pushNamed(
                               context,
                               AppRoutes.attendanceHistory,
@@ -119,9 +125,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _ParentActionTile(
-                            icon: Icons.grade_outlined,
+                            imageAsset: 'assets/icons/grades.png',
                             label: l10n.grades,
-                            color: AppColors.warning,
+                            color: context.colors.warning,
                             onTap: _openGrades,
                           ),
                         ),
@@ -147,13 +153,18 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
 
 class _ParentActionTile extends StatelessWidget {
   const _ParentActionTile({
-    required this.icon,
+    this.icon,
+    this.imageAsset,
     required this.label,
     required this.color,
     required this.onTap,
-  });
+  }) : assert(icon != null || imageAsset != null, 'Provide icon or imageAsset');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Path to a custom PNG icon (e.g. 'assets/icons/history.png'), shown
+  /// instead of [icon] when set.
+  final String? imageAsset;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -161,7 +172,7 @@ class _ParentActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: AppRadius.lgRadius,
       child: InkWell(
         borderRadius: AppRadius.lgRadius,
@@ -170,26 +181,29 @@ class _ParentActionTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: AppRadius.lgRadius,
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
             boxShadow: AppShadows.card,
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: AppGradients.tint(color),
-                  borderRadius: AppRadius.mdRadius,
+              if (imageAsset != null)
+                Image.asset(imageAsset!, width: 36, height: 36)
+              else
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.tint(color),
+                    borderRadius: AppRadius.mdRadius,
+                  ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                child: Icon(icon, color: color, size: 20),
-              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.textPrimary),
                 ),
               ),
             ],

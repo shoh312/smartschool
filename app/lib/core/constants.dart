@@ -1,7 +1,7 @@
 class AppConstants {
   static const _fallbackApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.43.3:8000',
+    defaultValue: 'http://192.168.0.10:8000',
   );
 
   /// Set at startup once the backend is auto-discovered on the local network
@@ -34,7 +34,7 @@ class AppConstants {
   /// `localhost` to reach the host machine.
   static const String publicServerBaseUrl = String.fromEnvironment(
     'PUBLIC_SERVER_BASE_URL',
-    defaultValue: 'http://localhost:8100',
+    defaultValue: 'http://localhost:8200',
   );
 
   /// Subjects taught in the standard Tajikistan general-education (umumta'lim)

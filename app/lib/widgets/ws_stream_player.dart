@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:smartschool_app/generated/app_localizations.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../services/token_storage.dart';
@@ -111,20 +112,32 @@ class _WsStreamPlayerState extends State<WsStreamPlayer> {
     if (_image == null) {
       return Container(
         color: Colors.black,
-        child: const Center(
-          child: Text('No frame', style: TextStyle(color: Colors.white54)),
+        child: Center(
+          child: Text(
+            AppLocalizations.of(context)!.noFrame,
+            style: const TextStyle(color: Colors.white54),
+          ),
         ),
       );
     }
 
-    return Container(
-      color: Colors.black,
-      child: Center(
-        child: RawImage(
-          image: _image!,
-          width: widget.width,
-          height: widget.height,
+    // RawImage only respects `fit` when it's given a definite size, and it
+    // won't pick one up from a loose parent on its own -- so size it to the
+    // frame's native resolution first, then let FittedBox scale that box up
+    // to fill whatever space is available (full screen here) without
+    // distorting the aspect ratio.
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: Container(
+        color: Colors.black,
+        child: FittedBox(
           fit: BoxFit.contain,
+          child: SizedBox(
+            width: _image!.width.toDouble(),
+            height: _image!.height.toDouble(),
+            child: RawImage(image: _image!),
+          ),
         ),
       ),
     );

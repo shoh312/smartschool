@@ -74,9 +74,8 @@ class _SplashScreenState extends State<SplashScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.canvas),
-        child: Center(
+      backgroundColor: context.colors.background,
+      body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -85,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 decoration: BoxDecoration(
                   gradient: AppGradients.primary,
                   shape: BoxShape.circle,
-                  boxShadow: AppShadows.colored(AppColors.primary),
+                  boxShadow: AppShadows.colored(context.colors.primary),
                 ),
                 child: const Icon(
                   Icons.school_rounded,
@@ -97,14 +96,14 @@ class _SplashScreenState extends State<SplashScreen> {
               Text(
                 'SmartSchool',
                 style: theme.textTheme.headlineLarge?.copyWith(
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'PREMIUM EDITION',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.primary,
+                  color: context.colors.primary,
                   letterSpacing: 3,
                 ),
               ),
@@ -114,15 +113,14 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    backgroundColor: AppColors.surfaceSunken,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                    backgroundColor: context.colors.surfaceSunken,
+                    valueColor: AlwaysStoppedAnimation(context.colors.primary),
                     minHeight: 6,
                   ),
                 ),
               ),
             ],
           ),
-        ),
       ),
     );
   }

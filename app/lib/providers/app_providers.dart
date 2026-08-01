@@ -23,12 +23,14 @@ import 'school_provider.dart';
 import 'student_provider.dart';
 import 'teacher_admin_provider.dart';
 import 'teacher_provider.dart';
+import 'theme_provider.dart';
 
 List<SingleChildWidget> buildAppProviders() {
   return [
     Provider(create: (_) => TokenStorage()),
     // ... (rest of providers)
     ChangeNotifierProvider(create: (_) => LanguageProvider()),
+    ChangeNotifierProvider(create: (_) => ThemeProvider()),
     ChangeNotifierProvider(create: (_) => DirectorNavProvider()),
     ProxyProvider<TokenStorage, ApiClient>(
       update: (_, storage, __) => ApiClient(tokenStorage: storage),

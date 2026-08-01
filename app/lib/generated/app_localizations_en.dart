@@ -63,6 +63,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
   String get logout => 'Logout';
 
   @override
@@ -72,6 +84,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorPrefix(String error) {
     return 'Error: $error';
   }
+
+  @override
+  String get networkErrorMessage =>
+      'Could not connect to the server. Check your internet connection or make sure the server is running.';
+
+  @override
+  String get serverErrorMessage =>
+      'The server returned an error. Please try again.';
+
+  @override
+  String get unknownErrorMessage => 'Something went wrong. Please try again.';
+
+  @override
+  String get phoneNotRegisteredMessage =>
+      'This phone number is not registered at any school yet. Please contact your child\'s school.';
+
+  @override
+  String get invalidCredentialsMessage => 'Incorrect email or password.';
+
+  @override
+  String get accountInactiveMessage =>
+      'Your account is inactive. Please contact your administrator.';
+
+  @override
+  String get invalidCurrentPasswordMessage => 'Current password is incorrect.';
 
   @override
   String get needSupport => 'Need support? ';
@@ -84,6 +121,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleParent => 'Parent';
+
+  @override
+  String get roleTeacher => 'Teacher';
 
   @override
   String get createAccount => 'Create Account';
@@ -135,6 +175,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recentActivity => 'Recent Activity';
+
+  @override
+  String get attendanceByClass => 'Attendance by Class';
 
   @override
   String get noAttendanceRecorded => 'No attendance recorded yet today';
@@ -394,6 +437,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String classAttendanceRatio(String className, int arrived, int total) {
+    return '$className • $arrived/$total arrived';
+  }
+
+  @override
   String get directorDashboard => 'Director Dashboard';
 
   @override
@@ -572,4 +620,196 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get average => 'Average';
+
+  @override
+  String get weekday1 => 'Mon';
+
+  @override
+  String get weekday2 => 'Tue';
+
+  @override
+  String get weekday3 => 'Wed';
+
+  @override
+  String get weekday4 => 'Thu';
+
+  @override
+  String get weekday5 => 'Fri';
+
+  @override
+  String get weekday6 => 'Sat';
+
+  @override
+  String get weekday7 => 'Sun';
+
+  @override
+  String get attendanceJournal => 'Attendance journal';
+
+  @override
+  String get lastSeenLabel => 'Last seen';
+
+  @override
+  String get noAttendanceThisMonth => 'No attendance records this month';
+
+  @override
+  String get noCameraForClassTitle => 'No camera for this class';
+
+  @override
+  String get noCameraForClassMessage =>
+      'Assign a camera to this class in Camera Management to see its live status.';
+
+  @override
+  String get studentNotAssignedToClass =>
+      'This student isn\'t assigned to a class yet';
+
+  @override
+  String get cameraNotAvailable =>
+      'Camera capture isn\'t available on this device. Use Gallery instead.';
+
+  @override
+  String get rooms => 'Rooms';
+
+  @override
+  String get roomManagement => 'Room Management';
+
+  @override
+  String get addNewRoom => 'Add New Room';
+
+  @override
+  String get editRoom => 'Edit Room';
+
+  @override
+  String get roomNameLabel => 'Room Name';
+
+  @override
+  String get assignToRoom => 'Assign to Room';
+
+  @override
+  String get positions => 'Positions';
+
+  @override
+  String get addPosition => 'Add Position';
+
+  @override
+  String get positionClassLabel => 'Class';
+
+  @override
+  String get registeredRooms => 'Registered Rooms';
+
+  @override
+  String get noRooms => 'No rooms';
+
+  @override
+  String get roomsWillAppear => 'Rooms will appear here.';
+
+  @override
+  String get deleteRoomTitle => 'Delete Room';
+
+  @override
+  String get deleteRoomConfirm => 'Are you sure you want to delete this room?';
+
+  @override
+  String get roomHasCamerasError =>
+      'Reassign or remove this room\'s cameras before deleting it.';
+
+  @override
+  String cameraListSubtitleRoom(String roomName, String waitDuration) {
+    return 'Room: $roomName • Wait: ${waitDuration}m';
+  }
+
+  @override
+  String roomPositionSubtitle(
+    String className,
+    String startTime,
+    String endTime,
+  ) {
+    return '$className: $startTime–$endTime';
+  }
+
+  @override
+  String analyticsScreenTitle(String className) {
+    return '$className - Analytics';
+  }
+
+  @override
+  String get noDataTitle => 'No data';
+
+  @override
+  String get noAttendanceDataLast30Days =>
+      'No attendance data for last 30 days';
+
+  @override
+  String get perStudentDetails => 'Per-Student Details';
+
+  @override
+  String get hoursLabel => 'Hours';
+
+  @override
+  String get thirtyDayTimeline => '30-Day Timeline';
+
+  @override
+  String get noTimetableSubjectsTitle => 'No timetable subjects';
+
+  @override
+  String get noTimetableSubjectsMessage =>
+      'Add lessons to this class timetable first.';
+
+  @override
+  String get tapToAssignTeacher => 'Tap to assign teacher';
+
+  @override
+  String get timetableLabel => 'Timetable';
+
+  @override
+  String totalHoursPerWeek(String hours) {
+    return 'Total: $hours h/week';
+  }
+
+  @override
+  String get noLessonsForDay => 'No lessons for this day';
+
+  @override
+  String get addLesson => 'Add Lesson';
+
+  @override
+  String get minutesUnit => 'min';
+
+  @override
+  String get cameraOptionTooltip => 'Camera';
+
+  @override
+  String get galleryOptionTooltip => 'Gallery';
+
+  @override
+  String get noFrame => 'No frame';
+
+  @override
+  String get selectMonth => 'Select month';
+
+  @override
+  String get generatePdfReport => 'Generate PDF Report';
+
+  @override
+  String get pdfReportEyebrow => 'ATTENDANCE REPORT';
+
+  @override
+  String get pdfNoDataForMonth => 'No attendance data for the selected month';
+
+  @override
+  String get columnPresentDays => 'Present days';
+
+  @override
+  String get columnLateDays => 'Late days';
+
+  @override
+  String get columnAbsentDays => 'Absent days';
+
+  @override
+  String get columnPresentHours => 'Present hours';
+
+  @override
+  String get columnAbsentHours => 'Absent hours';
+
+  @override
+  String get columnRate => 'Rate';
 }

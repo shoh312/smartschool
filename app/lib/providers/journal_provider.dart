@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/grade.dart';
 import '../services/journal_service.dart';
+import '../utils/error_formatter.dart';
 
 /// Read-side view of grades for a student (parent) or a school (director).
 class JournalProvider extends ChangeNotifier {
@@ -28,7 +29,7 @@ class JournalProvider extends ChangeNotifier {
         parentId: parentId,
       );
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -43,7 +44,7 @@ class JournalProvider extends ChangeNotifier {
     try {
       grades = await _service!.listGrades();
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -58,7 +59,7 @@ class JournalProvider extends ChangeNotifier {
     try {
       grades = await _service!.listGrades(classId: classId);
     } catch (exception) {
-      error = exception.toString();
+      error = classifyError(exception);
     } finally {
       isLoading = false;
       notifyListeners();

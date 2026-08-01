@@ -44,7 +44,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           ? const Center(child: CircularProgressIndicator())
           : provider.history.isEmpty
           ? EmptyState(
-              icon: Icons.history,
+              imageAsset: 'assets/icons/history.png',
               title: l10n.noAttendanceRecords,
               message: l10n.recordsWillAppear,
             )
@@ -56,25 +56,17 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 final record = provider.history[index];
                 return Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                     boxShadow: AppShadows.card,
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    leading: Container(
+                    leading: Image.asset(
+                      'assets/icons/history.png',
                       width: 44,
                       height: 44,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.tint(AppColors.primary),
-                        borderRadius: AppRadius.mdRadius,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.event_available_outlined,
-                        color: AppColors.primary,
-                      ),
                     ),
                     title: Text(
                       DateFormatters.shortDate(record.attendanceDate),

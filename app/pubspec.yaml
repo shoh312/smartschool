@@ -44,6 +44,8 @@ dependencies:
   firebase_auth: ^5.4.1
   firebase_messaging: ^15.2.2
   google_fonts: ^6.2.1
+  pdf: ^3.11.1
+  printing: ^5.13.4
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +69,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   generate: true
+
+  assets:
+    - assets/icons/
+    - assets/fonts/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

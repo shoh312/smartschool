@@ -33,10 +33,15 @@ def get_daily_attendance(db: Session, student_id: int, day: date) -> Attendance 
 
 def _class_start_from_camera(db: Session, camera_id: int) -> time | None:
     from app.models.camera_model import Camera
+    from app.models.class_model import Class
+
     cam = db.query(Camera).filter(Camera.id == camera_id).first()
-    if cam and cam.detection_start_time:
+    if not cam or not cam.class_id:
+        return None
+    school_class = db.query(Class).filter(Class.id == cam.class_id).first()
+    if school_class and school_class.start_time:
         try:
-            parts = cam.detection_start_time.split(':')
+            parts = school_class.start_time.split(':')
             return time(int(parts[0]), int(parts[1]))
         except (ValueError, IndexError):
             pass

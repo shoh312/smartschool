@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -13,6 +15,14 @@ class ApiException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Thrown whenever the request never reached the server at all (refused
+/// connection, DNS failure, timeout, ...). Kept free of the raw OS/socket
+/// text -- callers map this to a localized, human-readable message instead
+/// of showing `SocketException`/`ClientException` details to the user.
+class NetworkException implements Exception {
+  const NetworkException();
 }
 
 class ApiClient {
@@ -67,8 +77,17 @@ class ApiClient {
       if (token != null) 'Authorization': 'Bearer $token',
     });
 
-    final streamed = await request.send();
-    final response = await http.Response.fromStream(streamed);
+    http.Response response;
+    try {
+      final streamed = await request.send();
+      response = await http.Response.fromStream(streamed);
+    } on SocketException {
+      throw const NetworkException();
+    } on TimeoutException {
+      throw const NetworkException();
+    } on http.ClientException {
+      throw const NetworkException();
+    }
     final decoded = response.body.isEmpty ? null : jsonDecode(response.body);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -97,34 +116,43 @@ class ApiClient {
       if (token != null) 'Authorization': 'Bearer $token',
     };
 
-    final response = switch (method) {
-      'GET' => await _httpClient.get(uri, headers: headers),
-      'POST' => await _httpClient.post(
-        uri,
-        headers: headers,
-        body: body == null
-            ? null
-            : isFormData
-                ? body
-                : jsonEncode(body),
-      ),
-      'PUT' => await _httpClient.put(
-        uri,
-        headers: headers,
-        body: body == null
-            ? null
-            : isFormData
-                ? body
-                : jsonEncode(body),
-      ),
-      'PATCH' => await _httpClient.patch(
-        uri,
-        headers: headers,
-        body: body == null ? null : jsonEncode(body),
-      ),
-      'DELETE' => await _httpClient.delete(uri, headers: headers),
-      _ => throw UnsupportedError(method),
-    };
+    http.Response response;
+    try {
+      response = switch (method) {
+        'GET' => await _httpClient.get(uri, headers: headers),
+        'POST' => await _httpClient.post(
+          uri,
+          headers: headers,
+          body: body == null
+              ? null
+              : isFormData
+                  ? body
+                  : jsonEncode(body),
+        ),
+        'PUT' => await _httpClient.put(
+          uri,
+          headers: headers,
+          body: body == null
+              ? null
+              : isFormData
+                  ? body
+                  : jsonEncode(body),
+        ),
+        'PATCH' => await _httpClient.patch(
+          uri,
+          headers: headers,
+          body: body == null ? null : jsonEncode(body),
+        ),
+        'DELETE' => await _httpClient.delete(uri, headers: headers),
+        _ => throw UnsupportedError(method),
+      };
+    } on SocketException {
+      throw const NetworkException();
+    } on TimeoutException {
+      throw const NetworkException();
+    } on http.ClientException {
+      throw const NetworkException();
+    }
 
     dynamic decoded;
     try {

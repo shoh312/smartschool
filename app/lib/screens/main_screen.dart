@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../core/design_tokens.dart';
-import '../providers/auth_provider.dart';
 import '../providers/director_nav_provider.dart';
-import '../routes/app_routes.dart';
 import '../screens/director_dashboard_screen.dart';
 import '../screens/live_attendance_screen.dart';
 import '../screens/notification_screen.dart';
@@ -60,7 +58,7 @@ class _ManagementTab extends StatelessWidget {
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 3,
             labelColor: Theme.of(context).colorScheme.primary,
-            unselectedLabelColor: AppColors.textSecondary,
+            unselectedLabelColor: context.colors.textSecondary,
             labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             indicatorColor: Theme.of(context).colorScheme.primary,
             tabs: [
@@ -70,21 +68,6 @@ class _ManagementTab extends StatelessWidget {
               Tab(text: l10n.teachers),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () async {
-                await context.read<AuthProvider>().logout();
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.login,
-                    (_) => false,
-                  );
-                }
-              },
-            ),
-          ],
         ),
         body: const TabBarView(
           children: [

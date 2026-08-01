@@ -27,7 +27,7 @@ class NotificationScreen extends StatelessWidget {
       showAppBar: !isIntegrated,
       child: parentId == null
           ? EmptyState(
-              icon: Icons.notifications_outlined,
+              imageAsset: 'assets/icons/not_notifications.png',
               title: l10n.directorNotifications,
               message: l10n.schoolWideNotificationView,
             )
@@ -37,7 +37,7 @@ class NotificationScreen extends StatelessWidget {
                   onRefresh: () => notificationProvider.loadNotifications(parentId),
                   child: notificationProvider.notifications.isEmpty
                       ? EmptyState(
-                          icon: Icons.notifications_outlined,
+                          imageAsset: 'assets/icons/not_notifications.png',
                           title: l10n.noNotifications,
                           message: l10n.attendanceAlertsWillAppear,
                         )
@@ -49,26 +49,17 @@ class NotificationScreen extends StatelessWidget {
                             final item = notificationProvider.notifications[index];
                             return Container(
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: context.colors.surface,
                                 borderRadius: AppRadius.lgRadius,
-                                border: Border.all(color: AppColors.border),
+                                border: Border.all(color: context.colors.border),
                                 boxShadow: AppShadows.card,
                               ),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                leading: Container(
+                                leading: Image.asset(
+                                  'assets/icons/alerts.png',
                                   width: 44,
                                   height: 44,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    gradient: AppGradients.tint(AppColors.primary),
-                                    borderRadius: AppRadius.mdRadius,
-                                  ),
-                                  child: const Icon(
-                                    Icons.notifications_active_rounded,
-                                    color: AppColors.primary,
-                                    size: 20,
-                                  ),
                                 ),
                                 title: Text(
                                   item.title,
@@ -87,7 +78,7 @@ class NotificationScreen extends StatelessWidget {
                                       : '',
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.textMuted,
+                                        color: context.colors.textMuted,
                                       ),
                                 ),
                               ),
