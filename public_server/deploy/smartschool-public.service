@@ -1,0 +1,50 @@
+# systemd unit for the Public Server.
+#
+#   sudo cp deploy/smartschool-public.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now smartschool-public
+#   sudo systemctl status smartschool-public
+#   sudo journalctl -u smartschool-public -f      # logs
+#
+# Bound to 127.0.0.1 on purpose: nginx terminates TLS and proxies to it, so
+# the app itself is never exposed to the internet directly and can't be
+# reached over plain HTTP even by accident.
+
+[Unit]
+Description=SmartSchool Public Server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=exec
+User=smartschool
+Group=smartschool
+WorkingDirectory=/opt/smartschool/public_server
+EnvironmentFile=/opt/smartschool/public_server/.env
+ExecStart=/opt/smartschool/public_server/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8200 \
+    --proxy-headers \
+    --forwarded-allow-ips='127.0.0.1'
+
+# A crashed server means parents and pupils see nothing, so bring it back --
+# but rate-limited, so a server that crashes on startup doesn't spin.
+Restart=always
+RestartSec=5
+
+# One worker. The reminder loop in app/background/reminder_worker.py runs
+# inside the process, and a second worker would send every pupil their
+# deadline reminder twice.
+#
+# If this ever needs more capacity, move that loop out to its own service
+# first -- don't just raise the worker count.
+
+# Hardening: the service needs its own directory and nothing else.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/smartschool/public_server
+
+[Install]
+WantedBy=multi-user.target

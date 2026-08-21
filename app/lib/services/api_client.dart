@@ -3,9 +3,32 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../core/constants.dart';
 import 'token_storage.dart';
+
+/// `http.MultipartFile.fromPath` doesn't reliably infer a MIME type on
+/// every platform (on Windows, files picked via image_picker often come
+/// back with no recognizable extension in their temp path, so it falls
+/// back to `application/octet-stream`) -- and a photo endpoint like the
+/// journal scanner rejects that outright since the receiving API only
+/// accepts a real image MIME type. Guessing from the extension when
+/// present covers every photo this app ever uploads (face registration,
+/// journal scans), so there's no need for a full MIME-sniffing library.
+/// Every call site uploads a photo (face registration or a journal scan),
+/// never an arbitrary file, so an unrecognized/missing extension still
+/// defaults to JPEG rather than leaving it to `http`'s own fallback (which
+/// is `application/octet-stream` -- rejected outright by the journal-scan
+/// endpoint's image-only API).
+MediaType _guessImageMediaType(String filePath) {
+  final lower = filePath.toLowerCase();
+  if (lower.endsWith('.png')) return MediaType('image', 'png');
+  if (lower.endsWith('.webp')) return MediaType('image', 'webp');
+  if (lower.endsWith('.heic')) return MediaType('image', 'heic');
+  if (lower.endsWith('.heif')) return MediaType('image', 'heif');
+  return MediaType('image', 'jpeg');
+}
 
 class ApiException implements Exception {
   const ApiException(this.message, {this.statusCode});
@@ -59,18 +82,29 @@ class ApiClient {
     return _send('DELETE', path);
   }
 
+  /// [filePath] is optional: some form endpoints take a photo only
+  /// sometimes (the AI material builder can start from a topic, a pasted
+  /// text, *or* a textbook photo), and they still need multipart because
+  /// their other fields are form fields.
   Future<dynamic> multipartPost(
     String path, {
     required Map<String, String> fields,
-    required String fileField,
-    required String filePath,
+    String fileField = 'file',
+    String? filePath,
     String method = 'POST',
   }) async {
     final uri = Uri.parse('$baseUrl$path');
     final token = await _tokenStorage.readToken();
-    final request = http.MultipartRequest(method, uri)
-      ..fields.addAll(fields)
-      ..files.add(await http.MultipartFile.fromPath(fileField, filePath));
+    final request = http.MultipartRequest(method, uri)..fields.addAll(fields);
+    if (filePath != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fileField,
+          filePath,
+          contentType: _guessImageMediaType(filePath),
+        ),
+      );
+    }
 
     request.headers.addAll({
       'Accept': 'application/json',

@@ -13,8 +13,10 @@ from app.schemas.student_schema import (
     StudentResponse
 )
 from app.services.auth_service import get_parent_family_ids
+from app.services.student_login_service import issue_logins
 from app.services.sync_outbox_service import enqueue_student_event
 from app.utils.phone import normalize_phone
+from app.utils.security import hash_student_password
 
 from fastapi import Form, UploadFile, File
 import shutil
@@ -61,6 +63,7 @@ def get_my_students(
             "photo": student.photo,
             "face_encoding": student.face_encoding,
             "is_active": student.is_active,
+            "username": student.username,
         }
         for student, school_class in rows
     ]
@@ -142,6 +145,7 @@ def get_students(
             "photo": student.photo,
             "face_encoding": student.face_encoding,
             "is_active": student.is_active,
+            "username": student.username,
         })
 
     return students
@@ -157,6 +161,8 @@ def director_create_student(
     class_id: int = Form(...),
     parent_phone: str = Form(...),
     parent_full_name: str | None = Form(None),
+    username: str | None = Form(None),
+    password: str | None = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
@@ -214,6 +220,11 @@ def director_create_student(
         is_active=True
     )
 
+    if username and username.strip():
+        new_student.username = username.strip()
+    if password:
+        new_student.password_salt, new_student.password_hash = hash_student_password(password)
+
     db.add(new_student)
 
     db.commit()
@@ -266,6 +277,7 @@ def director_create_student(
         "photo": new_student.photo,
         "face_encoding": new_student.face_encoding,
         "is_active": new_student.is_active,
+        "username": new_student.username,
     }
 
 
@@ -324,8 +336,15 @@ def update_student(
     first_name: str = Form(...),
     last_name: str = Form(...),
     class_id: int = Form(...),
-    parent_phone: str = Form(...),
+    # Optional, unlike on create. Most students in a school have no parent
+    # account: the bulk import creates them from a class list, and a phone
+    # number arrives later or never. Requiring it here made every one of
+    # those students impossible to edit at all -- the form came back 422
+    # before it could rename anyone or move them between classes.
+    parent_phone: str | None = Form(None),
     is_active: bool = Form(True),
+    username: str | None = Form(None),
+    password: str | None = Form(None),
     file: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
@@ -345,26 +364,41 @@ def update_student(
         raise HTTPException(status_code=404, detail="Class not found")
 
     # Handle parent -- scoped to this school, see director_create_student for why.
-    normalized_phone = normalize_phone(parent_phone)
-    parent = db.query(Parent).filter(
-        Parent.phone == normalized_phone,
-        Parent.school_id == director.school_id,
-    ).first()
-    if not parent:
-        parent = Parent(
-            school_id=director.school_id,
-            full_name=normalized_phone,
-            phone=normalized_phone,
-        )
-        db.add(parent)
-        db.commit()
-        db.refresh(parent)
+    #
+    # An empty or absent phone means "leave the parent alone", not "clear
+    # it": the edit form is also how a name or class is corrected, and those
+    # edits must not quietly detach a student from a parent who is already
+    # linked. Only a phone that was actually typed changes the link.
+    normalized_phone = normalize_phone(parent_phone) if parent_phone else ""
+    parent = None
+    if normalized_phone:
+        parent = db.query(Parent).filter(
+            Parent.phone == normalized_phone,
+            Parent.school_id == director.school_id,
+        ).first()
+        if not parent:
+            parent = Parent(
+                school_id=director.school_id,
+                full_name=normalized_phone,
+                phone=normalized_phone,
+            )
+            db.add(parent)
+            db.commit()
+            db.refresh(parent)
+    elif student.parent_id is not None:
+        parent = db.query(Parent).filter(Parent.id == student.parent_id).first()
 
     student.first_name = first_name.strip()
     student.last_name = last_name.strip()
     student.class_id = class_id
-    student.parent_id = parent.id
+    if parent is not None:
+        student.parent_id = parent.id
     student.is_active = is_active
+
+    if username is not None:
+        student.username = username.strip() or None
+    if password:
+        student.password_salt, student.password_hash = hash_student_password(password)
 
     if file:
         os.makedirs("uploads", exist_ok=True)
@@ -388,13 +422,14 @@ def update_student(
         "class_id": student.class_id,
         "parent_id": student.parent_id,
         "class_name": school_class.name,
-        "parent_phone": parent.phone,
-        "parent_name": parent.full_name,
+        "parent_phone": parent.phone if parent else None,
+        "parent_name": parent.full_name if parent else None,
         "first_name": student.first_name,
         "last_name": student.last_name,
         "photo": student.photo,
         "face_encoding": student.face_encoding,
         "is_active": student.is_active,
+        "username": student.username,
     }
 
 
@@ -439,3 +474,53 @@ def delete_student(
     db.delete(student)
     db.commit()
     return {"message": "Student deleted"}
+
+
+@router.post("/students/issue-logins")
+def issue_student_logins(
+    class_id: int | None = None,
+    reset_existing: bool = False,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """Give a class (or the whole school) their own logins.
+
+    The passwords come back in plain text in this response and nowhere
+    else -- they are stored only as a salted hash. This is the one moment
+    they can be written down or printed for the children, which is why the
+    app shows them on a screen the director has to dismiss deliberately.
+
+    Pupils who already have a login are left alone unless `reset_existing`:
+    re-running it for a class must not quietly invalidate logins the
+    children have already learned.
+    """
+    query = db.query(Student).filter(
+        Student.school_id == director.school_id,
+        Student.is_active == True,  # noqa: E712 -- SQLAlchemy column comparison
+    )
+    if class_id is not None:
+        school_class = db.query(Class).filter(
+            Class.id == class_id,
+            Class.school_id == director.school_id,
+        ).first()
+        if not school_class:
+            raise HTTPException(status_code=404, detail="Class not found")
+        query = query.filter(Student.class_id == class_id)
+
+    students = query.order_by(Student.last_name, Student.first_name).all()
+    issued = issue_logins(db, students, reset_existing=reset_existing)
+
+    db.flush()
+    for row in issued:
+        student = next(s for s in students if s.id == row["student_id"])
+        # The Public Server needs the hash, or the pupil can sign in on the
+        # school's network and nowhere else -- which is the one place they
+        # never are.
+        enqueue_student_event(db, student, operation="upsert")
+    db.commit()
+
+    return {
+        "issued_count": len(issued),
+        "skipped_count": len(students) - len(issued),
+        "logins": issued,
+    }

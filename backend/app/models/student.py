@@ -37,6 +37,15 @@ class Student(Base):
 
     is_active = Column(Boolean, default=True)
 
+    # Optional -- only set when the director enables this student to log in
+    # on their own (Public Server only, same as a parent; see
+    # app/utils/security.py::hash_student_password for why this is a plain
+    # salted sha256 pair, not the passlib/bcrypt scheme used for
+    # director/teacher).
+    username = Column(String, unique=True, nullable=True, index=True)
+    password_hash = Column(String, nullable=True)
+    password_salt = Column(String, nullable=True)
+
     attendances = relationship("Attendance", back_populates="student", cascade="all, delete-orphan")
     notifications = relationship("NotificationEvent", back_populates="student", cascade="all, delete-orphan")
     school_class = relationship("Class", back_populates="students")

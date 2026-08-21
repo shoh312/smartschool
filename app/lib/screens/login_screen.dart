@@ -7,7 +7,11 @@ import '../core/design_tokens.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart' as my_auth;
 import '../routes/app_routes.dart';
+import 'change_password_screen.dart';
+import '../services/discovery_service.dart';
+import '../services/token_storage.dart';
 import '../utils/error_formatter.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/flag_badge.dart';
 import '../widgets/language_picker_sheet.dart';
 import 'registration_details_screen.dart';
@@ -41,12 +45,29 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     final auth = context.read<my_auth.AuthProvider>();
 
+    // Staff sign in against the school's own server, and the splash screen
+    // only looks for it when the restored role needs it. Someone signing out
+    // of a parent or pupil session lands straight here, so the address may
+    // never have been resolved on this launch.
+    if (roleUsesSchoolServer(_role)) {
+      await resolveSchoolServerUrl(context.read<TokenStorage>());
+      if (!mounted) return;
+    }
+
     if (_role == AppRole.director) {
       final success = await auth.loginDirector(
         _emailController.text.trim(),
         _passwordController.text,
       );
       if (!mounted || !success) return;
+      if (auth.mustChangePassword) {
+        // Nowhere else until it's done -- see ChangePasswordScreen.
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+        );
+        return;
+      }
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else if (_role == AppRole.teacher) {
       final success = await auth.loginTeacher(
@@ -54,7 +75,14 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
       if (!mounted || !success) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
+      Navigator.pushReplacementNamed(context, AppRoutes.main);
+    } else if (_role == AppRole.student) {
+      final success = await auth.loginStudent(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (!mounted || !success) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       // Parent Login - Bypassing OTP
       final phoneNumber = '$_tajikistanPhonePrefix${_phoneController.text.trim()}';
@@ -70,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         final success = await auth.loginParent(phoneNumber);
         if (success && mounted) {
-          Navigator.pushReplacementNamed(context, AppRoutes.parentDashboard);
+          Navigator.pushReplacementNamed(context, AppRoutes.main);
         } else if (auth.error == 'registration_required' && mounted) {
           Navigator.push(
             context,
@@ -120,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              padding: (const EdgeInsets.symmetric(horizontal: 28, vertical: 24)).add(bottomNavPadding(context)),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: Column(
@@ -167,40 +195,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: context.colors.surfaceAlt,
-                      borderRadius: AppRadius.mdRadius,
-                    ),
-                    child: SegmentedButton<AppRole>(
-                      segments: AppRole.values
-                          .map(
-                            (role) => ButtonSegment(
-                              value: role,
-                              label: Text(switch (role) {
-                                AppRole.director => l10n.roleDirector,
-                                AppRole.parent => l10n.roleParent,
-                                AppRole.teacher => l10n.roleTeacher,
-                              }),
-                              icon: Icon(switch (role) {
-                                AppRole.director =>
-                                  Icons.admin_panel_settings_rounded,
-                                AppRole.parent => Icons.family_restroom_rounded,
-                                AppRole.teacher => Icons.school_rounded,
-                              }),
-                            ),
-                          )
-                          .toList(),
-                      selected: {_role},
-                      onSelectionChanged: (value) =>
-                          setState(() => _role = value.first),
-                    ),
+                  _RoleSelector(
+                    selected: _role,
+                    onChanged: (role) => setState(() => _role = role),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: _role != AppRole.parent
+                    child: _role == AppRole.director || _role == AppRole.teacher
                         ? Column(
                             key: const ValueKey('director_fields'),
                             children: [
@@ -211,6 +214,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                   labelText: l10n.email,
                                   hintText: 'name@school.com',
                                   prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              TextField(
+                                controller: _passwordController,
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  labelText: l10n.password,
+                                  hintText: '••••••••',
+                                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                                ),
+                              ),
+                            ],
+                          )
+                        : _role == AppRole.student
+                        ? Column(
+                            key: const ValueKey('student_fields'),
+                            children: [
+                              TextField(
+                                controller: _emailController,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  labelText: l10n.studentUsernameLabel,
+                                  prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -347,6 +374,120 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+    );
+  }
+}
+
+/// The four sign-in roles as a 2x2 grid of cards.
+///
+/// Was a `SegmentedButton` across the full width: four segments sharing one
+/// row left each role barely 60px, so every Tajik label wrapped mid-word
+/// ("Дирек тор", "Волид айн") and the control became unreadable. A grid
+/// gives each role a full line of text plus room for its icon.
+class _RoleSelector extends StatelessWidget {
+  const _RoleSelector({required this.selected, required this.onChanged});
+
+  final AppRole selected;
+  final ValueChanged<AppRole> onChanged;
+
+  static IconData _iconFor(AppRole role) => switch (role) {
+        AppRole.director => Icons.admin_panel_settings_rounded,
+        AppRole.parent => Icons.family_restroom_rounded,
+        AppRole.teacher => Icons.school_rounded,
+        AppRole.student => Icons.backpack_rounded,
+      };
+
+  static String _labelFor(AppLocalizations l10n, AppRole role) => switch (role) {
+        AppRole.director => l10n.roleDirector,
+        AppRole.parent => l10n.roleParent,
+        AppRole.teacher => l10n.roleTeacher,
+        AppRole.student => l10n.roleStudent,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 10.0;
+        final tileWidth = (constraints.maxWidth - spacing) / 2;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final role in AppRole.values)
+              SizedBox(
+                width: tileWidth,
+                child: _RoleTile(
+                  icon: _iconFor(role),
+                  label: _labelFor(l10n, role),
+                  isSelected: role == selected,
+                  onTap: () => onChanged(role),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RoleTile extends StatelessWidget {
+  const _RoleTile({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = context.colors.primary;
+    return Material(
+      color: isSelected ? accent.withOpacity(0.12) : context.colors.surfaceAlt,
+      borderRadius: AppRadius.mdRadius,
+      child: InkWell(
+        borderRadius: AppRadius.mdRadius,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.mdRadius,
+            border: Border.all(
+              color: isSelected ? accent : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: isSelected ? accent : context.colors.textMuted,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? accent : context.colors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

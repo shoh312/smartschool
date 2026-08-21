@@ -16,7 +16,7 @@ class JournalProvider extends ChangeNotifier {
     _service = service;
   }
 
-  Future<void> loadForStudent(int studentId, {int? parentId}) async {
+  Future<void> loadForStudent(int studentId, {int? parentId, bool viaPublicServer = false}) async {
     isLoading = true;
     error = null;
     // Clear immediately so a different student's/class's screen never
@@ -27,6 +27,7 @@ class JournalProvider extends ChangeNotifier {
       grades = await _service!.listGrades(
         studentId: studentId,
         parentId: parentId,
+        viaPublicServer: viaPublicServer,
       );
     } catch (exception) {
       error = classifyError(exception);

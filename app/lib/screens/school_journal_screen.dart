@@ -5,7 +5,11 @@ import 'package:smartschool_app/generated/app_localizations.dart';
 import '../core/design_tokens.dart';
 import '../providers/school_provider.dart';
 import '../providers/student_provider.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_list_card.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/metric_card.dart';
 import 'class_journal_screen.dart';
@@ -50,7 +54,7 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
           await context.read<StudentProvider>().loadStudents();
         },
         child: provider.isLoading && provider.classes.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoadingIndicator()
             : provider.classes.isEmpty
             ? EmptyState(
                 icon: Icons.class_outlined,
@@ -58,7 +62,7 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                 message: l10n.createClassesMessage,
               )
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
                 children: [
                   IntrinsicHeight(
                     child: Row(
@@ -67,7 +71,7 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                           child: MetricCard(
                             label: l10n.classes,
                             value: provider.classes.length.toString(),
-                            imageAsset: 'assets/icons/classes.png',
+                            icon: Icons.class_outlined,
                             color: theme.colorScheme.primary,
                           ),
                         ),
@@ -76,7 +80,7 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                           child: MetricCard(
                             label: l10n.students,
                             value: students.length.toString(),
-                            imageAsset: 'assets/icons/students.png',
+                            icon: Icons.groups_2_outlined,
                             color: context.colors.success,
                           ),
                         ),
@@ -84,61 +88,23 @@ class _SchoolJournalScreenState extends State<SchoolJournalScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  for (final schoolClass in provider.classes)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      decoration: BoxDecoration(
-                        color: context.colors.surface,
-                        borderRadius: AppRadius.lgRadius,
-                        border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
+                  for (var i = 0; i < provider.classes.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: FadeSlideIn(
+                        delay: i < 12 ? Duration(milliseconds: 40 * i) : Duration.zero,
+                        child: AppListCard(
+                          leading: AppListBadge(text: '${provider.classes[i].grade}'),
+                          title: provider.classes[i].name,
+                          subtitle:
+                              '${studentCountByClass[provider.classes[i].id] ?? 0} ${l10n.students}',
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => ClassJournalScreen(
-                                classId: schoolClass.id,
-                                className: schoolClass.name,
+                                classId: provider.classes[i].id,
+                                className: provider.classes[i].name,
                               ),
-                            ),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
-                            ),
-                            leading: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                gradient: AppGradients.tint(context.colors.accent),
-                                borderRadius: AppRadius.mdRadius,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                schoolClass.grade.toString(),
-                                style: TextStyle(
-                                  color: context.colors.accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              schoolClass.name,
-                              style: theme.textTheme.titleMedium,
-                            ),
-                            subtitle: Text(
-                              '${studentCountByClass[schoolClass.id] ?? 0} ${l10n.students}',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right_rounded,
-                              color: context.colors.textMuted,
                             ),
                           ),
                         ),

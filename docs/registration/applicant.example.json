@@ -1,0 +1,12 @@
+{
+  "_comment": "Nusxa oling va applicant.json deb saqlang. U .gitignore da -- ichida uy manzili va telefon raqami bo'ladi, ular omborga tushmasligi kerak.",
+
+  "fish": "Фамилия Имя Отчество",
+  "fish_short": "Фамилия И.О.",
+  "index": "735690",
+  "address": "Согдийская область, район, посёлок, улица, дом",
+  "address_full": "735690, Таджикистан, Согд, район, посёлок, улица, дом",
+  "phone": "+992 (00) 000-00-00",
+  "email": "pochta@example.com",
+  "coauthor": null
+}

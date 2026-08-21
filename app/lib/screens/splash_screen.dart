@@ -6,6 +6,7 @@ import '../core/design_tokens.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart';
 import '../routes/app_routes.dart';
+import 'change_password_screen.dart';
 import '../services/discovery_service.dart';
 import '../services/token_storage.dart';
 
@@ -31,42 +32,40 @@ class _SplashScreenState extends State<SplashScreen> {
     final auth = context.read<AuthProvider>();
     final tokenStorage = context.read<TokenStorage>();
 
+    // Restoring the session is local-storage only, so doing it first is free
+    // and tells us whether the LAN search below is worth running at all.
+    await auth.restoreSession();
+
+    // Both addresses are resolved together rather than one after the other:
+    // each may end up scanning the subnet, and doing that twice in sequence
+    // would double a wait the user is already staring at a splash for.
     await Future.wait([
-      _resolveServerUrl(tokenStorage),
+      resolvePublicServerUrl(tokenStorage),
+      if (roleUsesSchoolServer(auth.role)) resolveSchoolServerUrl(tokenStorage),
       Future.delayed(const Duration(milliseconds: 1500)),
     ]);
-    await auth.restoreSession();
 
     if (!mounted) return;
 
-    final route = switch (auth.role) {
-      AppRole.director => AppRoutes.main,
-      AppRole.parent => AppRoutes.parentDashboard,
-      AppRole.teacher => AppRoutes.teacherDashboard,
-      null => AppRoutes.login,
-    };
+    // A director whose session predates the forced-change rule still has a
+    // valid token, so the check has to happen on restore as well as login.
+    if (auth.role == AppRole.director) {
+      await auth.refreshMustChangePassword();
+      if (!mounted) return;
+      if (auth.mustChangePassword) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+        );
+        return;
+      }
+    }
+
+    // Every role lands on the same tabbed shell now; which tabs it shows
+    // is decided inside MainScreen from the role.
+    final route = auth.role == null ? AppRoutes.login : AppRoutes.main;
 
     Navigator.pushReplacementNamed(context, route);
-  }
-
-  /// Finds the backend on the current network: try the last known-good
-  /// address first (fast path, no traffic if it still works), and only fall
-  /// back to a broadcast search if that fails or nothing was cached yet.
-  Future<void> _resolveServerUrl(TokenStorage tokenStorage) async {
-    final discovery = DiscoveryService();
-    final cachedUrl = await tokenStorage.readServerUrl();
-
-    if (cachedUrl != null && await discovery.isReachable(cachedUrl)) {
-      AppConstants.setResolvedBaseUrl(cachedUrl);
-      return;
-    }
-
-    final discoveredUrl = await discovery.discoverBaseUrl();
-    if (discoveredUrl != null) {
-      AppConstants.setResolvedBaseUrl(discoveredUrl);
-      await tokenStorage.saveServerUrl(discoveredUrl);
-    }
-    // If discovery also fails, AppConstants just keeps its hardcoded fallback.
   }
 
   @override

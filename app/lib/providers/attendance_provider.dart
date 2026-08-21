@@ -23,7 +23,7 @@ class AttendanceProvider extends ChangeNotifier {
     _socket = socket;
   }
 
-  Future<void> loadHistory({int? studentId, int? parentId}) async {
+  Future<void> loadHistory({int? studentId, int? parentId, bool viaPublicServer = false}) async {
     isLoading = true;
     error = null;
     notifyListeners();
@@ -31,6 +31,7 @@ class AttendanceProvider extends ChangeNotifier {
       history = await _service!.history(
         studentId: studentId,
         parentId: parentId,
+        viaPublicServer: viaPublicServer,
       );
     } catch (exception) {
       error = classifyError(exception);

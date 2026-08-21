@@ -6,7 +6,13 @@ import '../core/design_tokens.dart';
 import '../models/camera_config.dart';
 import '../models/school_class.dart';
 import '../providers/school_provider.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_confirm_dialog.dart';
+import '../widgets/app_list_card.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/collapsible_form_card.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
 import '../widgets/empty_state.dart';
 
 class CameraManagementScreen extends StatefulWidget {
@@ -23,6 +29,7 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
   final _rtspController = TextEditingController();
   SchoolClass? _selectedClass;
   CameraConfig? _editingCamera;
+  bool _formOpen = false;
 
   @override
   void initState() {
@@ -41,6 +48,9 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
 
   void _prepareEdit(CameraConfig camera, List<SchoolClass> classes) {
     setState(() {
+      // Editing has to open the form itself -- the user tapped a pencil on a
+      // row, not the "+" header.
+      _formOpen = true;
       _editingCamera = camera;
       _nameController.text = camera.name;
       _rtspController.text = camera.rtspUrl ?? '';
@@ -53,6 +63,7 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
 
   void _clear() {
     setState(() {
+      _formOpen = false;
       _editingCamera = null;
       _nameController.clear();
       _rtspController.clear();
@@ -79,25 +90,15 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
 
   Future<void> _delete(int id) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteCameraTitle),
-        content: Text(l10n.deleteCameraConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: TextStyle(color: context.colors.danger)),
-          ),
-        ],
-      ),
+    final confirm = await showAppConfirmDialog(
+      context,
+      icon: Icons.delete_outline_rounded,
+      title: l10n.deleteCameraTitle,
+      message: l10n.deleteCameraConfirm,
+      isDestructive: true,
     );
 
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       await context.read<SchoolProvider>().deleteCamera(id);
     }
   }
@@ -111,19 +112,21 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
       title: l10n.cameraManagement,
       showAppBar: !widget.isIntegrated,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: (const EdgeInsets.fromLTRB(16, 16, 16, 24)).add(bottomNavPadding(context)),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          CollapsibleFormCard(
+            title: _editingCamera == null ? l10n.addNewCamera : l10n.editCamera,
+            expanded: _formOpen,
+            onToggle: () {
+              if (_formOpen) {
+                _clear();
+              } else {
+                setState(() => _formOpen = true);
+              }
+            },
+            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    _editingCamera == null ? l10n.addNewCamera : l10n.editCamera,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
                   TextField(
                     controller: _nameController,
                     decoration: InputDecoration(labelText: l10n.cameraNameLabel),
@@ -169,14 +172,9 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                   ),
                 ],
               ),
-            ),
           ),
-          const SizedBox(height: 28),
-          Text(
-            l10n.registeredCameras,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 26),
+          DashboardSectionHeader(title: l10n.registeredCameras),
           if (provider.cameras.isEmpty)
             SizedBox(
               height: 200,
@@ -187,55 +185,44 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
               ),
             )
           else
-            ...provider.cameras.map(
-              (camera) {
+            ...provider.cameras.asMap().entries.map(
+              (entry) {
+                final index = entry.key;
+                final camera = entry.value;
                 final className = provider.classes
                     .cast<SchoolClass?>()
                     .firstWhere((c) => c?.id == camera.classId, orElse: () => null)
                     ?.name;
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: context.colors.surface,
-                    borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: context.colors.border),
-                    boxShadow: AppShadows.card,
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: AppRadius.lgRadius),
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: camera.isActive
-                            ? AppGradients.success
-                            : null,
-                        color: camera.isActive ? null : context.colors.surfaceAlt,
-                        borderRadius: AppRadius.mdRadius,
-                        boxShadow: camera.isActive ? AppShadows.colored(context.colors.success) : null,
+                return FadeSlideIn(
+                  delay: index < 12 ? Duration(milliseconds: 40 * index) : Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: AppListCard(
+                      leading: AppListBadge(
+                        icon: Icons.videocam_outlined,
+                        // An inactive camera reads as muted rather than
+                        // green, so a glance down the list shows which
+                        // rooms are actually being watched.
+                        color: camera.isActive
+                            ? context.colors.success
+                            : context.colors.textMuted,
                       ),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.videocam_outlined,
-                        color: camera.isActive ? Colors.white : context.colors.textMuted,
+                      title: camera.name,
+                      subtitle: className ?? l10n.unassigned,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit_outlined, size: 20, color: context.colors.textMuted),
+                            onPressed: () => _prepareEdit(camera, provider.classes),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete_outline, size: 20, color: context.colors.danger),
+                            onPressed: () => _delete(camera.id),
+                          ),
+                        ],
                       ),
-                    ),
-                    title: Text(camera.name, style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(className ?? l10n.unassigned),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit_outlined, size: 20, color: context.colors.textMuted),
-                          onPressed: () => _prepareEdit(camera, provider.classes),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete_outline, size: 20, color: context.colors.danger),
-                          onPressed: () => _delete(camera.id),
-                        ),
-                      ],
                     ),
                   ),
                 );

@@ -43,6 +43,41 @@ def verify_parent_access_token(token: str) -> int:
         ) from exc
 
 
+def create_student_access_token(student_id: int) -> str:
+    payload = {
+        "student_id": student_id,
+        "exp": (datetime.utcnow() + timedelta(days=30)).isoformat(),
+    }
+    payload_text = json.dumps(payload, separators=(",", ":"))
+    encoded = base64.urlsafe_b64encode(payload_text.encode("utf-8")).decode("utf-8")
+    return f"{encoded}.{_sign(encoded)}"
+
+
+def verify_student_access_token(token: str) -> int:
+    try:
+        encoded, signature = token.split(".", 1)
+        if not hmac.compare_digest(signature, _sign(encoded)):
+            raise ValueError
+        payload = json.loads(base64.urlsafe_b64decode(encoded.encode("utf-8")))
+        if datetime.fromisoformat(payload["exp"]) < datetime.utcnow():
+            raise ValueError
+        return int(payload["student_id"])
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        ) from exc
+
+
+# Same dependency-light salted-sha256 scheme as the local server's
+# hash_student_password (see backend/app/utils/security.py) -- this server
+# only ever verifies against the synced hash, it never hashes a plaintext
+# password itself (that only happens locally, when a director sets one).
+def verify_student_password(password: str, salt: str, expected_hash: str) -> bool:
+    digest = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+    return hmac.compare_digest(digest, expected_hash)
+
+
 def hash_school_key(raw_key: str) -> str:
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 

@@ -24,6 +24,7 @@ class StudentResponse(BaseModel):
     photo: Optional[str] = None
     face_encoding: Optional[str] = None
     is_active: bool
+    username: Optional[str] = None
 
     class Config:
         from_attributes = True

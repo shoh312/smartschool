@@ -3,9 +3,11 @@ from datetime import date, datetime, time, timedelta
 from sqlalchemy.orm import Session
 
 from app.models.attendance_model import Attendance
+from app.models.lesson_attendance_model import LessonAttendance
 from app.models.student import Student
 from app.notifications.firebase import create_notification_event
 from app.realtime import broadcast_attendance_update
+from app.services.lesson_service import finished_lessons_today
 from app.services.sync_outbox_service import enqueue_attendance_event
 from app.utils.config import settings
 
@@ -167,6 +169,188 @@ def mark_absent_students(
             attendance_id=absent_record.id,
         )
 
+    return created
+
+
+class DetectionCycleCounter:
+    """Counts a camera's completed detect windows, per day.
+
+    Exists as its own object because the interesting case is the one that is
+    easy to get wrong in an inline counter: a camera thread runs for days,
+    and a count carried over from yesterday would mark a whole class absent
+    on the very first sweep of the morning -- before anybody has walked in.
+    Rolling the count over at the date boundary is the whole job, and it is
+    worth being able to test without a camera or a database.
+    """
+
+    def __init__(self, threshold: int, today: date | None = None):
+        self.threshold = threshold
+        self._day = today or date.today()
+        self._count = 0
+
+    @property
+    def count(self) -> int:
+        return self._count
+
+    def record(self, day: date | None = None) -> bool:
+        """Records one completed window; True once enough have run today."""
+        day = day or date.today()
+        if day != self._day:
+            self._day = day
+            self._count = 0
+        self._count += 1
+        return self._count >= self.threshold
+
+
+def mark_absent_after_detection_cycles(
+    db: Session,
+    class_id: int,
+    day: date | None = None,
+) -> list[Attendance]:
+    """Marks a class's still-unseen students absent, once the camera has had
+    more than one go at finding them.
+
+    [mark_absent_students] answers the same question by the clock: anyone not
+    seen by 08:15 is absent. That misfires whenever the camera's own schedule
+    and the clock disagree -- a class starting late, a camera that reconnected
+    slowly, a school day shifted for an event -- and it marks a child absent
+    who nobody ever actually looked for.
+
+    Counting the camera's passes instead ties the verdict to the evidence:
+    the first pass can miss somebody who was turned away or walking in, so it
+    only says "not found yet". By the second pass the room has been looked at
+    twice, and a student still missing is genuinely not there.
+
+    The caller owns the counting -- this runs only when it has already
+    happened at least twice today (see live_detection.py).
+    """
+    now = datetime.now()
+    day = day or now.date()
+
+    students = db.query(Student).filter(
+        Student.class_id == class_id,
+        Student.is_active == True,  # noqa: E712
+    ).all()
+
+    created = []
+    for student in students:
+        if get_daily_attendance(db, student.id, day):
+            continue
+
+        absent_record = Attendance(
+            student_id=student.id,
+            camera_id=None,
+            status=ABSENT,
+            attendance_date=day,
+            detected_at=now,
+        )
+        db.add(absent_record)
+        db.flush()
+        enqueue_attendance_event(db, absent_record, operation="upsert")
+        db.commit()
+        db.refresh(absent_record)
+        created.append(absent_record)
+
+        create_notification_event(
+            db,
+            event_type=ABSENT,
+            title="Student absent",
+            body=f"{student.first_name} {student.last_name} was not found in class today.",
+            parent_id=student.parent_id,
+            student_id=student.id,
+            attendance_id=absent_record.id,
+        )
+
+    if created:
+        broadcast_attendance_update()
+    return created
+
+
+def get_lesson_attendance(db: Session, student_id: int, lesson_id: int, day: date) -> LessonAttendance | None:
+    return db.query(LessonAttendance).filter(
+        LessonAttendance.student_id == student_id,
+        LessonAttendance.lesson_id == lesson_id,
+        LessonAttendance.attendance_date == day,
+    ).first()
+
+
+def _status_for_lesson_detection(detected_at: datetime, lesson_start: time, grace_minutes: int = 10) -> str:
+    start_min = lesson_start.hour * 60 + lesson_start.minute
+    grace_min = start_min + grace_minutes
+    grace_time = time(grace_min // 60 % 24, grace_min % 60)
+    return PRESENT if detected_at.time() <= grace_time else LATE
+
+
+def record_lesson_detection(
+    db: Session,
+    student_id: int,
+    lesson_id: int,
+    lesson_start: time,
+    camera_id: int | None = None,
+    confidence: float | None = 1.0,
+    detected_at: datetime | None = None,
+) -> LessonAttendance:
+    """Per-lesson counterpart to `record_detection` -- upserts one row per
+    (student, lesson, day) so a student's presence can be judged per subject
+    instead of only once for the whole day. Called alongside `record_detection`,
+    never instead of it, so the existing day-level screens are unaffected.
+    """
+    detected_at = detected_at or datetime.now()
+    today = detected_at.date()
+    existing = get_lesson_attendance(db, student_id, lesson_id, today)
+    if existing:
+        return existing
+
+    record = LessonAttendance(
+        student_id=student_id,
+        lesson_id=lesson_id,
+        camera_id=camera_id,
+        status=_status_for_lesson_detection(detected_at, lesson_start),
+        confidence=confidence,
+        attendance_date=today,
+        detected_at=detected_at,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def mark_absent_for_finished_lessons(db: Session) -> list[LessonAttendance]:
+    """For every lesson that has already ended today, mark absent any active
+    student in that class with no LessonAttendance row yet. Naturally
+    idempotent (skips students who already have a row), so this can run on
+    every background-loop tick with no separate "already processed" state --
+    unlike the day-level `mark_absent_students`, no notification is sent here
+    per lesson (a student absent all day would otherwise get one notification
+    per period).
+    """
+    today = date.today()
+    created: list[LessonAttendance] = []
+
+    for lesson in finished_lessons_today(db):
+        students = db.query(Student).filter(
+            Student.class_id == lesson.class_id,
+            Student.is_active == True,
+        ).all()
+        for student in students:
+            if get_lesson_attendance(db, student.id, lesson.id, today):
+                continue
+            record = LessonAttendance(
+                student_id=student.id,
+                lesson_id=lesson.id,
+                status=ABSENT,
+                attendance_date=today,
+                detected_at=datetime.now(),
+            )
+            db.add(record)
+            db.flush()
+            created.append(record)
+
+    if created:
+        db.commit()
+        for record in created:
+            db.refresh(record)
     return created
 
 

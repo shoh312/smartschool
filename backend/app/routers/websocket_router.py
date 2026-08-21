@@ -29,6 +29,10 @@ async def stream_websocket(
     _director=Depends(get_current_director_ws),
 ):
     await websocket.accept()
+    # Tells the camera thread somebody is actually watching, so it keeps the
+    # stream open instead of dropping it between detection windows -- which
+    # is what made the live view run for ten seconds and then freeze.
+    stream_manager.add_viewer(camera_id)
     try:
         last_frame: bytes | None = None
         while True:
@@ -39,3 +43,8 @@ async def stream_websocket(
             await asyncio.sleep(0.05)
     except WebSocketDisconnect:
         pass
+    finally:
+        # Must run on every exit path, not just a clean disconnect: a viewer
+        # left counted forever would pin the camera open for the rest of the
+        # server's life.
+        stream_manager.remove_viewer(camera_id)

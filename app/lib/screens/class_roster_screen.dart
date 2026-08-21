@@ -9,8 +9,10 @@ import '../providers/teacher_provider.dart';
 import '../utils/date_formatters.dart';
 import '../utils/error_formatter.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/metric_card.dart';
+import 'journal_scan_screen.dart';
 
 const double _kNameColumnWidth = 168;
 const double _kDateColumnWidth = 44;
@@ -388,6 +390,25 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
 
     return AppShell(
       title: '${widget.className} • ${widget.subject}',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.document_scanner_outlined),
+          tooltip: l10n.journalScanTitle,
+          onPressed: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => JournalScanScreen(
+                  classId: widget.classId,
+                  className: widget.className,
+                  subject: widget.subject,
+                ),
+              ),
+            );
+            if (!mounted) return;
+            context.read<TeacherProvider>().loadClassGrades(widget.classId, widget.subject);
+          },
+        ),
+      ],
       child: RefreshIndicator(
         onRefresh: () async {
           await context.read<TeacherProvider>().loadRoster(widget.classId);
@@ -413,7 +434,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: MetricCard(
                               label: l10n.students,
                               value: roster.length.toString(),
-                              imageAsset: 'assets/icons/students.png',
+                              icon: Icons.groups_2_outlined,
                               color: theme.colorScheme.primary,
                             ),
                           ),
@@ -422,7 +443,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: MetricCard(
                               label: l10n.grades,
                               value: monthGrades.length.toString(),
-                              imageAsset: 'assets/icons/grades.png',
+                              icon: Icons.grading_rounded,
                               color: context.colors.success,
                             ),
                           ),
@@ -431,7 +452,7 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                             child: MetricCard(
                               label: l10n.average,
                               value: averageLabel,
-                              imageAsset: 'assets/icons/average.png',
+                              icon: Icons.trending_up_rounded,
                               color: context.colors.warning,
                             ),
                           ),
@@ -447,7 +468,6 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                         color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
                         border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
                       ),
                       child: Row(
                         children: [
@@ -484,22 +504,24 @@ class _ClassRosterScreenState extends State<ClassRosterScreen> {
                         builder: (context, constraints) {
                           final totalGridWidth =
                               dateColumns.length * _kDateColumnWidth;
+                          // 34 = 16px padding on each side of the scroll
+                          // view, plus the 1px border on each side of the
+                          // table's own container.
                           final availableGridWidth =
-                              (constraints.maxWidth - _kNameColumnWidth - 48)
+                              (constraints.maxWidth - _kNameColumnWidth - 34)
                                   .clamp(0.0, double.infinity);
                           final gridViewportWidth =
                               totalGridWidth < availableGridWidth
                               ? totalGridWidth
                               : availableGridWidth;
                           return SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            padding: (const EdgeInsets.fromLTRB(16, 0, 16, 16)).add(bottomNavPadding(context)),
                             child: Container(
                               clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
                                 color: context.colors.surface,
                                 borderRadius: AppRadius.lgRadius,
                                 border: Border.all(color: context.colors.border),
-                                boxShadow: AppShadows.card,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,

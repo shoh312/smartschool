@@ -128,6 +128,12 @@ class AppLocalizationsTg extends AppLocalizations {
   String get roleTeacher => 'Муаллим';
 
   @override
+  String get roleStudent => 'Хонанда';
+
+  @override
+  String get studentUsernameLabel => 'Логин';
+
+  @override
   String get createAccount => 'Эҷоди ҳисоб';
 
   @override
@@ -820,4 +826,808 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get columnRate => 'Фоиз';
+
+  @override
+  String get ratingAnalytics => 'Рейтинг';
+
+  @override
+  String get overallAverage => 'Баҳои миёна';
+
+  @override
+  String get classRank => 'Синф';
+
+  @override
+  String get parallelRank => 'Параллел';
+
+  @override
+  String get schoolRank => 'Мактаб';
+
+  @override
+  String get classRanking => 'Рейтинги синф';
+
+  @override
+  String get parallelRanking => 'Рейтинги параллел';
+
+  @override
+  String get schoolRanking => 'Рейтинги мактаб';
+
+  @override
+  String get strongestSubject => 'Фанни пешрафта';
+
+  @override
+  String get weakestSubject => 'Фанни бо диққат';
+
+  @override
+  String get subjectBreakdown => 'Фанҳо';
+
+  @override
+  String get lessonAttendanceRate => 'Ҳозирии дарсҳо';
+
+  @override
+  String get quarter1 => 'Чораки I';
+
+  @override
+  String get quarter2 => 'Чораки II';
+
+  @override
+  String get quarter3 => 'Чораки III';
+
+  @override
+  String get quarter4 => 'Чораки IV';
+
+  @override
+  String get noGradesYetMessage => 'Барои ин давра ҳанӯз бахо нест';
+
+  @override
+  String get achievementFirstPlace => 'Ҷои 1';
+
+  @override
+  String get achievementTopThree => '3-и беҳтарин';
+
+  @override
+  String get achievementTopTenPercent => '10%-и беҳтарин';
+
+  @override
+  String get exportPdf => 'Содироти PDF';
+
+  @override
+  String get classAverage => 'Миёнаи синф';
+
+  @override
+  String get parallelAverage => 'Миёнаи параллел';
+
+  @override
+  String get schoolAverage => 'Миёнаи мактаб';
+
+  @override
+  String get needsAttention => 'Диққат талаб мекунанд';
+
+  @override
+  String get biggestDecline => 'Пастравии калонтарин';
+
+  @override
+  String get lowestAverage => 'Баҳои пасттарин';
+
+  @override
+  String get trendVsPreviousQuarter => 'нисбат ба чораки гузашта';
+
+  @override
+  String get pdfRatingEyebrow => 'ҲИСОБОТИ РЕЙТИНГ';
+
+  @override
+  String get gradeCountSuffix => 'баҳо';
+
+  @override
+  String get rankingScopeAll => 'Ҳама';
+
+  @override
+  String get rankingScopeClasses => 'Синфҳо';
+
+  @override
+  String get rankingScopeParallel => 'Параллел';
+
+  @override
+  String get selectClassPrompt => 'Синфро интихоб кунед';
+
+  @override
+  String get selectParallelPrompt => 'Параллелро интихоб кунед';
+
+  @override
+  String get topThree => '3-и беҳтарин';
+
+  @override
+  String lessonSchedule(String className) {
+    return 'Ҷадвал — $className';
+  }
+
+  @override
+  String get editLesson => 'Дарсро таҳрир кардан';
+
+  @override
+  String get deleteLessonTitle => 'Дарсро нест кардан';
+
+  @override
+  String get deleteLessonConfirm =>
+      'Ин дарс нест карда шавад? Баргардонидан мумкин нест.';
+
+  @override
+  String get roomLabel => 'Хона';
+
+  @override
+  String get ruznoma => 'Рӯзнома';
+
+  @override
+  String get todayLessons => 'Имрӯз';
+
+  @override
+  String get tomorrowLessons => 'Пагоҳ';
+
+  @override
+  String get homeworkLabel => 'Вазифаи хонагӣ';
+
+  @override
+  String get teacherNoteLabel => 'Қайди муаллим';
+
+  @override
+  String get addHomeworkPrompt => 'Вазифа ё қайд илова кунед';
+
+  @override
+  String get noLessonsToday => 'Барои ин рӯз дарс нест';
+
+  @override
+  String get schoolCalendar => 'Тақвими мактаб';
+
+  @override
+  String get eventTypeHoliday => 'Иди/Таътил';
+
+  @override
+  String get eventTypeExam => 'Имтиҳон';
+
+  @override
+  String get eventTypeTest => 'Кори назоратӣ';
+
+  @override
+  String get eventTypeEvent => 'Тадбир';
+
+  @override
+  String get addEvent => 'Тадбир илова кунед';
+
+  @override
+  String get eventTitleLabel => 'Сарлавҳа';
+
+  @override
+  String get eventDescriptionLabel => 'Тавсиф (ихтиёрӣ)';
+
+  @override
+  String get noUpcomingEvents => 'Тадбири наздик нест';
+
+  @override
+  String get deleteEventTitle => 'Тадбирро нест кардан';
+
+  @override
+  String get deleteEventConfirm => 'Ин тадбир нест карда шавад?';
+
+  @override
+  String get announcements => 'Эълонҳо';
+
+  @override
+  String get postAnnouncement => 'Эълон гузоштан';
+
+  @override
+  String get announcementTitleLabel => 'Сарлавҳа';
+
+  @override
+  String get announcementBodyLabel => 'Матн';
+
+  @override
+  String get noAnnouncementsYet => 'Ҳанӯз эълон нест';
+
+  @override
+  String get deleteAnnouncementTitle => 'Эълонро нест кардан';
+
+  @override
+  String get deleteAnnouncementConfirm => 'Ин эълон нест карда шавад?';
+
+  @override
+  String get pickDatePrompt => 'Санаро интихоб кунед';
+
+  @override
+  String get lessonWord => 'дарс';
+
+  @override
+  String get lessonsCountSuffix => 'дарс';
+
+  @override
+  String untilTime(String time) {
+    return 'то соати $time';
+  }
+
+  @override
+  String get teacherWord => 'Муаллим';
+
+  @override
+  String lessonOrdinal(int number) {
+    return 'Дарси $number';
+  }
+
+  @override
+  String get retry => 'Такрор кунед';
+
+  @override
+  String get logoutConfirmMessage => 'Шумо мутмаин ҳастед, ки мехоҳед бароед?';
+
+  @override
+  String get homeworkListTitle => 'Вазифаи хонагӣ';
+
+  @override
+  String get noHomeworkMessage => 'Ҳанӯз вазифаи хонагӣ дода нашудааст';
+
+  @override
+  String get achievementsTitle => 'Ютуқҳо';
+
+  @override
+  String get achievementSchoolFirst => '1-ин дар мактаб';
+
+  @override
+  String get achievementTopThreeBadge => '3-и беҳтарин';
+
+  @override
+  String get achievementExcellent => 'Хонандаи аълочӣ';
+
+  @override
+  String get achievementPerfectAttendance => 'Ҳозирии намунавӣ';
+
+  @override
+  String get achievementBigImprovement => 'Беҳтарин пешравӣ';
+
+  @override
+  String achievementSubjectMaster(String subject) {
+    return 'Устои фанни $subject';
+  }
+
+  @override
+  String get noAchievementsTitle => 'Ҳанӯз ютуқ нест';
+
+  @override
+  String get noAchievementsMessage =>
+      'Хондан идома диҳед -- аввалин нишони шумо наздик аст';
+
+  @override
+  String get studentHomeTitle => 'Саҳифаи ман';
+
+  @override
+  String get studentLoginLabel => 'Логин барои воридшавӣ';
+
+  @override
+  String get studentPasswordLabel => 'Парол';
+
+  @override
+  String get studentLoginHelperText =>
+      'Ихтиёрӣ -- танҳо агар хонанда худаш ворид шавад лозим аст';
+
+  @override
+  String get journalScanTitle => 'Сканкунии рӯзнома';
+
+  @override
+  String get journalScanPrompt =>
+      'Аз саҳифаи рӯзнома сурат гиред ё аз галерея интихоб кунед. Баҳоҳои сутуни имрӯза худкор муайян карда мешаванд.';
+
+  @override
+  String get journalScanTakePhoto => 'Сурат гирифтан';
+
+  @override
+  String get journalScanPickGallery => 'Аз галерея интихоб кардан';
+
+  @override
+  String get journalScanEmptyTitle => 'Ҳеҷ чиз ёфт нашуд';
+
+  @override
+  String get journalScanEmptyMessage =>
+      'Дар сутуни имрӯзаи ин сурат баҳо ёфт нашуд. Суратро равшантар ва ростатар гиред.';
+
+  @override
+  String get journalScanConfirmAll => 'Тасдиқ ва захира';
+
+  @override
+  String journalScanSavedCount(int saved, int total) {
+    return '$saved аз $total баҳо захира шуд';
+  }
+
+  @override
+  String journalScanNoMatch(String name) {
+    return 'Барои \"$name\" мувофиқат ёфт нашуд -- гузашта шуд';
+  }
+
+  @override
+  String journalScanRawName(String name) {
+    return 'Хонда шуд: $name';
+  }
+
+  @override
+  String get journalScanAbsent => 'Ҳозир набуд';
+
+  @override
+  String get attendanceToday => 'Ҳозирии имрӯза';
+
+  @override
+  String get sectionLearning => 'Таълим';
+
+  @override
+  String get sectionSchool => 'Мактаб';
+
+  @override
+  String arrivedOfTotal(int arrived, int total) {
+    return '$arrived аз $total омад';
+  }
+
+  @override
+  String get materialsTitle => 'Маводҳо';
+
+  @override
+  String get materialsSubtitle => 'Дарсу тестҳо барои синфҳои шумо';
+
+  @override
+  String get materialLibrary => 'Китобхонаи ман';
+
+  @override
+  String get materialHandedOut => 'Додашуда';
+
+  @override
+  String get materialNew => 'Маводи нав';
+
+  @override
+  String get materialTitleLabel => 'Ном';
+
+  @override
+  String get materialDescriptionLabel => 'Тавсифи кӯтоҳ';
+
+  @override
+  String get materialEmptyTitle => 'Ҳанӯз мавод нест';
+
+  @override
+  String get materialEmptyMessage => 'Дарс ё тест созед ва ба синф диҳед.';
+
+  @override
+  String get materialContentEmpty => 'Ақаллан як саҳифа ё савол илова кунед.';
+
+  @override
+  String get materialPage => 'Саҳифа';
+
+  @override
+  String get materialQuestion => 'Савол';
+
+  @override
+  String get materialAddPage => 'Саҳифа';
+
+  @override
+  String get materialAddQuestion => 'Савол';
+
+  @override
+  String get materialPasteImport => 'Аз матн гузоштан';
+
+  @override
+  String get materialPasteTitle => 'Саволҳои худро гузоред';
+
+  @override
+  String get materialPasteHelp =>
+      '# саҳифаи шарҳро оғоз мекунад, сатри рақамдор — савол, * ҷавоби дурустро нишон медиҳад, - нодурустро, ва = саволи ҷавобнависро месозад.';
+
+  @override
+  String get materialPasteAction => 'Матнро хондан';
+
+  @override
+  String materialPasteResult(int count) {
+    return '$count блок хонда шуд';
+  }
+
+  @override
+  String get materialQuestionType => 'Навъи савол';
+
+  @override
+  String get materialTypeSingle => 'Як ҷавоби дуруст';
+
+  @override
+  String get materialTypeTrueFalse => 'Дуруст / Нодуруст';
+
+  @override
+  String get materialTypeFill => 'Ҷавобро нависед';
+
+  @override
+  String get materialTypeMatch => 'Ҷуфтҳоро пайваст кунед';
+
+  @override
+  String get materialTypeOrder => 'Ба тартиб гузоред';
+
+  @override
+  String get materialQuestionText => 'Матни савол';
+
+  @override
+  String get materialPageText => 'Матни саҳифа';
+
+  @override
+  String get materialOption => 'Вариант';
+
+  @override
+  String get materialAddOption => 'Илова кардани вариант';
+
+  @override
+  String get materialMarkCorrect =>
+      'Барои нишон додани ҷавоби дуруст доирачаро пахш кунед';
+
+  @override
+  String get materialAcceptedAnswers => 'Ҷавобҳои қабулшаванда';
+
+  @override
+  String get materialAcceptedHint =>
+      'Дар ҳар сатр як — ҳама шаклҳои навишт қабул мешаванд.';
+
+  @override
+  String get materialLeftItem => 'Чап';
+
+  @override
+  String get materialRightItem => 'Рост';
+
+  @override
+  String get materialOrderHint =>
+      'Ҷузъҳоро ба тартиби дуруст нависед — хонанда онҳоро омехта мебинад.';
+
+  @override
+  String get materialTrue => 'Дуруст';
+
+  @override
+  String get materialFalse => 'Нодуруст';
+
+  @override
+  String get materialAssign => 'Додан';
+
+  @override
+  String get materialAssignTitle => 'Ба синфҳо додан';
+
+  @override
+  String get materialPickClasses => 'Ба кадом синфҳо';
+
+  @override
+  String get materialMode => 'Навъи кор';
+
+  @override
+  String get materialModeControl => 'Кори назоратӣ';
+
+  @override
+  String get materialModeControlHint =>
+      'Бо баҳо. Холҳо то мӯҳлат пинҳон мемонанд.';
+
+  @override
+  String get materialModePractice => 'Машқ';
+
+  @override
+  String get materialModePracticeHint =>
+      'Бе баҳо. Хонанда фавран дуруст ё нодурустро мебинад.';
+
+  @override
+  String get materialDueAt => 'Мӯҳлат';
+
+  @override
+  String get materialPickDue => 'Мӯҳлатро интихоб кунед';
+
+  @override
+  String get materialAttempts => 'Кӯшишҳо';
+
+  @override
+  String get materialAttemptsUnlimited => 'Бе маҳдудият';
+
+  @override
+  String get materialControlNeedsDue => 'Кори назоратӣ мӯҳлат талаб мекунад.';
+
+  @override
+  String get materialPickAtLeastOne => 'Ақаллан як синф интихоб кунед.';
+
+  @override
+  String get materialResults => 'Натиҷаҳо';
+
+  @override
+  String materialSubmittedOf(int done, int total) {
+    return '$done аз $total супоридаанд';
+  }
+
+  @override
+  String get materialResultsHidden =>
+      'Холҳо пас аз мӯҳлат ё вақте ки ҳама супоранд, кушода мешаванд.';
+
+  @override
+  String get materialNotSubmitted => 'Насупоридааст';
+
+  @override
+  String get materialTransfer => 'Ба журнал гузарондан';
+
+  @override
+  String get materialTransferDone => 'Баҳоҳо ба журнал гузаронида шуданд';
+
+  @override
+  String get materialTransferred => 'Дар журнал';
+
+  @override
+  String get materialDuplicate => 'Нусха гирифтан';
+
+  @override
+  String get materialLockedEdit =>
+      'Ин мавод аллакай дода шудааст. Барои тағйири саволҳо нусха гиред.';
+
+  @override
+  String get materialDeleteTitle => 'Ин маводро нест кунем?';
+
+  @override
+  String get materialDeleteConfirm =>
+      'Он аз китобхона ва аз ҳама синфҳое, ки гирифта буданд, нест мешавад.';
+
+  @override
+  String get materialNoQuestions => 'савол нест';
+
+  @override
+  String materialQuestionsCount(int count) {
+    return '$count савол';
+  }
+
+  @override
+  String get assignmentsTitle => 'Супоришҳо';
+
+  @override
+  String get assignmentsNoneTitle => 'Ҳозир коре нест';
+
+  @override
+  String get assignmentsNoneMessage => 'Муаллимон ҳанӯз супориш надодаанд.';
+
+  @override
+  String get assignmentStart => 'Оғоз';
+
+  @override
+  String get assignmentContinue => 'Давом додан';
+
+  @override
+  String get assignmentRetry => 'Боз кӯшиш кунед';
+
+  @override
+  String get assignmentNext => 'Оянда';
+
+  @override
+  String get assignmentCheck => 'Санҷидан';
+
+  @override
+  String get assignmentFinish => 'Анҷом';
+
+  @override
+  String get assignmentCorrect => 'Дуруст!';
+
+  @override
+  String get assignmentWrong => 'На он қадар дуруст';
+
+  @override
+  String get assignmentOverdue => 'Мӯҳлат гузашт';
+
+  @override
+  String get assignmentDone => 'Супорида шуд';
+
+  @override
+  String assignmentDueLabel(String when) {
+    return 'То $when';
+  }
+
+  @override
+  String assignmentAttemptsLeft(int count) {
+    return '$count кӯшиш мондааст';
+  }
+
+  @override
+  String get assignmentNoAttemptsLeft => 'Кӯшиш намондааст';
+
+  @override
+  String get assignmentWaitingMark =>
+      'Супорида шуд. Холи шумо пас аз мӯҳлат пайдо мешавад.';
+
+  @override
+  String get assignmentYourScore => 'Натиҷаи шумо';
+
+  @override
+  String get assignmentTypeAnswer => 'Ҷавобатонро нависед';
+
+  @override
+  String get assignmentTapInOrder => 'Калимаҳоро ба тартиб пахш кунед';
+
+  @override
+  String get assignmentMatchHint => 'Аз ҳар тараф якто интихоб кунед';
+
+  @override
+  String get assignmentLeave => 'Аз супориш бароем?';
+
+  @override
+  String get assignmentLeaveMessage =>
+      'Ҷавобҳо нигоҳ дошта шуданд — метавонед баргардед ва идома диҳед.';
+
+  @override
+  String get materialScopeMine => 'Меники';
+
+  @override
+  String get materialScopeSchool => 'Мактаб';
+
+  @override
+  String materialByTeacher(String name) {
+    return 'муаллиф: $name';
+  }
+
+  @override
+  String get materialReadOnly =>
+      'Ин маводи каси дигар аст. Барои тағйир ё додан нусха гиред.';
+
+  @override
+  String get materialSchoolEmpty => 'Дигарон ҳанӯз чизе нанавиштаанд.';
+
+  @override
+  String get analysisByQuarter => 'Аз рӯи чоракҳо';
+
+  @override
+  String get analysisByMonth => 'Моҳона';
+
+  @override
+  String get analysisNoMonthly => 'Дар ин моҳ баҳо нест.';
+
+  @override
+  String get analysisBestDay => 'Беҳтарин рӯз';
+
+  @override
+  String analysisDaysWithMarks(int count) {
+    return '$count рӯз бо баҳо';
+  }
+
+  @override
+  String get aiTitle => 'Ёрдамчии AI';
+
+  @override
+  String get aiSubtitle => 'Дарс ё тест месозад, шумо худатон месанҷед';
+
+  @override
+  String get aiStepSource => 'Манбаъ';
+
+  @override
+  String get aiStepSettings => 'Танзимот';
+
+  @override
+  String get aiStepReview => 'Санҷиш';
+
+  @override
+  String get aiSourceTopic => 'Мавзӯъ';
+
+  @override
+  String get aiSourceTopicHint =>
+      'Мавзӯъро нависед, масалан «Теоремаи Пифагор»';
+
+  @override
+  String get aiSourcePhoto => 'Сурати китоб';
+
+  @override
+  String get aiSourcePhotoHint => 'Саҳифаро сурат гиред, AI онро мехонад';
+
+  @override
+  String get aiSourceText => 'Матн гузоштан';
+
+  @override
+  String get aiSourceTextHint => 'Матнро аз китоб ё ҳуҷҷат гузоред';
+
+  @override
+  String get aiPickPhoto => 'Сурат интихоб кунед';
+
+  @override
+  String get aiPhotoReady => 'Сурат замима шуд';
+
+  @override
+  String get aiNeedSource => 'Аввал манбаъро пур кунед.';
+
+  @override
+  String get aiQuestionCount => 'Саволҳо';
+
+  @override
+  String get aiPageCount => 'Саҳифаҳои шарҳ';
+
+  @override
+  String get aiDifficulty => 'Мураккабӣ';
+
+  @override
+  String get aiDifficultyEasy => 'Осон';
+
+  @override
+  String get aiDifficultyMedium => 'Миёна';
+
+  @override
+  String get aiDifficultyHard => 'Душвор';
+
+  @override
+  String get aiNeedTypes => 'Ақаллан як навъи саволро интихоб кунед.';
+
+  @override
+  String get aiGenerate => 'Сохтан';
+
+  @override
+  String get aiWorking => 'Мавод навишта истодаам…';
+
+  @override
+  String get aiWorkingHint => 'Одатан 20–30 сония вақт мегирад.';
+
+  @override
+  String get aiReviewWarning =>
+      'AI метавонад хато кунад. Пеш аз нигоҳ доштан ҳар блокро хонед ва ислоҳ кунед.';
+
+  @override
+  String aiDropped(int count) {
+    return '$count блоки нодуруст нест карда шуд.';
+  }
+
+  @override
+  String get aiSaveMaterial => 'Ҳамчун мавод нигоҳ доштан';
+
+  @override
+  String get aiRegenerate => 'Аз нав сохтан';
+
+  @override
+  String get aiBack => 'Бозгашт';
+
+  @override
+  String get aiNext => 'Оянда';
+
+  @override
+  String get passwordChangeTitle => 'Паролро иваз кунед';
+
+  @override
+  String get passwordChangeWhy =>
+      'Ин ҳисоб то ҳол пароли пешфарзро истифода мебарад. Пеш аз идома пароли худро интихоб кунед.';
+
+  @override
+  String get passwordCurrent => 'Пароли ҳозира';
+
+  @override
+  String get passwordNew => 'Пароли нав';
+
+  @override
+  String get passwordRepeat => 'Пароли навро такрор кунед';
+
+  @override
+  String get passwordTooShort => 'Ақаллан 8 аломат.';
+
+  @override
+  String get passwordMismatch => 'Паролҳо мувофиқат намекунанд.';
+
+  @override
+  String get passwordIsDefault => 'Пароли дигар аз пешфарз интихоб кунед.';
+
+  @override
+  String get passwordChanged => 'Парол иваз шуд.';
+
+  @override
+  String get passwordSave => 'Паролро нигоҳ доштан';
+
+  @override
+  String get serverAddress => 'Суроғаи сервер';
+
+  @override
+  String get serverAddressHint => 'Барои суроғаи дарунсохт холӣ гузоред';
+
+  @override
+  String get serverAddressSaved =>
+      'Суроға нигоҳ дошта шуд. Барномаро аз нав кушоед.';
+
+  @override
+  String serverAddressCurrent(String url) {
+    return 'Ҳозир: $url';
+  }
+
+  @override
+  String get ratingHighAchievers => 'Аълочиён';
+
+  @override
+  String get subjectStrengths => 'Фанҳои қавӣ ва заиф';
+
+  @override
+  String subjectCoverage(int students, int grades) {
+    return '$students хонанда / $grades баҳо';
+  }
+
+  @override
+  String get awaitingDetection => 'Ҳанӯз тафтиш нашуд';
 }

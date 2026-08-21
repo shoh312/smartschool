@@ -126,6 +126,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleTeacher => 'Teacher';
 
   @override
+  String get roleStudent => 'Student';
+
+  @override
+  String get studentUsernameLabel => 'Username';
+
+  @override
   String get createAccount => 'Create Account';
 
   @override
@@ -812,4 +818,809 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get columnRate => 'Rate';
+
+  @override
+  String get ratingAnalytics => 'Rating';
+
+  @override
+  String get overallAverage => 'Overall average';
+
+  @override
+  String get classRank => 'Class';
+
+  @override
+  String get parallelRank => 'Parallel';
+
+  @override
+  String get schoolRank => 'School';
+
+  @override
+  String get classRanking => 'Class ranking';
+
+  @override
+  String get parallelRanking => 'Parallel ranking';
+
+  @override
+  String get schoolRanking => 'School ranking';
+
+  @override
+  String get strongestSubject => 'Strongest subject';
+
+  @override
+  String get weakestSubject => 'Needs attention';
+
+  @override
+  String get subjectBreakdown => 'Subjects';
+
+  @override
+  String get lessonAttendanceRate => 'Lesson attendance';
+
+  @override
+  String get quarter1 => 'Quarter 1';
+
+  @override
+  String get quarter2 => 'Quarter 2';
+
+  @override
+  String get quarter3 => 'Quarter 3';
+
+  @override
+  String get quarter4 => 'Quarter 4';
+
+  @override
+  String get noGradesYetMessage => 'No grades recorded yet for this period';
+
+  @override
+  String get achievementFirstPlace => '1st place';
+
+  @override
+  String get achievementTopThree => 'Top 3';
+
+  @override
+  String get achievementTopTenPercent => 'Top 10%';
+
+  @override
+  String get exportPdf => 'Export PDF';
+
+  @override
+  String get classAverage => 'Class avg';
+
+  @override
+  String get parallelAverage => 'Parallel avg';
+
+  @override
+  String get schoolAverage => 'School avg';
+
+  @override
+  String get needsAttention => 'Needs attention';
+
+  @override
+  String get biggestDecline => 'Biggest decline';
+
+  @override
+  String get lowestAverage => 'Lowest average';
+
+  @override
+  String get trendVsPreviousQuarter => 'vs previous quarter';
+
+  @override
+  String get pdfRatingEyebrow => 'RATING REPORT';
+
+  @override
+  String get gradeCountSuffix => 'grades';
+
+  @override
+  String get rankingScopeAll => 'All';
+
+  @override
+  String get rankingScopeClasses => 'Classes';
+
+  @override
+  String get rankingScopeParallel => 'Parallel';
+
+  @override
+  String get selectClassPrompt => 'Select a class';
+
+  @override
+  String get selectParallelPrompt => 'Select a parallel';
+
+  @override
+  String get topThree => 'Top 3';
+
+  @override
+  String lessonSchedule(String className) {
+    return 'Schedule — $className';
+  }
+
+  @override
+  String get editLesson => 'Edit lesson';
+
+  @override
+  String get deleteLessonTitle => 'Delete lesson';
+
+  @override
+  String get deleteLessonConfirm =>
+      'Delete this lesson? This cannot be undone.';
+
+  @override
+  String get roomLabel => 'Room';
+
+  @override
+  String get ruznoma => 'Diary';
+
+  @override
+  String get todayLessons => 'Today';
+
+  @override
+  String get tomorrowLessons => 'Tomorrow';
+
+  @override
+  String get homeworkLabel => 'Homework';
+
+  @override
+  String get teacherNoteLabel => 'Teacher\'s note';
+
+  @override
+  String get addHomeworkPrompt => 'Add homework or a note';
+
+  @override
+  String get noLessonsToday => 'No lessons for this day';
+
+  @override
+  String get schoolCalendar => 'School calendar';
+
+  @override
+  String get eventTypeHoliday => 'Holiday';
+
+  @override
+  String get eventTypeExam => 'Exam';
+
+  @override
+  String get eventTypeTest => 'Control work';
+
+  @override
+  String get eventTypeEvent => 'Event';
+
+  @override
+  String get addEvent => 'Add event';
+
+  @override
+  String get eventTitleLabel => 'Title';
+
+  @override
+  String get eventDescriptionLabel => 'Description (optional)';
+
+  @override
+  String get noUpcomingEvents => 'No upcoming events';
+
+  @override
+  String get deleteEventTitle => 'Delete event';
+
+  @override
+  String get deleteEventConfirm => 'Delete this event?';
+
+  @override
+  String get announcements => 'Announcements';
+
+  @override
+  String get postAnnouncement => 'Post announcement';
+
+  @override
+  String get announcementTitleLabel => 'Title';
+
+  @override
+  String get announcementBodyLabel => 'Message';
+
+  @override
+  String get noAnnouncementsYet => 'No announcements yet';
+
+  @override
+  String get deleteAnnouncementTitle => 'Delete announcement';
+
+  @override
+  String get deleteAnnouncementConfirm => 'Delete this announcement?';
+
+  @override
+  String get pickDatePrompt => 'Select a date';
+
+  @override
+  String get lessonWord => 'lesson';
+
+  @override
+  String get lessonsCountSuffix => 'lessons';
+
+  @override
+  String untilTime(String time) {
+    return 'until $time';
+  }
+
+  @override
+  String get teacherWord => 'Teacher';
+
+  @override
+  String lessonOrdinal(int number) {
+    return 'Lesson $number';
+  }
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get logoutConfirmMessage => 'Are you sure you want to sign out?';
+
+  @override
+  String get homeworkListTitle => 'Homework';
+
+  @override
+  String get noHomeworkMessage => 'No homework assigned yet';
+
+  @override
+  String get achievementsTitle => 'Achievements';
+
+  @override
+  String get achievementSchoolFirst => '#1 in school';
+
+  @override
+  String get achievementTopThreeBadge => 'Top 3';
+
+  @override
+  String get achievementExcellent => 'Excellent student';
+
+  @override
+  String get achievementPerfectAttendance => 'Perfect attendance';
+
+  @override
+  String get achievementBigImprovement => 'Most improved';
+
+  @override
+  String achievementSubjectMaster(String subject) {
+    return '$subject master';
+  }
+
+  @override
+  String get noAchievementsTitle => 'No achievements yet';
+
+  @override
+  String get noAchievementsMessage =>
+      'Keep studying -- your first badge is just around the corner';
+
+  @override
+  String get studentHomeTitle => 'My page';
+
+  @override
+  String get studentLoginLabel => 'Login username';
+
+  @override
+  String get studentPasswordLabel => 'Password';
+
+  @override
+  String get studentLoginHelperText =>
+      'Optional -- only needed if this student should log in on their own';
+
+  @override
+  String get journalScanTitle => 'Scan journal';
+
+  @override
+  String get journalScanPrompt =>
+      'Take a photo of the journal page, or pick one from your gallery. Grades in today\'s column will be read automatically.';
+
+  @override
+  String get journalScanTakePhoto => 'Take photo';
+
+  @override
+  String get journalScanPickGallery => 'Choose from gallery';
+
+  @override
+  String get journalScanEmptyTitle => 'Nothing detected';
+
+  @override
+  String get journalScanEmptyMessage =>
+      'No grades were found in today\'s column of this photo. Try a clearer, straighter photo.';
+
+  @override
+  String get journalScanConfirmAll => 'Confirm and save';
+
+  @override
+  String journalScanSavedCount(int saved, int total) {
+    return '$saved of $total grades saved';
+  }
+
+  @override
+  String journalScanNoMatch(String name) {
+    return 'No matching student for \"$name\" -- skipped';
+  }
+
+  @override
+  String journalScanRawName(String name) {
+    return 'Read as: $name';
+  }
+
+  @override
+  String get journalScanAbsent => 'Absent';
+
+  @override
+  String get attendanceToday => 'Today\'s attendance';
+
+  @override
+  String get sectionLearning => 'Learning';
+
+  @override
+  String get sectionSchool => 'School';
+
+  @override
+  String arrivedOfTotal(int arrived, int total) {
+    return '$arrived of $total arrived';
+  }
+
+  @override
+  String get materialsTitle => 'Materials';
+
+  @override
+  String get materialsSubtitle => 'Lessons and tests for your classes';
+
+  @override
+  String get materialLibrary => 'My library';
+
+  @override
+  String get materialHandedOut => 'Handed out';
+
+  @override
+  String get materialNew => 'New material';
+
+  @override
+  String get materialTitleLabel => 'Title';
+
+  @override
+  String get materialDescriptionLabel => 'Short description';
+
+  @override
+  String get materialEmptyTitle => 'No materials yet';
+
+  @override
+  String get materialEmptyMessage =>
+      'Create a lesson or a test and hand it to your class.';
+
+  @override
+  String get materialContentEmpty => 'Add at least one page or question.';
+
+  @override
+  String get materialPage => 'Page';
+
+  @override
+  String get materialQuestion => 'Question';
+
+  @override
+  String get materialAddPage => 'Page';
+
+  @override
+  String get materialAddQuestion => 'Question';
+
+  @override
+  String get materialPasteImport => 'Paste from text';
+
+  @override
+  String get materialPasteTitle => 'Paste your questions';
+
+  @override
+  String get materialPasteHelp =>
+      '# starts an explanation page, a numbered line starts a question, * marks the correct option, - a wrong one, and = makes it a type-the-answer question.';
+
+  @override
+  String get materialPasteAction => 'Read the text';
+
+  @override
+  String materialPasteResult(int count) {
+    return '$count blocks read';
+  }
+
+  @override
+  String get materialQuestionType => 'Question type';
+
+  @override
+  String get materialTypeSingle => 'One correct answer';
+
+  @override
+  String get materialTypeTrueFalse => 'True / False';
+
+  @override
+  String get materialTypeFill => 'Type the answer';
+
+  @override
+  String get materialTypeMatch => 'Match pairs';
+
+  @override
+  String get materialTypeOrder => 'Put in order';
+
+  @override
+  String get materialQuestionText => 'Question text';
+
+  @override
+  String get materialPageText => 'Page text';
+
+  @override
+  String get materialOption => 'Option';
+
+  @override
+  String get materialAddOption => 'Add option';
+
+  @override
+  String get materialMarkCorrect => 'Tap the circle to mark the correct answer';
+
+  @override
+  String get materialAcceptedAnswers => 'Accepted answers';
+
+  @override
+  String get materialAcceptedHint =>
+      'One per line -- spelling variants all count.';
+
+  @override
+  String get materialLeftItem => 'Left';
+
+  @override
+  String get materialRightItem => 'Right';
+
+  @override
+  String get materialOrderHint =>
+      'Write the items in the correct order -- the pupil sees them shuffled.';
+
+  @override
+  String get materialTrue => 'True';
+
+  @override
+  String get materialFalse => 'False';
+
+  @override
+  String get materialAssign => 'Hand out';
+
+  @override
+  String get materialAssignTitle => 'Hand out to classes';
+
+  @override
+  String get materialPickClasses => 'Which classes';
+
+  @override
+  String get materialMode => 'Type of work';
+
+  @override
+  String get materialModeControl => 'Control test';
+
+  @override
+  String get materialModeControlHint =>
+      'Graded. Marks stay hidden until the deadline.';
+
+  @override
+  String get materialModePractice => 'Practice';
+
+  @override
+  String get materialModePracticeHint =>
+      'No grade. The pupil is told right or wrong at once.';
+
+  @override
+  String get materialDueAt => 'Deadline';
+
+  @override
+  String get materialPickDue => 'Choose a deadline';
+
+  @override
+  String get materialAttempts => 'Attempts';
+
+  @override
+  String get materialAttemptsUnlimited => 'Unlimited';
+
+  @override
+  String get materialControlNeedsDue => 'A control test needs a deadline.';
+
+  @override
+  String get materialPickAtLeastOne => 'Choose at least one class.';
+
+  @override
+  String get materialResults => 'Results';
+
+  @override
+  String materialSubmittedOf(int done, int total) {
+    return '$done of $total submitted';
+  }
+
+  @override
+  String get materialResultsHidden =>
+      'Marks open when the deadline passes, or once everybody has submitted.';
+
+  @override
+  String get materialNotSubmitted => 'Not submitted';
+
+  @override
+  String get materialTransfer => 'Send to journal';
+
+  @override
+  String get materialTransferDone => 'Grades sent to the journal';
+
+  @override
+  String get materialTransferred => 'In the journal';
+
+  @override
+  String get materialDuplicate => 'Make a copy';
+
+  @override
+  String get materialLockedEdit =>
+      'This material has been handed out. Make a copy to change the questions.';
+
+  @override
+  String get materialDeleteTitle => 'Delete this material?';
+
+  @override
+  String get materialDeleteConfirm =>
+      'It will disappear from your library and from every class it was handed to.';
+
+  @override
+  String get materialNoQuestions => 'no questions';
+
+  @override
+  String materialQuestionsCount(int count) {
+    return '$count questions';
+  }
+
+  @override
+  String get assignmentsTitle => 'Assignments';
+
+  @override
+  String get assignmentsNoneTitle => 'Nothing to do right now';
+
+  @override
+  String get assignmentsNoneMessage =>
+      'Your teachers have not handed out any work yet.';
+
+  @override
+  String get assignmentStart => 'Start';
+
+  @override
+  String get assignmentContinue => 'Continue';
+
+  @override
+  String get assignmentRetry => 'Try again';
+
+  @override
+  String get assignmentNext => 'Next';
+
+  @override
+  String get assignmentCheck => 'Check';
+
+  @override
+  String get assignmentFinish => 'Finish';
+
+  @override
+  String get assignmentCorrect => 'Correct!';
+
+  @override
+  String get assignmentWrong => 'Not quite';
+
+  @override
+  String get assignmentOverdue => 'Deadline passed';
+
+  @override
+  String get assignmentDone => 'Done';
+
+  @override
+  String assignmentDueLabel(String when) {
+    return 'Due $when';
+  }
+
+  @override
+  String assignmentAttemptsLeft(int count) {
+    return '$count attempts left';
+  }
+
+  @override
+  String get assignmentNoAttemptsLeft => 'No attempts left';
+
+  @override
+  String get assignmentWaitingMark =>
+      'Submitted. Your mark appears after the deadline.';
+
+  @override
+  String get assignmentYourScore => 'Your score';
+
+  @override
+  String get assignmentTypeAnswer => 'Type your answer';
+
+  @override
+  String get assignmentTapInOrder => 'Tap the words in the right order';
+
+  @override
+  String get assignmentMatchHint => 'Pick one from each side to join them';
+
+  @override
+  String get assignmentLeave => 'Leave this task?';
+
+  @override
+  String get assignmentLeaveMessage =>
+      'Your answers are saved -- you can come back and carry on.';
+
+  @override
+  String get materialScopeMine => 'Mine';
+
+  @override
+  String get materialScopeSchool => 'School';
+
+  @override
+  String materialByTeacher(String name) {
+    return 'by $name';
+  }
+
+  @override
+  String get materialReadOnly =>
+      'Someone else wrote this. Make a copy to change it or hand it out.';
+
+  @override
+  String get materialSchoolEmpty => 'Nobody else has written anything yet.';
+
+  @override
+  String get analysisByQuarter => 'By quarter';
+
+  @override
+  String get analysisByMonth => 'Monthly';
+
+  @override
+  String get analysisNoMonthly => 'No marks in this month.';
+
+  @override
+  String get analysisBestDay => 'Best day';
+
+  @override
+  String analysisDaysWithMarks(int count) {
+    return '$count days with marks';
+  }
+
+  @override
+  String get aiTitle => 'AI assistant';
+
+  @override
+  String get aiSubtitle => 'Draft a lesson or a test, then check it yourself';
+
+  @override
+  String get aiStepSource => 'Source';
+
+  @override
+  String get aiStepSettings => 'Settings';
+
+  @override
+  String get aiStepReview => 'Check';
+
+  @override
+  String get aiSourceTopic => 'Topic';
+
+  @override
+  String get aiSourceTopicHint =>
+      'Write the topic, e.g. \"Pythagoras theorem\"';
+
+  @override
+  String get aiSourcePhoto => 'Textbook photo';
+
+  @override
+  String get aiSourcePhotoHint => 'Photograph a page and the AI will read it';
+
+  @override
+  String get aiSourceText => 'Paste text';
+
+  @override
+  String get aiSourceTextHint => 'Paste text from a book or a document';
+
+  @override
+  String get aiPickPhoto => 'Choose a photo';
+
+  @override
+  String get aiPhotoReady => 'Photo attached';
+
+  @override
+  String get aiNeedSource => 'Fill in the source first.';
+
+  @override
+  String get aiQuestionCount => 'Questions';
+
+  @override
+  String get aiPageCount => 'Explanation pages';
+
+  @override
+  String get aiDifficulty => 'Difficulty';
+
+  @override
+  String get aiDifficultyEasy => 'Easy';
+
+  @override
+  String get aiDifficultyMedium => 'Medium';
+
+  @override
+  String get aiDifficultyHard => 'Hard';
+
+  @override
+  String get aiNeedTypes => 'Choose at least one question type.';
+
+  @override
+  String get aiGenerate => 'Generate';
+
+  @override
+  String get aiWorking => 'Writing the material…';
+
+  @override
+  String get aiWorkingHint => 'This usually takes 20–30 seconds.';
+
+  @override
+  String get aiReviewWarning =>
+      'AI can be wrong. Read every block and fix what needs fixing before saving.';
+
+  @override
+  String aiDropped(int count) {
+    return '$count blocks were unusable and removed.';
+  }
+
+  @override
+  String get aiSaveMaterial => 'Save as material';
+
+  @override
+  String get aiRegenerate => 'Generate again';
+
+  @override
+  String get aiBack => 'Back';
+
+  @override
+  String get aiNext => 'Next';
+
+  @override
+  String get passwordChangeTitle => 'Change your password';
+
+  @override
+  String get passwordChangeWhy =>
+      'This account still uses the password it shipped with. Choose your own before going any further.';
+
+  @override
+  String get passwordCurrent => 'Current password';
+
+  @override
+  String get passwordNew => 'New password';
+
+  @override
+  String get passwordRepeat => 'Repeat new password';
+
+  @override
+  String get passwordTooShort => 'At least 8 characters.';
+
+  @override
+  String get passwordMismatch => 'The two passwords do not match.';
+
+  @override
+  String get passwordIsDefault =>
+      'Choose a different password from the default one.';
+
+  @override
+  String get passwordChanged => 'Password changed.';
+
+  @override
+  String get passwordSave => 'Save password';
+
+  @override
+  String get serverAddress => 'Server address';
+
+  @override
+  String get serverAddressHint => 'Leave empty to use the built-in address';
+
+  @override
+  String get serverAddressSaved => 'Server address saved. Restart the app.';
+
+  @override
+  String serverAddressCurrent(String url) {
+    return 'Now: $url';
+  }
+
+  @override
+  String get ratingHighAchievers => 'High achievers';
+
+  @override
+  String get subjectStrengths => 'Strong and weak subjects';
+
+  @override
+  String subjectCoverage(int students, int grades) {
+    return '$students pupils / $grades grades';
+  }
+
+  @override
+  String get awaitingDetection => 'Not checked yet';
 }

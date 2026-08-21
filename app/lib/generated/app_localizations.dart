@@ -322,6 +322,18 @@ abstract class AppLocalizations {
   /// **'Teacher'**
   String get roleTeacher;
 
+  /// No description provided for @roleStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get roleStudent;
+
+  /// No description provided for @studentUsernameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get studentUsernameLabel;
+
   /// No description provided for @createAccount.
   ///
   /// In en, this message translates to:
@@ -1579,6 +1591,1500 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate'**
   String get columnRate;
+
+  /// No description provided for @ratingAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get ratingAnalytics;
+
+  /// No description provided for @overallAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall average'**
+  String get overallAverage;
+
+  /// No description provided for @classRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get classRank;
+
+  /// No description provided for @parallelRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel'**
+  String get parallelRank;
+
+  /// No description provided for @schoolRank.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get schoolRank;
+
+  /// No description provided for @classRanking.
+  ///
+  /// In en, this message translates to:
+  /// **'Class ranking'**
+  String get classRanking;
+
+  /// No description provided for @parallelRanking.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel ranking'**
+  String get parallelRanking;
+
+  /// No description provided for @schoolRanking.
+  ///
+  /// In en, this message translates to:
+  /// **'School ranking'**
+  String get schoolRanking;
+
+  /// No description provided for @strongestSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Strongest subject'**
+  String get strongestSubject;
+
+  /// No description provided for @weakestSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get weakestSubject;
+
+  /// No description provided for @subjectBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Subjects'**
+  String get subjectBreakdown;
+
+  /// No description provided for @lessonAttendanceRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson attendance'**
+  String get lessonAttendanceRate;
+
+  /// No description provided for @quarter1.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarter 1'**
+  String get quarter1;
+
+  /// No description provided for @quarter2.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarter 2'**
+  String get quarter2;
+
+  /// No description provided for @quarter3.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarter 3'**
+  String get quarter3;
+
+  /// No description provided for @quarter4.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarter 4'**
+  String get quarter4;
+
+  /// No description provided for @noGradesYetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No grades recorded yet for this period'**
+  String get noGradesYetMessage;
+
+  /// No description provided for @achievementFirstPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'1st place'**
+  String get achievementFirstPlace;
+
+  /// No description provided for @achievementTopThree.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 3'**
+  String get achievementTopThree;
+
+  /// No description provided for @achievementTopTenPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 10%'**
+  String get achievementTopTenPercent;
+
+  /// No description provided for @exportPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export PDF'**
+  String get exportPdf;
+
+  /// No description provided for @classAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Class avg'**
+  String get classAverage;
+
+  /// No description provided for @parallelAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel avg'**
+  String get parallelAverage;
+
+  /// No description provided for @schoolAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'School avg'**
+  String get schoolAverage;
+
+  /// No description provided for @needsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get needsAttention;
+
+  /// No description provided for @biggestDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Biggest decline'**
+  String get biggestDecline;
+
+  /// No description provided for @lowestAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest average'**
+  String get lowestAverage;
+
+  /// No description provided for @trendVsPreviousQuarter.
+  ///
+  /// In en, this message translates to:
+  /// **'vs previous quarter'**
+  String get trendVsPreviousQuarter;
+
+  /// No description provided for @pdfRatingEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'RATING REPORT'**
+  String get pdfRatingEyebrow;
+
+  /// No description provided for @gradeCountSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'grades'**
+  String get gradeCountSuffix;
+
+  /// No description provided for @rankingScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get rankingScopeAll;
+
+  /// No description provided for @rankingScopeClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get rankingScopeClasses;
+
+  /// No description provided for @rankingScopeParallel.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel'**
+  String get rankingScopeParallel;
+
+  /// No description provided for @selectClassPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a class'**
+  String get selectClassPrompt;
+
+  /// No description provided for @selectParallelPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a parallel'**
+  String get selectParallelPrompt;
+
+  /// No description provided for @topThree.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 3'**
+  String get topThree;
+
+  /// No description provided for @lessonSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule — {className}'**
+  String lessonSchedule(String className);
+
+  /// No description provided for @editLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit lesson'**
+  String get editLesson;
+
+  /// No description provided for @deleteLessonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete lesson'**
+  String get deleteLessonTitle;
+
+  /// No description provided for @deleteLessonConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this lesson? This cannot be undone.'**
+  String get deleteLessonConfirm;
+
+  /// No description provided for @roomLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get roomLabel;
+
+  /// No description provided for @ruznoma.
+  ///
+  /// In en, this message translates to:
+  /// **'Diary'**
+  String get ruznoma;
+
+  /// No description provided for @todayLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get todayLessons;
+
+  /// No description provided for @tomorrowLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get tomorrowLessons;
+
+  /// No description provided for @homeworkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Homework'**
+  String get homeworkLabel;
+
+  /// No description provided for @teacherNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher\'s note'**
+  String get teacherNoteLabel;
+
+  /// No description provided for @addHomeworkPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Add homework or a note'**
+  String get addHomeworkPrompt;
+
+  /// No description provided for @noLessonsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No lessons for this day'**
+  String get noLessonsToday;
+
+  /// No description provided for @schoolCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'School calendar'**
+  String get schoolCalendar;
+
+  /// No description provided for @eventTypeHoliday.
+  ///
+  /// In en, this message translates to:
+  /// **'Holiday'**
+  String get eventTypeHoliday;
+
+  /// No description provided for @eventTypeExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get eventTypeExam;
+
+  /// No description provided for @eventTypeTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Control work'**
+  String get eventTypeTest;
+
+  /// No description provided for @eventTypeEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get eventTypeEvent;
+
+  /// No description provided for @addEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Add event'**
+  String get addEvent;
+
+  /// No description provided for @eventTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get eventTitleLabel;
+
+  /// No description provided for @eventDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get eventDescriptionLabel;
+
+  /// No description provided for @noUpcomingEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming events'**
+  String get noUpcomingEvents;
+
+  /// No description provided for @deleteEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete event'**
+  String get deleteEventTitle;
+
+  /// No description provided for @deleteEventConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this event?'**
+  String get deleteEventConfirm;
+
+  /// No description provided for @announcements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get announcements;
+
+  /// No description provided for @postAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'Post announcement'**
+  String get postAnnouncement;
+
+  /// No description provided for @announcementTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get announcementTitleLabel;
+
+  /// No description provided for @announcementBodyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get announcementBodyLabel;
+
+  /// No description provided for @noAnnouncementsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements yet'**
+  String get noAnnouncementsYet;
+
+  /// No description provided for @deleteAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete announcement'**
+  String get deleteAnnouncementTitle;
+
+  /// No description provided for @deleteAnnouncementConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this announcement?'**
+  String get deleteAnnouncementConfirm;
+
+  /// No description provided for @pickDatePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a date'**
+  String get pickDatePrompt;
+
+  /// No description provided for @lessonWord.
+  ///
+  /// In en, this message translates to:
+  /// **'lesson'**
+  String get lessonWord;
+
+  /// No description provided for @lessonsCountSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'lessons'**
+  String get lessonsCountSuffix;
+
+  /// No description provided for @untilTime.
+  ///
+  /// In en, this message translates to:
+  /// **'until {time}'**
+  String untilTime(String time);
+
+  /// No description provided for @teacherWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get teacherWord;
+
+  /// No description provided for @lessonOrdinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson {number}'**
+  String lessonOrdinal(int number);
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @logoutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out?'**
+  String get logoutConfirmMessage;
+
+  /// No description provided for @homeworkListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Homework'**
+  String get homeworkListTitle;
+
+  /// No description provided for @noHomeworkMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No homework assigned yet'**
+  String get noHomeworkMessage;
+
+  /// No description provided for @achievementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get achievementsTitle;
+
+  /// No description provided for @achievementSchoolFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'#1 in school'**
+  String get achievementSchoolFirst;
+
+  /// No description provided for @achievementTopThreeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 3'**
+  String get achievementTopThreeBadge;
+
+  /// No description provided for @achievementExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent student'**
+  String get achievementExcellent;
+
+  /// No description provided for @achievementPerfectAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect attendance'**
+  String get achievementPerfectAttendance;
+
+  /// No description provided for @achievementBigImprovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Most improved'**
+  String get achievementBigImprovement;
+
+  /// No description provided for @achievementSubjectMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'{subject} master'**
+  String achievementSubjectMaster(String subject);
+
+  /// No description provided for @noAchievementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No achievements yet'**
+  String get noAchievementsTitle;
+
+  /// No description provided for @noAchievementsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep studying -- your first badge is just around the corner'**
+  String get noAchievementsMessage;
+
+  /// No description provided for @studentHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My page'**
+  String get studentHomeTitle;
+
+  /// No description provided for @studentLoginLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Login username'**
+  String get studentLoginLabel;
+
+  /// No description provided for @studentPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get studentPasswordLabel;
+
+  /// No description provided for @studentLoginHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional -- only needed if this student should log in on their own'**
+  String get studentLoginHelperText;
+
+  /// No description provided for @journalScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan journal'**
+  String get journalScanTitle;
+
+  /// No description provided for @journalScanPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo of the journal page, or pick one from your gallery. Grades in today\'s column will be read automatically.'**
+  String get journalScanPrompt;
+
+  /// No description provided for @journalScanTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get journalScanTakePhoto;
+
+  /// No description provided for @journalScanPickGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get journalScanPickGallery;
+
+  /// No description provided for @journalScanEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing detected'**
+  String get journalScanEmptyTitle;
+
+  /// No description provided for @journalScanEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No grades were found in today\'s column of this photo. Try a clearer, straighter photo.'**
+  String get journalScanEmptyMessage;
+
+  /// No description provided for @journalScanConfirmAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm and save'**
+  String get journalScanConfirmAll;
+
+  /// No description provided for @journalScanSavedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{saved} of {total} grades saved'**
+  String journalScanSavedCount(int saved, int total);
+
+  /// No description provided for @journalScanNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching student for \"{name}\" -- skipped'**
+  String journalScanNoMatch(String name);
+
+  /// No description provided for @journalScanRawName.
+  ///
+  /// In en, this message translates to:
+  /// **'Read as: {name}'**
+  String journalScanRawName(String name);
+
+  /// No description provided for @journalScanAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent'**
+  String get journalScanAbsent;
+
+  /// No description provided for @attendanceToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s attendance'**
+  String get attendanceToday;
+
+  /// No description provided for @sectionLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get sectionLearning;
+
+  /// No description provided for @sectionSchool.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get sectionSchool;
+
+  /// No description provided for @arrivedOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{arrived} of {total} arrived'**
+  String arrivedOfTotal(int arrived, int total);
+
+  /// No description provided for @materialsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials'**
+  String get materialsTitle;
+
+  /// No description provided for @materialsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons and tests for your classes'**
+  String get materialsSubtitle;
+
+  /// No description provided for @materialLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'My library'**
+  String get materialLibrary;
+
+  /// No description provided for @materialHandedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Handed out'**
+  String get materialHandedOut;
+
+  /// No description provided for @materialNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New material'**
+  String get materialNew;
+
+  /// No description provided for @materialTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get materialTitleLabel;
+
+  /// No description provided for @materialDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Short description'**
+  String get materialDescriptionLabel;
+
+  /// No description provided for @materialEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No materials yet'**
+  String get materialEmptyTitle;
+
+  /// No description provided for @materialEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a lesson or a test and hand it to your class.'**
+  String get materialEmptyMessage;
+
+  /// No description provided for @materialContentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one page or question.'**
+  String get materialContentEmpty;
+
+  /// No description provided for @materialPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get materialPage;
+
+  /// No description provided for @materialQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get materialQuestion;
+
+  /// No description provided for @materialAddPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get materialAddPage;
+
+  /// No description provided for @materialAddQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get materialAddQuestion;
+
+  /// No description provided for @materialPasteImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from text'**
+  String get materialPasteImport;
+
+  /// No description provided for @materialPasteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your questions'**
+  String get materialPasteTitle;
+
+  /// No description provided for @materialPasteHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'# starts an explanation page, a numbered line starts a question, * marks the correct option, - a wrong one, and = makes it a type-the-answer question.'**
+  String get materialPasteHelp;
+
+  /// No description provided for @materialPasteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the text'**
+  String get materialPasteAction;
+
+  /// No description provided for @materialPasteResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks read'**
+  String materialPasteResult(int count);
+
+  /// No description provided for @materialQuestionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Question type'**
+  String get materialQuestionType;
+
+  /// No description provided for @materialTypeSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'One correct answer'**
+  String get materialTypeSingle;
+
+  /// No description provided for @materialTypeTrueFalse.
+  ///
+  /// In en, this message translates to:
+  /// **'True / False'**
+  String get materialTypeTrueFalse;
+
+  /// No description provided for @materialTypeFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the answer'**
+  String get materialTypeFill;
+
+  /// No description provided for @materialTypeMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Match pairs'**
+  String get materialTypeMatch;
+
+  /// No description provided for @materialTypeOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Put in order'**
+  String get materialTypeOrder;
+
+  /// No description provided for @materialQuestionText.
+  ///
+  /// In en, this message translates to:
+  /// **'Question text'**
+  String get materialQuestionText;
+
+  /// No description provided for @materialPageText.
+  ///
+  /// In en, this message translates to:
+  /// **'Page text'**
+  String get materialPageText;
+
+  /// No description provided for @materialOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Option'**
+  String get materialOption;
+
+  /// No description provided for @materialAddOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add option'**
+  String get materialAddOption;
+
+  /// No description provided for @materialMarkCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the circle to mark the correct answer'**
+  String get materialMarkCorrect;
+
+  /// No description provided for @materialAcceptedAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted answers'**
+  String get materialAcceptedAnswers;
+
+  /// No description provided for @materialAcceptedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One per line -- spelling variants all count.'**
+  String get materialAcceptedHint;
+
+  /// No description provided for @materialLeftItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get materialLeftItem;
+
+  /// No description provided for @materialRightItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get materialRightItem;
+
+  /// No description provided for @materialOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the items in the correct order -- the pupil sees them shuffled.'**
+  String get materialOrderHint;
+
+  /// No description provided for @materialTrue.
+  ///
+  /// In en, this message translates to:
+  /// **'True'**
+  String get materialTrue;
+
+  /// No description provided for @materialFalse.
+  ///
+  /// In en, this message translates to:
+  /// **'False'**
+  String get materialFalse;
+
+  /// No description provided for @materialAssign.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand out'**
+  String get materialAssign;
+
+  /// No description provided for @materialAssignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand out to classes'**
+  String get materialAssignTitle;
+
+  /// No description provided for @materialPickClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Which classes'**
+  String get materialPickClasses;
+
+  /// No description provided for @materialMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Type of work'**
+  String get materialMode;
+
+  /// No description provided for @materialModeControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Control test'**
+  String get materialModeControl;
+
+  /// No description provided for @materialModeControlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded. Marks stay hidden until the deadline.'**
+  String get materialModeControlHint;
+
+  /// No description provided for @materialModePractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get materialModePractice;
+
+  /// No description provided for @materialModePracticeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No grade. The pupil is told right or wrong at once.'**
+  String get materialModePracticeHint;
+
+  /// No description provided for @materialDueAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline'**
+  String get materialDueAt;
+
+  /// No description provided for @materialPickDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a deadline'**
+  String get materialPickDue;
+
+  /// No description provided for @materialAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts'**
+  String get materialAttempts;
+
+  /// No description provided for @materialAttemptsUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get materialAttemptsUnlimited;
+
+  /// No description provided for @materialControlNeedsDue.
+  ///
+  /// In en, this message translates to:
+  /// **'A control test needs a deadline.'**
+  String get materialControlNeedsDue;
+
+  /// No description provided for @materialPickAtLeastOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one class.'**
+  String get materialPickAtLeastOne;
+
+  /// No description provided for @materialResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get materialResults;
+
+  /// No description provided for @materialSubmittedOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} submitted'**
+  String materialSubmittedOf(int done, int total);
+
+  /// No description provided for @materialResultsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Marks open when the deadline passes, or once everybody has submitted.'**
+  String get materialResultsHidden;
+
+  /// No description provided for @materialNotSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not submitted'**
+  String get materialNotSubmitted;
+
+  /// No description provided for @materialTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to journal'**
+  String get materialTransfer;
+
+  /// No description provided for @materialTransferDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades sent to the journal'**
+  String get materialTransferDone;
+
+  /// No description provided for @materialTransferred.
+  ///
+  /// In en, this message translates to:
+  /// **'In the journal'**
+  String get materialTransferred;
+
+  /// No description provided for @materialDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a copy'**
+  String get materialDuplicate;
+
+  /// No description provided for @materialLockedEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'This material has been handed out. Make a copy to change the questions.'**
+  String get materialLockedEdit;
+
+  /// No description provided for @materialDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this material?'**
+  String get materialDeleteTitle;
+
+  /// No description provided for @materialDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'It will disappear from your library and from every class it was handed to.'**
+  String get materialDeleteConfirm;
+
+  /// No description provided for @materialNoQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'no questions'**
+  String get materialNoQuestions;
+
+  /// No description provided for @materialQuestionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions'**
+  String materialQuestionsCount(int count);
+
+  /// No description provided for @assignmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get assignmentsTitle;
+
+  /// No description provided for @assignmentsNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to do right now'**
+  String get assignmentsNoneTitle;
+
+  /// No description provided for @assignmentsNoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teachers have not handed out any work yet.'**
+  String get assignmentsNoneMessage;
+
+  /// No description provided for @assignmentStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get assignmentStart;
+
+  /// No description provided for @assignmentContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get assignmentContinue;
+
+  /// No description provided for @assignmentRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get assignmentRetry;
+
+  /// No description provided for @assignmentNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get assignmentNext;
+
+  /// No description provided for @assignmentCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get assignmentCheck;
+
+  /// No description provided for @assignmentFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get assignmentFinish;
+
+  /// No description provided for @assignmentCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct!'**
+  String get assignmentCorrect;
+
+  /// No description provided for @assignmentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get assignmentWrong;
+
+  /// No description provided for @assignmentOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline passed'**
+  String get assignmentOverdue;
+
+  /// No description provided for @assignmentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get assignmentDone;
+
+  /// No description provided for @assignmentDueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {when}'**
+  String assignmentDueLabel(String when);
+
+  /// No description provided for @assignmentAttemptsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attempts left'**
+  String assignmentAttemptsLeft(int count);
+
+  /// No description provided for @assignmentNoAttemptsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'No attempts left'**
+  String get assignmentNoAttemptsLeft;
+
+  /// No description provided for @assignmentWaitingMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted. Your mark appears after the deadline.'**
+  String get assignmentWaitingMark;
+
+  /// No description provided for @assignmentYourScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Your score'**
+  String get assignmentYourScore;
+
+  /// No description provided for @assignmentTypeAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your answer'**
+  String get assignmentTypeAnswer;
+
+  /// No description provided for @assignmentTapInOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the words in the right order'**
+  String get assignmentTapInOrder;
+
+  /// No description provided for @assignmentMatchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one from each side to join them'**
+  String get assignmentMatchHint;
+
+  /// No description provided for @assignmentLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this task?'**
+  String get assignmentLeave;
+
+  /// No description provided for @assignmentLeaveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answers are saved -- you can come back and carry on.'**
+  String get assignmentLeaveMessage;
+
+  /// No description provided for @materialScopeMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Mine'**
+  String get materialScopeMine;
+
+  /// No description provided for @materialScopeSchool.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get materialScopeSchool;
+
+  /// No description provided for @materialByTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String materialByTeacher(String name);
+
+  /// No description provided for @materialReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else wrote this. Make a copy to change it or hand it out.'**
+  String get materialReadOnly;
+
+  /// No description provided for @materialSchoolEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody else has written anything yet.'**
+  String get materialSchoolEmpty;
+
+  /// No description provided for @analysisByQuarter.
+  ///
+  /// In en, this message translates to:
+  /// **'By quarter'**
+  String get analysisByQuarter;
+
+  /// No description provided for @analysisByMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get analysisByMonth;
+
+  /// No description provided for @analysisNoMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'No marks in this month.'**
+  String get analysisNoMonthly;
+
+  /// No description provided for @analysisBestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Best day'**
+  String get analysisBestDay;
+
+  /// No description provided for @analysisDaysWithMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days with marks'**
+  String analysisDaysWithMarks(int count);
+
+  /// No description provided for @aiTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI assistant'**
+  String get aiTitle;
+
+  /// No description provided for @aiSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft a lesson or a test, then check it yourself'**
+  String get aiSubtitle;
+
+  /// No description provided for @aiStepSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get aiStepSource;
+
+  /// No description provided for @aiStepSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get aiStepSettings;
+
+  /// No description provided for @aiStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get aiStepReview;
+
+  /// No description provided for @aiSourceTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic'**
+  String get aiSourceTopic;
+
+  /// No description provided for @aiSourceTopicHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the topic, e.g. \"Pythagoras theorem\"'**
+  String get aiSourceTopicHint;
+
+  /// No description provided for @aiSourcePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Textbook photo'**
+  String get aiSourcePhoto;
+
+  /// No description provided for @aiSourcePhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Photograph a page and the AI will read it'**
+  String get aiSourcePhotoHint;
+
+  /// No description provided for @aiSourceText.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste text'**
+  String get aiSourceText;
+
+  /// No description provided for @aiSourceTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste text from a book or a document'**
+  String get aiSourceTextHint;
+
+  /// No description provided for @aiPickPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo'**
+  String get aiPickPhoto;
+
+  /// No description provided for @aiPhotoReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo attached'**
+  String get aiPhotoReady;
+
+  /// No description provided for @aiNeedSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in the source first.'**
+  String get aiNeedSource;
+
+  /// No description provided for @aiQuestionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get aiQuestionCount;
+
+  /// No description provided for @aiPageCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation pages'**
+  String get aiPageCount;
+
+  /// No description provided for @aiDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get aiDifficulty;
+
+  /// No description provided for @aiDifficultyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get aiDifficultyEasy;
+
+  /// No description provided for @aiDifficultyMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get aiDifficultyMedium;
+
+  /// No description provided for @aiDifficultyHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get aiDifficultyHard;
+
+  /// No description provided for @aiNeedTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one question type.'**
+  String get aiNeedTypes;
+
+  /// No description provided for @aiGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get aiGenerate;
+
+  /// No description provided for @aiWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing the material…'**
+  String get aiWorking;
+
+  /// No description provided for @aiWorkingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This usually takes 20–30 seconds.'**
+  String get aiWorkingHint;
+
+  /// No description provided for @aiReviewWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'AI can be wrong. Read every block and fix what needs fixing before saving.'**
+  String get aiReviewWarning;
+
+  /// No description provided for @aiDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks were unusable and removed.'**
+  String aiDropped(int count);
+
+  /// No description provided for @aiSaveMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as material'**
+  String get aiSaveMaterial;
+
+  /// No description provided for @aiRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate again'**
+  String get aiRegenerate;
+
+  /// No description provided for @aiBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get aiBack;
+
+  /// No description provided for @aiNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get aiNext;
+
+  /// No description provided for @passwordChangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change your password'**
+  String get passwordChangeTitle;
+
+  /// No description provided for @passwordChangeWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'This account still uses the password it shipped with. Choose your own before going any further.'**
+  String get passwordChangeWhy;
+
+  /// No description provided for @passwordCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get passwordCurrent;
+
+  /// No description provided for @passwordNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get passwordNew;
+
+  /// No description provided for @passwordRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat new password'**
+  String get passwordRepeat;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters.'**
+  String get passwordTooShort;
+
+  /// No description provided for @passwordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The two passwords do not match.'**
+  String get passwordMismatch;
+
+  /// No description provided for @passwordIsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a different password from the default one.'**
+  String get passwordIsDefault;
+
+  /// No description provided for @passwordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed.'**
+  String get passwordChanged;
+
+  /// No description provided for @passwordSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save password'**
+  String get passwordSave;
+
+  /// No description provided for @serverAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Server address'**
+  String get serverAddress;
+
+  /// No description provided for @serverAddressHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to use the built-in address'**
+  String get serverAddressHint;
+
+  /// No description provided for @serverAddressSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Server address saved. Restart the app.'**
+  String get serverAddressSaved;
+
+  /// No description provided for @serverAddressCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Now: {url}'**
+  String serverAddressCurrent(String url);
+
+  /// Label for the count of students averaging 8 or above
+  ///
+  /// In en, this message translates to:
+  /// **'High achievers'**
+  String get ratingHighAchievers;
+
+  /// Section title for the per-subject class breakdown
+  ///
+  /// In en, this message translates to:
+  /// **'Strong and weak subjects'**
+  String get subjectStrengths;
+
+  /// How many pupils and grades a subject average covers
+  ///
+  /// In en, this message translates to:
+  /// **'{students} pupils / {grades} grades'**
+  String subjectCoverage(int students, int grades);
+
+  /// Shown when the cameras have not yet decided a student is present or absent today
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked yet'**
+  String get awaitingDetection;
 }
 
 class _AppLocalizationsDelegate

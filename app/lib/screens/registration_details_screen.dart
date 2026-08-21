@@ -4,6 +4,7 @@ import '../core/design_tokens.dart';
 import '../providers/auth_provider.dart';
 import '../routes/app_routes.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
+import '../widgets/bottom_nav_inset.dart';
 
 class RegistrationDetailsScreen extends StatefulWidget {
   final String phoneNumber;
@@ -42,7 +43,7 @@ class _RegistrationDetailsScreenState extends State<RegistrationDetailsScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: (const EdgeInsets.all(24.0)).add(bottomNavPadding(context)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

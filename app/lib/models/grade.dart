@@ -9,6 +9,7 @@ class Grade {
     required this.gradeDate,
     this.comment,
     this.teacherName,
+    this.quarter,
   });
 
   final int id;
@@ -21,6 +22,10 @@ class Grade {
   final DateTime gradeDate;
   final String? teacherName;
 
+  /// Which school quarter this grade belongs to. Lets a quarter-scoped
+  /// screen filter without having to work out the quarter's date range.
+  final int? quarter;
+
   factory Grade.fromJson(Map<String, dynamic> json) {
     return Grade(
       id: json['id'] as int,
@@ -32,6 +37,7 @@ class Grade {
       comment: json['comment'] as String?,
       gradeDate: DateTime.parse(json['grade_date'] as String),
       teacherName: json['teacher_name'] as String?,
+      quarter: json['quarter'] as int?,
     );
   }
 

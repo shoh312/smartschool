@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartschool_app/generated/app_localizations.dart';
 
-import '../core/design_tokens.dart';
 import '../providers/school_provider.dart';
 import '../providers/student_provider.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_list_card.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
 import '../widgets/empty_state.dart';
 import 'class_students_screen.dart';
 
@@ -69,68 +72,24 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
                 ),
               )
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: (const EdgeInsets.fromLTRB(16, 8, 16, 24)).add(bottomNavPadding(context)),
                 children: [
-                  for (final schoolClass in classes)
+                  DashboardSectionHeader(title: l10n.studentManagement),
+                  for (var i = 0; i < classes.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: context.colors.surface,
-                          borderRadius: AppRadius.lgRadius,
-                          border: Border.all(color: context.colors.border),
-                          boxShadow: AppShadows.card,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ClassStudentsScreen(
-                                  classId: schoolClass.id,
-                                  className: schoolClass.name,
-                                ),
-                              ),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  gradient: AppGradients.primary,
-                                  borderRadius: AppRadius.mdRadius,
-                                  boxShadow: AppShadows.colored(context.colors.primary),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  schoolClass.grade.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                schoolClass.name,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  '${countByClass[schoolClass.id] ?? 0} ${l10n.students}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                              trailing: Icon(
-                                Icons.chevron_right_rounded,
-                                color: context.colors.textMuted,
+                      child: FadeSlideIn(
+                        delay: i < 12 ? Duration(milliseconds: 40 * i) : Duration.zero,
+                        child: AppListCard(
+                          leading: AppListBadge(text: '${classes[i].grade}'),
+                          title: classes[i].name,
+                          subtitle: '${countByClass[classes[i].id] ?? 0} ${l10n.students}',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ClassStudentsScreen(
+                                classId: classes[i].id,
+                                className: classes[i].name,
                               ),
                             ),
                           ),

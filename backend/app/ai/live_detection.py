@@ -5,6 +5,8 @@ import numpy as np
 import insightface
 import threading
 import time
+from datetime import date
+from datetime import time as dt_time
 
 from sqlalchemy.orm import Session
 
@@ -12,9 +14,13 @@ from app.database import SessionLocal
 
 from app.models.student import Student
 from app.services.attendance_service import (
+    DetectionCycleCounter,
+    mark_absent_after_detection_cycles,
     mark_left_school_students,
     record_detection,
+    record_lesson_detection,
 )
+from app.services.lesson_service import active_lesson_for_class
 def _class_window_end_time(start_str: str | None, end_str: str | None, timetable: dict | None) -> str | None:
     from datetime import datetime, timedelta
     if not start_str:
@@ -89,6 +95,50 @@ SIMILARITY_THRESHOLD = 0.42
 # a few seconds later gets another chance.
 MIN_MATCH_MARGIN = 0.08
 
+# How many completed detect windows before an unseen student counts as
+# absent. One is not enough: a child walking through the door, or turned
+# away from the lens for those ten seconds, is missed by a single sweep, and
+# marking them absent on that basis sends their parent a false alarm. Two
+# passes means the room has genuinely been looked at twice.
+ABSENT_AFTER_CYCLES = 2
+
+# What each camera thread is doing right now, so it can be watched from
+# outside without reading the process's stdout.
+#
+# Only the loop itself knows where it is in its cycle -- whether the stream
+# is open, whether recognition is running, how long until the next window.
+# Anything watching from outside would otherwise have to infer that from
+# detections appearing in the database, which says nothing at all on a
+# morning when nobody has arrived yet.
+_camera_status: dict[int, dict] = {}
+_camera_status_lock = threading.Lock()
+
+
+def set_camera_status(camera_id: int, **fields) -> None:
+    with _camera_status_lock:
+        current = _camera_status.setdefault(camera_id, {"camera_id": camera_id})
+        current.update(fields)
+        current["updated_at"] = time.time()
+
+
+def camera_statuses() -> list[dict]:
+    """A snapshot, with the countdowns worked out as of this moment."""
+    now = time.time()
+    with _camera_status_lock:
+        rows = [dict(row) for row in _camera_status.values()]
+
+    for row in rows:
+        next_at = row.pop("_next_detection_at", None)
+        row["seconds_to_detect"] = (
+            max(0, round(next_at - now)) if next_at else None
+        )
+        started_at = row.pop("_detect_started_at", None)
+        row["detecting_for"] = (
+            round(now - started_at) if row.get("detecting") and started_at else None
+        )
+        row["stale_seconds"] = round(now - row.get("updated_at", now))
+    return rows
+
 _insight_app = None
 
 
@@ -97,7 +147,19 @@ def _get_insight_app():
     if _insight_app is None:
         _insight_app = insightface.app.FaceAnalysis(
             name="buffalo_l",
-            providers=["CPUExecutionProvider"]
+            providers=["CPUExecutionProvider"],
+            # FaceAnalysis runs every module in the pack by default, and this
+            # project reads exactly two things off a face: `embedding` (here)
+            # and `bbox` (face_engine). The 2D/3D landmark and age/gender
+            # models were being run once per detected face and thrown away --
+            # 59ms of the 189ms each face cost, so a third of the work in a
+            # classroom, spent on nothing.
+            #
+            # Verified before switching: with these dropped the embeddings
+            # come out bit-identical (max difference 0.0 across a 6-face test
+            # image), so no student has to be re-registered. Recognition
+            # aligns from the detector's own 5 keypoints, not from these.
+            allowed_modules=['detection', 'recognition'],
         )
         # 960x960 instead of the model's default 640x640 -- a camera mounted
         # front-center in a ~10m classroom needs to still resolve faces in
@@ -126,12 +188,27 @@ def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / denom)
 
 
-def _detect_faces_and_save(frame, known_encodings, known_students, camera_id: int) -> None:
+def _detect_faces_and_save(
+    frame,
+    known_encodings,
+    known_students,
+    camera_id: int,
+    lesson_id: int | None = None,
+    lesson_start: dt_time | None = None,
+    lesson_seen: set[int] | None = None,
+) -> None:
     """Runs on a dedicated per-camera worker thread (see `detection_executor`
     in `_run_camera_once`) so the CPU-heavy insightface call never blocks
     that camera's frame-capture loop. Opens its own DB session -- a
     SQLAlchemy session isn't safe to share with the capture loop's session,
     which keeps running concurrently on the main camera thread.
+
+    `lesson_id`/`lesson_start`/`lesson_seen` describe the lesson currently in
+    session for this camera's class (see `active_lesson_for_class` in
+    `_run_camera_once`) -- once a student is in `lesson_seen`, this function
+    stops writing attendance for them (day- and lesson-level both) until the
+    caller clears the set for a new lesson, satisfying "don't re-detect this
+    student again until the lesson ends."
     """
     # 0.5 instead of a smaller factor -- a 10m-deep classroom needs the back
     # row's faces to still have enough real pixels left after this resize
@@ -168,11 +245,26 @@ def _detect_faces_and_save(frame, known_encodings, known_students, camera_id: in
                     continue
 
             student = known_students[best_idx]
+
+            if lesson_seen is not None and student.id in lesson_seen:
+                continue
+
             save_attendance(
                 db, student.id,
                 camera_id=camera_id,
                 confidence=best_score
             )
+            if lesson_id is not None and lesson_start is not None:
+                record_lesson_detection(
+                    db,
+                    student_id=student.id,
+                    lesson_id=lesson_id,
+                    lesson_start=lesson_start,
+                    camera_id=camera_id,
+                    confidence=best_score,
+                )
+                if lesson_seen is not None:
+                    lesson_seen.add(student.id)
             print(f"[+] Camera {camera_id}: detected -> {student.first_name} (score: {best_score:.2f})")
     finally:
         db.close()
@@ -328,9 +420,15 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 school_class.timetable,
             ):
                 return DETECT_SECONDS, WAIT_MINUTES * 60, None
-            ds = (school_class.detect_duration_seconds if school_class.detect_duration_seconds is not None else None) or DETECT_SECONDS
-            ws = ((school_class.wait_duration_minutes if school_class.wait_duration_minutes is not None else None) or WAIT_MINUTES) * 60
-            return ds, ws, school_class.id
+            # `or` would be wrong here: a director who sets the wait to 0
+            # means "never pause", and `0 or WAIT_MINUTES` silently hands
+            # them the twenty-minute default instead -- the exact opposite.
+            # Only a missing value should fall back.
+            ds = school_class.detect_duration_seconds
+            ds = DETECT_SECONDS if ds is None else ds
+            ws = school_class.wait_duration_minutes
+            ws = WAIT_MINUTES if ws is None else ws
+            return ds, ws * 60, school_class.id
         finally:
             s.close()
 
@@ -341,6 +439,35 @@ def _run_camera_once(camera_id: int, camera_source: str):
 
     known_encodings, known_students = _load_roster(class_id)
     print(f"[+] Camera {camera_id}: loaded {len(known_students)} students for class_id={class_id}, source={camera_source}")
+
+    def _load_active_lesson(cid: int | None):
+        if cid is None:
+            return None, None
+        s = SessionLocal()
+        try:
+            lesson = active_lesson_for_class(s, cid)
+            if lesson is None:
+                return None, None
+            try:
+                hh, mm = map(int, lesson.start_time.split(":"))
+            except (ValueError, AttributeError):
+                return None, None
+            return lesson.id, dt_time(hh, mm)
+        finally:
+            s.close()
+
+    active_lesson_id, active_lesson_start = _load_active_lesson(class_id)
+    # Which students have already been recorded for the currently active
+    # lesson -- cleared below whenever the resolved lesson changes, so a
+    # student is only re-processed once the next lesson starts.
+    lesson_seen: set[int] = set()
+
+    def _refresh_lesson(cid: int | None) -> None:
+        nonlocal active_lesson_id, active_lesson_start, lesson_seen
+        new_lesson_id, new_lesson_start = _load_active_lesson(cid)
+        if new_lesson_id != active_lesson_id:
+            active_lesson_id, active_lesson_start = new_lesson_id, new_lesson_start
+            lesson_seen = set()
 
     stagger_offset = (camera_id % STAGGER_BUCKET) * STAGGER_SECONDS_PER_CAMERA
 
@@ -369,6 +496,11 @@ def _run_camera_once(camera_id: int, camera_source: str):
     last_refresh = time.time()
     frame_count = 0
     detect_start_time = time.time()
+
+    # How many detect windows this camera has completed today. Rolling the
+    # count over at midnight is what stops a counter left from yesterday
+    # branding a class absent on the first sweep of the morning.
+    cycle_counter = DetectionCycleCounter(ABSENT_AFTER_CYCLES)
     # Not connecting eagerly here even if a position is already active --
     # every camera whose position happens to start at the same clock time
     # (or every camera at all, on a server restart) goes through the same
@@ -407,6 +539,7 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 elif class_id is None:
                     detection_enabled = False
                     next_detection_time = 0.0
+            _refresh_lesson(class_id)
             last_refresh = now
 
         if class_id is None:
@@ -414,16 +547,60 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 cap.release()
                 cap = None
                 print(f"[+] Camera {camera_id}: no active position, disconnected")
+            set_camera_status(camera_id, class_id=None, connected=False,
+                              detecting=False, phase="dars vaqti emas",
+                              _next_detection_at=None)
             time.sleep(2)
             continue
 
         if not detection_enabled:
             time_until_detect = next_detection_time - now
+            watching = stream_manager.has_viewers(camera_id)
+
+            if watching:
+                # Somebody has the live view open. Keep the stream running
+                # and keep publishing frames -- just don't recognise anyone,
+                # which is the expensive half and is what the duty cycle
+                # exists to ration. Without this the picture froze the
+                # moment a detection window closed, for as long as the wait
+                # lasted (a minute, by default twenty).
+                if cap is None:
+                    cap = _connect()
+                    if cap is None:
+                        time.sleep(2)
+                        continue
+                    consecutive_read_failures = 0
+                    same_frame_count = 0
+                    last_frame_hash = None
+                    print(f"[+] Camera {camera_id}: connected for live view")
+                cap.grab()
+                ret, frame = cap.read()
+                if ret:
+                    stream_manager.update_frame(frame, camera_id=camera_id)
+                else:
+                    consecutive_read_failures += 1
+                    if consecutive_read_failures >= 50:
+                        cap.release()
+                        cap = None
+                        consecutive_read_failures = 0
+                        print(f"[-] Camera {camera_id}: live view stream lost, reconnecting")
+                if now >= next_detection_time:
+                    detection_enabled = True
+                    detect_start_time = now
+                    known_encodings, known_students = load_students(db, class_id)
+                    _refresh_lesson(class_id)
+                    print(f"[+] Camera {camera_id}: detection resumed")
+                continue
+
             if time_until_detect > RECONNECT_LEAD_SECONDS:
                 if cap is not None:
                     cap.release()
                     cap = None
                     print(f"[+] Camera {camera_id}: waiting ({int(time_until_detect)}s), disconnected")
+                set_camera_status(camera_id, class_id=class_id, connected=False,
+                                  detecting=False, phase="kutish",
+                                  roster=len(known_students),
+                                  _next_detection_at=next_detection_time)
                 time.sleep(1)
                 continue
             if cap is None:
@@ -439,7 +616,13 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 detection_enabled = True
                 detect_start_time = now
                 known_encodings, known_students = load_students(db, class_id)
+                _refresh_lesson(class_id)
                 print(f"[+] Camera {camera_id}: detection resumed")
+                set_camera_status(camera_id, class_id=class_id, connected=True,
+                                  detecting=True, phase="qidirilmoqda",
+                                  roster=len(known_students),
+                                  _detect_started_at=now,
+                                  _next_detection_at=None)
             else:
                 time.sleep(0.5)
             continue
@@ -454,8 +637,16 @@ def _run_camera_once(camera_id: int, camera_source: str):
             same_frame_count = 0
             last_frame_hash = None
 
-        for _ in range(3):
-            cap.grab()
+        # One grab, not three. Draining the decoder's buffer keeps the live
+        # view from drifting seconds behind reality, but discarding three
+        # frames for every one kept also capped the preview at a measured
+        # 10 fps off a 25 fps camera, which is most of why it looked jerky.
+        #
+        # One is enough to stay current: reading flat out kept pace with the
+        # camera in real time, so there is no backlog to clear -- and the
+        # per-frame cost on this thread is now ~1ms of encoding (see
+        # stream_manager) rather than 4ms, leaving room for the extra frames.
+        cap.grab()
         ret, frame = cap.read()
         if not ret:
             consecutive_read_failures += 1
@@ -509,13 +700,34 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 known_encodings,
                 known_students,
                 camera_id,
+                active_lesson_id,
+                active_lesson_start,
+                lesson_seen,
             )
 
         if elapsed >= detect_seconds:
             detection_enabled = False
             next_detection_time = now + wait_seconds
             print(f"[+] Camera {camera_id}: AI paused for {wait_seconds//60} minutes...")
+            set_camera_status(camera_id, class_id=class_id, connected=False,
+                              detecting=False, phase="kutish",
+                              roster=len(known_students),
+                              _next_detection_at=next_detection_time)
             mark_left_school_students(db)
+
+            # One pass is not evidence of absence -- a child walking in, or
+            # turned away from the lens, is missed by the first sweep and
+            # would be branded absent on the strength of a single look. From
+            # the second pass on, the room has been checked twice and anyone
+            # still unseen is genuinely not there.
+            today = date.today()
+            enough_passes = cycle_counter.record(today)
+            if enough_passes and class_id is not None:
+                marked = mark_absent_after_detection_cycles(db, class_id, today)
+                if marked:
+                    print(f"[+] Camera {camera_id}: cycle {cycle_counter.count}, "
+                          f"marked {len(marked)} absent")
+
             known_encodings, known_students = _load_roster(class_id)
             # No need to keep the stream open through the whole wait window
             # -- the "not detection_enabled" branch above reconnects on its

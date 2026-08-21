@@ -6,13 +6,18 @@ class NotificationService {
 
   final ApiClient _apiClient;
 
+  /// Registers this device against whoever the bearer token belongs to.
+  ///
+  /// [parentId] is sent for backwards compatibility only -- the server
+  /// takes the owner from the session, so the same call registers a pupil's
+  /// own phone when a pupil is signed in.
   Future<void> saveDeviceToken({
-    required int parentId,
+    int? parentId,
     required String token,
     required String platform,
   }) async {
     await _apiClient.post('/notifications/device-token', body: {
-      'parent_id': parentId,
+      if (parentId != null) 'parent_id': parentId,
       'token': token,
       'platform': platform,
     });

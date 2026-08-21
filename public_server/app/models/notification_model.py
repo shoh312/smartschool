@@ -10,6 +10,9 @@ class DeviceToken(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     parent_id = Column(Integer, ForeignKey("parents.id"), index=True)
+    # A pupil signs in on their own phone now, so a device belongs to
+    # whichever of the two registered it. Exactly one of these is set.
+    student_id = Column(Integer, ForeignKey("students.id"), index=True, nullable=True)
     token = Column(String, unique=True, index=True)
     platform = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)

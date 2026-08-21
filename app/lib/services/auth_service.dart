@@ -8,7 +8,9 @@ class AuthService {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
 
-  Future<void> loginDirector({
+  /// Returns true when the account is still on the default password and
+  /// the app must send the director to the change form before anything else.
+  Future<bool> loginDirector({
     required String email,
     required String password,
   }) async {
@@ -23,6 +25,31 @@ class AuthService {
       token: data['access_token'] as String,
       role: AppRole.director,
     );
+    return data['must_change_password'] as bool? ?? false;
+  }
+
+  /// Whether the signed-in director still has to change their password.
+  /// Read from /auth/me so a restored session is checked too, not only a
+  /// fresh login.
+  Future<bool> directorMustChangePassword() async {
+    try {
+      final data = await _apiClient.get('/auth/me') as Map<String, dynamic>;
+      return data['must_change_password'] as bool? ?? false;
+    } catch (_) {
+      // Offline or a stale token: let them in rather than stranding them
+      // on a screen they can't complete.
+      return false;
+    }
+  }
+
+  Future<void> changeDirectorPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _apiClient.post('/auth/director/change-password', body: {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+    });
   }
 
   Future<void> loginTeacher({

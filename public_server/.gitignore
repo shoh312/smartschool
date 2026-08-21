@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 firebase-credentials.json
 *firebase-adminsdk*.json
+
+# The template is meant to be committed; the real one never is.
+!.env.example

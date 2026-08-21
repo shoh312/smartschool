@@ -1,0 +1,20 @@
+
+# Database dumps -- never in the repository
+backups/
+app/android/key.properties
+app/android/*.jks
+
+# Android release signing -- never in the repository
+app/android/key.properties
+app/android/*.jks
+
+# Telegram bot tokeni bor -- hech qachon commit qilinmasin
+scripts/alerts.json
+
+# Server jurnallari va nazoratchi holati
+logs/
+
+# ММПИ hujjatlari -- ichida uy manzili va telefon raqami bor.
+# Skriptlar omborda qoladi, to'ldirilgan hujjatlar esa yo'q.
+docs/registration/tayyor/
+docs/registration/applicant.json

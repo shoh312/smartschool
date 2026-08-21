@@ -6,9 +6,17 @@ import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../models/school_class.dart';
 import '../providers/school_provider.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_confirm_dialog.dart';
+import '../widgets/app_list_card.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/collapsible_form_card.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
 import '../widgets/empty_state.dart';
+import 'class_journal_screen.dart';
 import 'class_subjects_screen.dart';
+import 'lesson_schedule_screen.dart';
 
 class ClassManagementScreen extends StatefulWidget {
   const ClassManagementScreen({super.key, this.isIntegrated = false});
@@ -24,6 +32,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
   final _detectController = TextEditingController(text: '10');
   final _waitController = TextEditingController(text: '20');
   SchoolClass? _editingClass;
+  bool _formOpen = false;
 
   final _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   String _selectedDay = 'mon';
@@ -55,6 +64,9 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
 
   void _prepareEdit(SchoolClass schoolClass) {
     setState(() {
+      // Editing opens the form itself: the user tapped a pencil on a row,
+      // not the "+" header.
+      _formOpen = true;
       _editingClass = schoolClass;
       _nameController.text = schoolClass.name;
       _gradeController.text = schoolClass.grade.toString();
@@ -76,6 +88,7 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
 
   void _clear() {
     setState(() {
+      _formOpen = false;
       _editingClass = null;
       _nameController.clear();
       _gradeController.clear();
@@ -132,27 +145,14 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
 
   Future<void> _delete(int id) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteClassTitle),
-        content: Text(l10n.deleteClassConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              l10n.delete,
-              style: TextStyle(color: context.colors.danger),
-            ),
-          ),
-        ],
-      ),
+    final confirm = await showAppConfirmDialog(
+      context,
+      icon: Icons.delete_outline_rounded,
+      title: l10n.deleteClassTitle,
+      message: l10n.deleteClassConfirm,
+      isDestructive: true,
     );
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       await context.read<SchoolProvider>().deleteClass(id);
     }
   }
@@ -192,21 +192,21 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
       title: l10n.classManagement,
       showAppBar: !widget.isIntegrated,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: (const EdgeInsets.fromLTRB(16, 16, 16, 24)).add(bottomNavPadding(context)),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          CollapsibleFormCard(
+            title: _editingClass == null ? l10n.createNewClass : l10n.editClass,
+            expanded: _formOpen,
+            onToggle: () {
+              if (_formOpen) {
+                _clear();
+              } else {
+                setState(() => _formOpen = true);
+              }
+            },
+            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    _editingClass == null
-                        ? l10n.createNewClass
-                        : l10n.editClass,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
                   TextField(
                     controller: _nameController,
                     textCapitalization: TextCapitalization.characters,
@@ -355,14 +355,9 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
                   ),
                 ],
               ),
-            ),
           ),
-          const SizedBox(height: 28),
-          Text(
-            l10n.existingClasses,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 26),
+          DashboardSectionHeader(title: l10n.existingClasses),
           if (provider.classes.isEmpty)
             SizedBox(
               height: 200,
@@ -373,76 +368,84 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
               ),
             )
           else
-            ...provider.classes.map(
-              (schoolClass) => Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                decoration: BoxDecoration(
-                  color: context.colors.surface,
-                  borderRadius: AppRadius.lgRadius,
-                  border: Border.all(color: context.colors.border),
-                  boxShadow: AppShadows.card,
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.lgRadius,
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ClassSubjectsScreen(schoolClass: schoolClass),
-                    ),
-                  ),
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: AppGradients.accent,
-                      borderRadius: AppRadius.mdRadius,
-                      boxShadow: AppShadows.colored(context.colors.accent),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      schoolClass.grade.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+            ...provider.classes.asMap().entries.map((entry) {
+              final index = entry.key;
+              final schoolClass = entry.value;
+              return FadeSlideIn(
+                delay: index < 12 ? Duration(milliseconds: 40 * index) : Duration.zero,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: AppListCard(
+                    leading: AppListBadge(text: schoolClass.grade.toString()),
+                    title: schoolClass.name,
+                    subtitle: l10n.gradeLabel(schoolClass.grade.toString()),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ClassSubjectsScreen(schoolClass: schoolClass),
                       ),
                     ),
-                  ),
-                  title: Text(
-                    schoolClass.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  subtitle: Text(l10n.gradeLabel(schoolClass.grade.toString())),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: context.colors.textMuted,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // The journal used to be reachable only as an icon
+                        // buried in this class's subjects screen (or from a
+                        // duplicate dashboard tile). One tap from the class
+                        // row is where staff actually look for it.
+                        IconButton(
+                          tooltip: l10n.viewJournal,
+                          icon: Icon(
+                            Icons.menu_book_outlined,
+                            size: 20,
+                            color: context.colors.textMuted,
+                          ),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ClassJournalScreen(
+                                classId: schoolClass.id,
+                                className: schoolClass.name,
+                              ),
+                            ),
+                          ),
                         ),
-                        onPressed: () => _prepareEdit(schoolClass),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.delete_outline,
-                          size: 20,
-                          color: context.colors.danger,
+                        IconButton(
+                          tooltip: l10n.lessonSchedule(schoolClass.name),
+                          icon: Icon(
+                            Icons.schedule_outlined,
+                            size: 20,
+                            color: context.colors.textMuted,
+                          ),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LessonScheduleScreen(schoolClass: schoolClass),
+                            ),
+                          ),
                         ),
-                        onPressed: () => _delete(schoolClass.id),
-                      ),
-                    ],
+                        IconButton(
+                          icon: Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: context.colors.textMuted,
+                          ),
+                          onPressed: () => _prepareEdit(schoolClass),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: context.colors.danger,
+                          ),
+                          onPressed: () => _delete(schoolClass.id),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
         ],
       ),
     );

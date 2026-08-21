@@ -44,6 +44,8 @@ class StudentProvider extends ChangeNotifier {
     required int classId,
     required String parentPhone,
     required String imagePath,
+    String? username,
+    String? password,
   }) async {
     isLoading = true;
     error = null;
@@ -55,6 +57,8 @@ class StudentProvider extends ChangeNotifier {
         classId: classId,
         parentPhone: parentPhone,
         imagePath: imagePath,
+        username: username,
+        password: password,
       );
       students = [created, ...students];
       return true;
@@ -75,6 +79,8 @@ class StudentProvider extends ChangeNotifier {
     required String parentPhone,
     required bool isActive,
     String? imagePath,
+    String? username,
+    String? password,
   }) async {
     isLoading = true;
     error = null;
@@ -88,6 +94,8 @@ class StudentProvider extends ChangeNotifier {
         parentPhone: parentPhone,
         isActive: isActive,
         imagePath: imagePath,
+        username: username,
+        password: password,
       );
       final index = students.indexWhere((s) => s.id == id);
       if (index != -1) {

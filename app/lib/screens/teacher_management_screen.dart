@@ -7,7 +7,14 @@ import '../core/design_tokens.dart';
 import '../models/teacher.dart';
 import '../providers/teacher_admin_provider.dart';
 import '../utils/error_formatter.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_confirm_dialog.dart';
+import '../widgets/app_list_card.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/collapsible_form_card.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
 import '../widgets/empty_state.dart';
 
 class TeacherManagementScreen extends StatefulWidget {
@@ -24,6 +31,7 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _newTeacherSubject = AppConstants.schoolSubjects.first;
+  bool _formOpen = false;
 
   @override
   void initState() {
@@ -55,6 +63,9 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       _fullNameController.clear();
       _emailController.clear();
       _passwordController.clear();
+      // Fold the form away again so the list of teachers -- including the
+      // one just added -- is what's on screen.
+      setState(() => _formOpen = false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -68,25 +79,15 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
 
   Future<void> _delete(Teacher teacher) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteTeacherTitle),
-        content: Text(l10n.deleteTeacherConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: TextStyle(color: context.colors.danger)),
-          ),
-        ],
-      ),
+    final confirm = await showAppConfirmDialog(
+      context,
+      icon: Icons.delete_outline_rounded,
+      title: l10n.deleteTeacherTitle,
+      message: l10n.deleteTeacherConfirm,
+      isDestructive: true,
     );
 
-    if (confirm != true || !mounted) return;
+    if (!confirm || !mounted) return;
 
     final success = await context.read<TeacherAdminProvider>().deleteTeacher(
       teacher.id,
@@ -113,19 +114,15 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
       child: RefreshIndicator(
         onRefresh: () => context.read<TeacherAdminProvider>().loadTeachers(),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: (const EdgeInsets.fromLTRB(16, 16, 16, 24)).add(bottomNavPadding(context)),
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+            CollapsibleFormCard(
+              title: l10n.addNewTeacher,
+              expanded: _formOpen,
+              onToggle: () => setState(() => _formOpen = !_formOpen),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      l10n.addNewTeacher,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
                     TextField(
                       controller: _fullNameController,
                       decoration: InputDecoration(labelText: l10n.fullName),
@@ -166,19 +163,14 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                       label: Text(l10n.create),
                     ),
                   ],
-                ),
               ),
             ),
-            const SizedBox(height: 28),
-            Text(
-              l10n.existingTeachers,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 26),
+            DashboardSectionHeader(title: l10n.existingTeachers),
             if (provider.isLoading && provider.teachers.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: CircularProgressIndicator()),
+                child: AppLoadingIndicator(),
               )
             else if (provider.teachers.isEmpty)
               SizedBox(
@@ -190,49 +182,32 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen> {
                 ),
               )
             else
-              ...provider.teachers.map(
-                (teacher) => Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: context.colors.surface,
-                    borderRadius: AppRadius.lgRadius,
-                    border: Border.all(color: context.colors.border),
-                    boxShadow: AppShadows.card,
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: AppRadius.lgRadius),
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primary,
-                        borderRadius: AppRadius.mdRadius,
-                        boxShadow: AppShadows.colored(context.colors.primary),
+              ...provider.teachers.asMap().entries.map((entry) {
+                final index = entry.key;
+                final teacher = entry.value;
+                return FadeSlideIn(
+                  delay: index < 12 ? Duration(milliseconds: 40 * index) : Duration.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: AppListCard(
+                      leading: AppListBadge(
+                        text: teacher.fullName.isEmpty
+                            ? '?'
+                            : teacher.fullName[0].toUpperCase(),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        teacher.fullName.isEmpty ? '?' : teacher.fullName[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    title: Text(teacher.fullName, style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(
-                      teacher.subject == null
+                      title: teacher.fullName,
+                      subtitle: teacher.subject == null
                           ? teacher.email
                           : '${teacher.email} • ${teacher.subject}',
-                    ),
-                    trailing: IconButton(
-                      tooltip: l10n.delete,
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: context.colors.danger,
+                      trailing: IconButton(
+                        tooltip: l10n.delete,
+                        icon: Icon(Icons.delete_outline, color: context.colors.danger),
+                        onPressed: () => _delete(teacher),
                       ),
-                      onPressed: () => _delete(teacher),
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
           ],
         ),
       ),

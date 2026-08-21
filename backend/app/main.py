@@ -9,6 +9,8 @@ from app.database import (
     Base,
     ensure_database_schema,
     ensure_default_school_and_backfill,
+    ensure_grade_quarter_backfill,
+    ensure_grade_school_year_backfill,
     ensure_rooms_backfill,
 )
 
@@ -25,6 +27,12 @@ from app.routers.journal_router import router as journal_router
 from app.routers.websocket_router import router as websocket_router
 from app.routers.stream_router import router as stream_router
 from app.routers.sync_status_router import router as sync_status_router
+from app.routers.lesson_router import router as lesson_router
+from app.routers.analytics_router import router as analytics_router
+from app.routers.diary_router import router as diary_router
+from app.routers.calendar_router import router as calendar_router
+from app.routers.announcement_router import router as announcement_router
+from app.routers.material_router import router as material_router
 
 from app.models.student import Student
 from app.models.class_model import Class
@@ -38,8 +46,20 @@ from app.models.teacher_model import Teacher, TeacherClass
 from app.models.journal_model import Grade
 from app.models.notification_model import DeviceToken, NotificationEvent
 from app.models.sync_outbox_model import SyncOutboxEntry
-from app.background.tasks import attendance_background_loop
+from app.models.lesson_model import Lesson
+from app.models.lesson_attendance_model import LessonAttendance
+from app.models.lesson_log_model import LessonLog
+from app.models.school_event_model import SchoolEvent
+from app.models.announcement_model import Announcement
+from app.models.material_model import (
+    Material,
+    MaterialAssignment,
+    MaterialAttempt,
+    MaterialBlock,
+)
+from app.background.tasks import attendance_background_loop, analytics_sync_loop, diary_sync_loop
 from app.background.sync_worker import sync_background_loop
+from app.background.attempt_pull_worker import attempt_pull_loop
 from app.database import SessionLocal
 from app.discovery import start_discovery_responder
 from app.services.auth_service import ensure_default_director
@@ -49,6 +69,8 @@ Base.metadata.create_all(bind=engine)
 ensure_database_schema()
 default_school_id = ensure_default_school_and_backfill()
 ensure_rooms_backfill()
+ensure_grade_quarter_backfill()
+ensure_grade_school_year_backfill()
 
 seed_db = SessionLocal()
 try:
@@ -83,6 +105,12 @@ app.include_router(journal_router)
 app.include_router(websocket_router)
 app.include_router(stream_router)
 app.include_router(sync_status_router)
+app.include_router(lesson_router)
+app.include_router(analytics_router)
+app.include_router(diary_router)
+app.include_router(calendar_router)
+app.include_router(announcement_router)
+app.include_router(material_router)
 
 @app.get("/")
 def root():
@@ -99,6 +127,11 @@ async def start_background_tasks():
     set_main_loop(asyncio.get_running_loop())
 
     asyncio.create_task(attendance_background_loop())
+    asyncio.create_task(analytics_sync_loop())
+    asyncio.create_task(diary_sync_loop())
     asyncio.create_task(sync_background_loop())
+    # The one loop that reads FROM the Public Server: pupils' finished test
+    # work, which is written there because that's where the pupil is.
+    asyncio.create_task(attempt_pull_loop())
     asyncio.create_task(start_discovery_responder())
     threading.Thread(target=start_detection_background, daemon=True).start()

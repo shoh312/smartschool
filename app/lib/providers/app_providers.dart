@@ -1,21 +1,28 @@
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import '../services/analytics_service.dart';
+import '../services/announcement_service.dart';
 import '../services/api_client.dart';
 import '../services/attendance_service.dart';
 import '../services/auth_service.dart';
+import '../services/calendar_service.dart';
+import '../services/diary_service.dart';
+import '../services/material_service.dart';
 import '../services/journal_service.dart';
+import '../services/lesson_service.dart';
 import '../services/notification_service.dart';
 import '../services/parent_auth_service.dart';
 import '../services/public_api_client.dart';
 import '../services/school_service.dart';
+import '../services/student_auth_service.dart';
 import '../services/student_service.dart';
 import '../services/teacher_service.dart';
 import '../services/token_storage.dart';
 import '../websocket/attendance_socket_service.dart';
 import 'attendance_provider.dart';
 import 'auth_provider.dart';
-import 'director_nav_provider.dart';
+import 'nav_provider.dart';
 import 'journal_provider.dart';
 import 'language_provider.dart';
 import 'notification_provider.dart';
@@ -31,7 +38,7 @@ List<SingleChildWidget> buildAppProviders() {
     // ... (rest of providers)
     ChangeNotifierProvider(create: (_) => LanguageProvider()),
     ChangeNotifierProvider(create: (_) => ThemeProvider()),
-    ChangeNotifierProvider(create: (_) => DirectorNavProvider()),
+    ChangeNotifierProvider(create: (_) => NavProvider()),
     ProxyProvider<TokenStorage, ApiClient>(
       update: (_, storage, __) => ApiClient(tokenStorage: storage),
     ),
@@ -47,6 +54,9 @@ List<SingleChildWidget> buildAppProviders() {
     ),
     ProxyProvider2<PublicApiClient, TokenStorage, ParentAuthService>(
       update: (_, api, storage, __) => ParentAuthService(api, storage),
+    ),
+    ProxyProvider2<PublicApiClient, TokenStorage, StudentAuthService>(
+      update: (_, api, storage, __) => StudentAuthService(api, storage),
     ),
     ProxyProvider2<ApiClient, PublicApiClient, StudentService>(
       update: (_, api, publicApi, __) => StudentService(api, publicApi),
@@ -66,17 +76,36 @@ List<SingleChildWidget> buildAppProviders() {
     ProxyProvider<ApiClient, TeacherService>(
       update: (_, api, __) => TeacherService(api),
     ),
+    ProxyProvider2<ApiClient, PublicApiClient, AnalyticsService>(
+      update: (_, api, publicApi, __) => AnalyticsService(api, publicApi),
+    ),
+    ProxyProvider<ApiClient, LessonService>(
+      update: (_, api, __) => LessonService(api),
+    ),
+    ProxyProvider2<ApiClient, PublicApiClient, DiaryService>(
+      update: (_, api, publicApi, __) => DiaryService(api, publicApi),
+    ),
+    ProxyProvider2<ApiClient, PublicApiClient, MaterialService>(
+      update: (_, api, publicApi, __) => MaterialService(api, publicApi),
+    ),
+    ProxyProvider2<ApiClient, PublicApiClient, CalendarService>(
+      update: (_, api, publicApi, __) => CalendarService(api, publicApi),
+    ),
+    ProxyProvider2<ApiClient, PublicApiClient, AnnouncementService>(
+      update: (_, api, publicApi, __) => AnnouncementService(api, publicApi),
+    ),
     Provider(create: (_) => AttendanceSocketService()),
-    ChangeNotifierProxyProvider3<
+    ChangeNotifierProxyProvider4<
       AuthService,
       ParentAuthService,
+      StudentAuthService,
       TokenStorage,
       AuthProvider
     >(
       create: (_) => AuthProvider(),
-      update: (_, authService, parentAuthService, storage, provider) =>
+      update: (_, authService, parentAuthService, studentAuthService, storage, provider) =>
           (provider ?? AuthProvider())
-            ..attach(authService, parentAuthService, storage),
+            ..attach(authService, parentAuthService, studentAuthService, storage),
     ),
     ChangeNotifierProxyProvider<StudentService, StudentProvider>(
       create: (_) => StudentProvider(),

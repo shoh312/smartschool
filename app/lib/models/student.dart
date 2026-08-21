@@ -10,6 +10,7 @@ class Student {
     this.parentName,
     this.photo,
     this.isActive = true,
+    this.username,
   });
 
   final int id;
@@ -22,6 +23,7 @@ class Student {
   final String? parentName;
   final String? photo;
   final bool isActive;
+  final String? username;
 
   String get fullName => '$firstName $lastName';
 
@@ -37,6 +39,7 @@ class Student {
       lastName: json['last_name'] as String? ?? '',
       photo: json['photo'] as String?,
       isActive: json['is_active'] as bool? ?? true,
+      username: json['username'] as String?,
     );
   }
 

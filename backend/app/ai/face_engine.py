@@ -10,7 +10,14 @@ def _get_app():
     if _app is None:
         _app = insightface.app.FaceAnalysis(
             name="buffalo_l",
-            providers=["CPUExecutionProvider"]
+            providers=["CPUExecutionProvider"],
+            # Same two modules as live_detection: this function reads `bbox`
+            # (to pick the largest face) and `embedding`, and nothing else in
+            # the pack contributes to either. Both sides must stay on the
+            # same module set -- an encoding registered here is compared
+            # against a live one there, so a difference in either would
+            # invalidate every stored face.
+            allowed_modules=['detection', 'recognition'],
         )
         _app.prepare(ctx_id=0, det_size=(640, 640))
     return _app

@@ -7,7 +7,9 @@ import '../models/attendance.dart';
 import '../providers/attendance_provider.dart';
 import '../utils/date_formatters.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/grade_detail_sheet.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/status_chip.dart';
 
@@ -36,10 +38,12 @@ class StudentAttendanceJournalScreen extends StatefulWidget {
     required this.studentId,
     required this.studentName,
     this.parentId,
+    this.viaPublicServer = false,
   });
 
   final int studentId;
   final String studentName;
+  final bool viaPublicServer;
   final int? parentId;
 
   @override
@@ -60,6 +64,7 @@ class _StudentAttendanceJournalScreenState
       context.read<AttendanceProvider>().loadHistory(
         studentId: widget.studentId,
         parentId: widget.parentId,
+        viaPublicServer: widget.viaPublicServer,
       );
     });
   }
@@ -76,82 +81,41 @@ class _StudentAttendanceJournalScreenState
   }
 
   void _showDayDetails(AttendanceRecord record) {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          decoration: BoxDecoration(
-            color: context.colors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: context.colors.borderStrong,
-                    borderRadius: BorderRadius.circular(4),
+    showDetailBottomSheet(
+      context,
+      contentBuilder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    DateFormatters.shortDate(record.attendanceDate),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      DateFormatters.shortDate(record.attendanceDate),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  AttendanceStatusChip(status: record.status),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.inTimeOutTime(
-                  DateFormatters.time(record.timeIn),
-                  DateFormatters.time(record.timeOut),
-                ),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              if (record.lastSeen != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  l10n.lastSeenLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  DateFormatters.time(record.lastSeen),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                AttendanceStatusChip(status: record.status),
               ],
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.mdRadius,
-                  ),
-                ),
-                child: Text(l10n.close),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              l10n.inTimeOutTime(
+                DateFormatters.time(record.timeIn),
+                DateFormatters.time(record.timeOut),
               ),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            if (record.lastSeen != null) ...[
+              const SizedBox(height: 12),
+              Text(l10n.lastSeenLabel, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 4),
+              Text(DateFormatters.time(record.lastSeen), style: Theme.of(context).textTheme.bodyMedium),
             ],
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
 
@@ -203,11 +167,12 @@ class _StudentAttendanceJournalScreenState
         onRefresh: () => context.read<AttendanceProvider>().loadHistory(
           studentId: widget.studentId,
           parentId: widget.parentId,
+          viaPublicServer: widget.viaPublicServer,
         ),
         child: provider.isLoading && provider.history.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
                 children: [
                   IntrinsicHeight(
                     child: Row(
@@ -216,7 +181,7 @@ class _StudentAttendanceJournalScreenState
                           child: MetricCard(
                             label: l10n.present,
                             value: presentCount.toString(),
-                            imageAsset: 'assets/icons/present.png',
+                            icon: Icons.check_circle_outline,
                             color: context.colors.success,
                           ),
                         ),
@@ -225,7 +190,7 @@ class _StudentAttendanceJournalScreenState
                           child: MetricCard(
                             label: l10n.late,
                             value: lateCount.toString(),
-                            imageAsset: 'assets/icons/late.png',
+                            icon: Icons.schedule_rounded,
                             color: context.colors.warning,
                           ),
                         ),
@@ -234,7 +199,7 @@ class _StudentAttendanceJournalScreenState
                           child: MetricCard(
                             label: l10n.absent,
                             value: absentCount.toString(),
-                            imageAsset: 'assets/icons/absent.png',
+                            icon: Icons.cancel_outlined,
                             color: context.colors.danger,
                           ),
                         ),
@@ -248,7 +213,6 @@ class _StudentAttendanceJournalScreenState
                       color: context.colors.surface,
                       borderRadius: AppRadius.lgRadius,
                       border: Border.all(color: context.colors.border),
-                      boxShadow: AppShadows.card,
                     ),
                     child: Row(
                       children: [
@@ -284,7 +248,6 @@ class _StudentAttendanceJournalScreenState
                         color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
                         border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
                       ),
                       child: Column(
                         children: [

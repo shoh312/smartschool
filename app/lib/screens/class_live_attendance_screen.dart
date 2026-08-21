@@ -134,7 +134,14 @@ class _ClassVideoViewState extends State<_ClassVideoView>
                         ],
                       ),
                     ),
-                    child: Row(
+                    // Capped and centered so the back button/title/LIVE badge
+                    // stay grouped near the (aspect-ratio-locked, so already
+                    // letterboxed) video on a wide desktop window instead of
+                    // spreading into a thin strip across the full width.
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 900),
+                        child: Row(
                       children: [
                         IconButton(
                           icon: const Icon(
@@ -201,6 +208,8 @@ class _ClassVideoViewState extends State<_ClassVideoView>
                           ),
                         ),
                       ],
+                    ),
+                      ),
                     ),
                   ),
                 ),
