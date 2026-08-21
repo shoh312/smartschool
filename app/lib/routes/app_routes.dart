@@ -11,6 +11,7 @@ import '../screens/notification_screen.dart';
 import '../screens/parent_dashboard_screen.dart';
 import '../screens/school_journal_screen.dart';
 import '../screens/student_details_screen.dart';
+import '../screens/student_home_screen.dart';
 import '../screens/student_management_screen.dart';
 import '../screens/teacher_dashboard_screen.dart';
 import '../screens/teacher_management_screen.dart';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const main = '/main';
   static const directorDashboard = '/director';
   static const parentDashboard = '/parent';
+  static const studentDashboard = '/student-home';
   static const studentDetails = '/student';
   static const attendanceHistory = '/attendance-history';
   static const liveAttendance = '/live-attendance';
@@ -36,6 +38,7 @@ class AppRoutes {
     main: (_) => const MainScreen(),
     directorDashboard: (_) => const DirectorDashboardScreen(),
     parentDashboard: (_) => const ParentDashboardScreen(),
+    studentDashboard: (_) => const StudentHomeScreen(),
     studentDetails: (_) => const StudentDetailsScreen(),
     attendanceHistory: (_) => const AttendanceHistoryScreen(),
     liveAttendance: (_) => const LiveAttendanceScreen(),

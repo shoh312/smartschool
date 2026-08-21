@@ -19,6 +19,15 @@ class Grade(Base):
 
     subject = Column(String, nullable=False)
 
+    quarter = Column(Integer, nullable=True)
+
+    # The year the school year STARTS in (see academic_calendar.school_year_for_date)
+    # -- disambiguates "quarter 1" across different years. Without it, once
+    # a student has more than one year of grades, every quarter-scoped
+    # average/ranking silently blends grades from every year they've
+    # attended (same quarter number repeats every year).
+    school_year = Column(Integer, nullable=True)
+
     value = Column(Integer, nullable=False)
 
     comment = Column(Text)

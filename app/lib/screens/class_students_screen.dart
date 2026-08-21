@@ -10,7 +10,12 @@ import '../models/student.dart';
 import '../providers/school_provider.dart';
 import '../providers/student_provider.dart';
 import '../utils/error_formatter.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_confirm_dialog.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/collapsible_form_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/student_tile.dart';
 
@@ -35,11 +40,14 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _parentPhoneController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _picker = ImagePicker();
   SchoolClass? _selectedClass;
   bool _classInitialized = false;
   XFile? _selectedImage;
   Student? _editingStudent;
+  bool _formOpen = false;
   bool _isActive = true;
 
   @override
@@ -47,6 +55,8 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _parentPhoneController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -82,10 +92,14 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
 
   void _prepareEdit(Student student, List<SchoolClass> classes) {
     setState(() {
+      // Editing opens the form itself: the user tapped a row, not "+".
+      _formOpen = true;
       _editingStudent = student;
       _firstNameController.text = student.firstName;
       _lastNameController.text = student.lastName;
       _parentPhoneController.text = student.parentPhone ?? '';
+      _usernameController.text = student.username ?? '';
+      _passwordController.clear();
       _isActive = student.isActive;
       _selectedClass = classes.cast<SchoolClass?>().firstWhere(
             (c) => c?.id == student.classId,
@@ -97,10 +111,13 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
 
   void _clear(SchoolClass? defaultClass) {
     setState(() {
+      _formOpen = false;
       _editingStudent = null;
       _firstNameController.clear();
       _lastNameController.clear();
       _parentPhoneController.clear();
+      _usernameController.clear();
+      _passwordController.clear();
       _selectedClass = defaultClass;
       _selectedImage = null;
       _isActive = true;
@@ -130,6 +147,8 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
             classId: _selectedClass!.id,
             parentPhone: _parentPhoneController.text.trim(),
             imagePath: _selectedImage!.path,
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
           );
     } else {
       await studentProvider.updateStudent(
@@ -140,6 +159,8 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
             parentPhone: _parentPhoneController.text.trim(),
             isActive: _isActive,
             imagePath: _selectedImage?.path,
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
           );
     }
 
@@ -151,25 +172,15 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
 
   Future<void> _delete(int id) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteStudentTitle),
-        content: Text(l10n.deleteStudentConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete, style: TextStyle(color: context.colors.danger)),
-          ),
-        ],
-      ),
+    final confirm = await showAppConfirmDialog(
+      context,
+      icon: Icons.delete_outline_rounded,
+      title: l10n.deleteStudentTitle,
+      message: l10n.deleteStudentConfirm,
+      isDestructive: true,
     );
 
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       await context.read<StudentProvider>().deleteStudent(id);
     }
   }
@@ -196,19 +207,21 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
     return AppShell(
       title: widget.className,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          CollapsibleFormCard(
+            title: _editingStudent == null ? l10n.addNewStudent : l10n.editStudent,
+            expanded: _formOpen,
+            onToggle: () {
+              if (_formOpen) {
+                _clear(null);
+              } else {
+                setState(() => _formOpen = true);
+              }
+            },
+            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    _editingStudent == null ? l10n.addNewStudent : l10n.editStudent,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -248,6 +261,31 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
                       labelText: l10n.parentPhoneNumber,
                       prefixIcon: const Icon(Icons.phone_outlined),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _usernameController,
+                          decoration: InputDecoration(
+                            labelText: l10n.studentLoginLabel,
+                            prefixIcon: const Icon(Icons.person_outline_rounded),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: l10n.studentPasswordLabel,
+                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   if (_editingStudent != null)
@@ -348,14 +386,9 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
                   ),
                 ],
               ),
-            ),
           ),
           const SizedBox(height: 28),
-          Text(
-            l10n.studentsList,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
+          DashboardSectionHeader(title: l10n.studentsList),
           if (roster.isEmpty && !provider.isLoading)
             SizedBox(
               height: 200,
@@ -366,13 +399,16 @@ class _ClassStudentsScreenState extends State<ClassStudentsScreen> {
               ),
             )
           else
-            ...roster.map(
-              (student) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: StudentTile(
-                  student: student,
-                  onEdit: () => _prepareEdit(student, school.classes),
-                  onDelete: () => _delete(student.id),
+            ...roster.asMap().entries.map(
+              (entry) => FadeSlideIn(
+                delay: entry.key < 12 ? Duration(milliseconds: 40 * entry.key) : Duration.zero,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: StudentTile(
+                    student: entry.value,
+                    onEdit: () => _prepareEdit(entry.value, school.classes),
+                    onDelete: () => _delete(entry.value.id),
+                  ),
                 ),
               ),
             ),

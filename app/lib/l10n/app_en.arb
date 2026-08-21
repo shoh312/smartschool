@@ -43,6 +43,8 @@
   "roleDirector": "Director",
   "roleParent": "Parent",
   "roleTeacher": "Teacher",
+  "roleStudent": "Student",
+  "studentUsernameLabel": "Username",
   "createAccount": "Create Account",
   "lastStep": "Last step!",
   "tellUsName": "Please enter your name to complete registration for {phone}",
@@ -391,5 +393,402 @@
   "columnAbsentDays": "Absent days",
   "columnPresentHours": "Present hours",
   "columnAbsentHours": "Absent hours",
-  "columnRate": "Rate"
+  "columnRate": "Rate",
+  "ratingAnalytics": "Rating",
+  "overallAverage": "Overall average",
+  "classRank": "Class",
+  "parallelRank": "Parallel",
+  "schoolRank": "School",
+  "classRanking": "Class ranking",
+  "parallelRanking": "Parallel ranking",
+  "schoolRanking": "School ranking",
+  "strongestSubject": "Strongest subject",
+  "weakestSubject": "Needs attention",
+  "subjectBreakdown": "Subjects",
+  "lessonAttendanceRate": "Lesson attendance",
+  "quarter1": "Quarter 1",
+  "quarter2": "Quarter 2",
+  "quarter3": "Quarter 3",
+  "quarter4": "Quarter 4",
+  "noGradesYetMessage": "No grades recorded yet for this period",
+  "achievementFirstPlace": "1st place",
+  "achievementTopThree": "Top 3",
+  "achievementTopTenPercent": "Top 10%",
+  "exportPdf": "Export PDF",
+  "classAverage": "Class avg",
+  "parallelAverage": "Parallel avg",
+  "schoolAverage": "School avg",
+  "needsAttention": "Needs attention",
+  "biggestDecline": "Biggest decline",
+  "lowestAverage": "Lowest average",
+  "trendVsPreviousQuarter": "vs previous quarter",
+  "pdfRatingEyebrow": "RATING REPORT",
+  "gradeCountSuffix": "grades",
+  "rankingScopeAll": "All",
+  "rankingScopeClasses": "Classes",
+  "rankingScopeParallel": "Parallel",
+  "selectClassPrompt": "Select a class",
+  "selectParallelPrompt": "Select a parallel",
+  "topThree": "Top 3",
+  "lessonSchedule": "Schedule — {className}",
+  "@lessonSchedule": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "editLesson": "Edit lesson",
+  "deleteLessonTitle": "Delete lesson",
+  "deleteLessonConfirm": "Delete this lesson? This cannot be undone.",
+  "roomLabel": "Room",
+  "ruznoma": "Diary",
+  "todayLessons": "Today",
+  "tomorrowLessons": "Tomorrow",
+  "homeworkLabel": "Homework",
+  "teacherNoteLabel": "Teacher's note",
+  "addHomeworkPrompt": "Add homework or a note",
+  "noLessonsToday": "No lessons for this day",
+  "schoolCalendar": "School calendar",
+  "eventTypeHoliday": "Holiday",
+  "eventTypeExam": "Exam",
+  "eventTypeTest": "Control work",
+  "eventTypeEvent": "Event",
+  "addEvent": "Add event",
+  "eventTitleLabel": "Title",
+  "eventDescriptionLabel": "Description (optional)",
+  "noUpcomingEvents": "No upcoming events",
+  "deleteEventTitle": "Delete event",
+  "deleteEventConfirm": "Delete this event?",
+  "announcements": "Announcements",
+  "postAnnouncement": "Post announcement",
+  "announcementTitleLabel": "Title",
+  "announcementBodyLabel": "Message",
+  "noAnnouncementsYet": "No announcements yet",
+  "deleteAnnouncementTitle": "Delete announcement",
+  "deleteAnnouncementConfirm": "Delete this announcement?",
+  "pickDatePrompt": "Select a date",
+  "lessonWord": "lesson",
+  "lessonsCountSuffix": "lessons",
+  "untilTime": "until {time}",
+  "@untilTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "teacherWord": "Teacher",
+  "lessonOrdinal": "Lesson {number}",
+  "@lessonOrdinal": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "retry": "Retry",
+  "logoutConfirmMessage": "Are you sure you want to sign out?",
+  "homeworkListTitle": "Homework",
+  "noHomeworkMessage": "No homework assigned yet",
+  "achievementsTitle": "Achievements",
+  "achievementSchoolFirst": "#1 in school",
+  "achievementTopThreeBadge": "Top 3",
+  "achievementExcellent": "Excellent student",
+  "achievementPerfectAttendance": "Perfect attendance",
+  "achievementBigImprovement": "Most improved",
+  "achievementSubjectMaster": "{subject} master",
+  "@achievementSubjectMaster": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "noAchievementsTitle": "No achievements yet",
+  "noAchievementsMessage": "Keep studying -- your first badge is just around the corner",
+  "studentHomeTitle": "My page",
+  "studentLoginLabel": "Login username",
+  "studentPasswordLabel": "Password",
+  "studentLoginHelperText": "Optional -- only needed if this student should log in on their own",
+  "journalScanTitle": "Scan journal",
+  "journalScanPrompt": "Take a photo of the journal page, or pick one from your gallery. Grades in today's column will be read automatically.",
+  "journalScanTakePhoto": "Take photo",
+  "journalScanPickGallery": "Choose from gallery",
+  "journalScanEmptyTitle": "Nothing detected",
+  "journalScanEmptyMessage": "No grades were found in today's column of this photo. Try a clearer, straighter photo.",
+  "journalScanConfirmAll": "Confirm and save",
+  "journalScanSavedCount": "{saved} of {total} grades saved",
+  "@journalScanSavedCount": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journalScanNoMatch": "No matching student for \"{name}\" -- skipped",
+  "@journalScanNoMatch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journalScanRawName": "Read as: {name}",
+  "@journalScanRawName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journalScanAbsent": "Absent",
+  "attendanceToday": "Today's attendance",
+  "sectionLearning": "Learning",
+  "sectionSchool": "School",
+  "arrivedOfTotal": "{arrived} of {total} arrived",
+  "@arrivedOfTotal": {
+    "placeholders": {
+      "arrived": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "materialsTitle": "Materials",
+  "materialsSubtitle": "Lessons and tests for your classes",
+  "materialLibrary": "My library",
+  "materialHandedOut": "Handed out",
+  "materialNew": "New material",
+  "materialTitleLabel": "Title",
+  "materialDescriptionLabel": "Short description",
+  "materialEmptyTitle": "No materials yet",
+  "materialEmptyMessage": "Create a lesson or a test and hand it to your class.",
+  "materialContentEmpty": "Add at least one page or question.",
+  "materialPage": "Page",
+  "materialQuestion": "Question",
+  "materialAddPage": "Page",
+  "materialAddQuestion": "Question",
+  "materialPasteImport": "Paste from text",
+  "materialPasteTitle": "Paste your questions",
+  "materialPasteHelp": "# starts an explanation page, a numbered line starts a question, * marks the correct option, - a wrong one, and = makes it a type-the-answer question.",
+  "materialPasteAction": "Read the text",
+  "materialPasteResult": "{count} blocks read",
+  "@materialPasteResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "materialQuestionType": "Question type",
+  "materialTypeSingle": "One correct answer",
+  "materialTypeTrueFalse": "True / False",
+  "materialTypeFill": "Type the answer",
+  "materialTypeMatch": "Match pairs",
+  "materialTypeOrder": "Put in order",
+  "materialQuestionText": "Question text",
+  "materialPageText": "Page text",
+  "materialOption": "Option",
+  "materialAddOption": "Add option",
+  "materialMarkCorrect": "Tap the circle to mark the correct answer",
+  "materialAcceptedAnswers": "Accepted answers",
+  "materialAcceptedHint": "One per line -- spelling variants all count.",
+  "materialLeftItem": "Left",
+  "materialRightItem": "Right",
+  "materialOrderHint": "Write the items in the correct order -- the pupil sees them shuffled.",
+  "materialTrue": "True",
+  "materialFalse": "False",
+  "materialAssign": "Hand out",
+  "materialAssignTitle": "Hand out to classes",
+  "materialPickClasses": "Which classes",
+  "materialMode": "Type of work",
+  "materialModeControl": "Control test",
+  "materialModeControlHint": "Graded. Marks stay hidden until the deadline.",
+  "materialModePractice": "Practice",
+  "materialModePracticeHint": "No grade. The pupil is told right or wrong at once.",
+  "materialDueAt": "Deadline",
+  "materialPickDue": "Choose a deadline",
+  "materialAttempts": "Attempts",
+  "materialAttemptsUnlimited": "Unlimited",
+  "materialControlNeedsDue": "A control test needs a deadline.",
+  "materialPickAtLeastOne": "Choose at least one class.",
+  "materialResults": "Results",
+  "materialSubmittedOf": "{done} of {total} submitted",
+  "@materialSubmittedOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "materialResultsHidden": "Marks open when the deadline passes, or once everybody has submitted.",
+  "materialNotSubmitted": "Not submitted",
+  "materialTransfer": "Send to journal",
+  "materialTransferDone": "Grades sent to the journal",
+  "materialTransferred": "In the journal",
+  "materialDuplicate": "Make a copy",
+  "materialLockedEdit": "This material has been handed out. Make a copy to change the questions.",
+  "materialDeleteTitle": "Delete this material?",
+  "materialDeleteConfirm": "It will disappear from your library and from every class it was handed to.",
+  "materialNoQuestions": "no questions",
+  "materialQuestionsCount": "{count} questions",
+  "@materialQuestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assignmentsTitle": "Assignments",
+  "assignmentsNoneTitle": "Nothing to do right now",
+  "assignmentsNoneMessage": "Your teachers have not handed out any work yet.",
+  "assignmentStart": "Start",
+  "assignmentContinue": "Continue",
+  "assignmentRetry": "Try again",
+  "assignmentNext": "Next",
+  "assignmentCheck": "Check",
+  "assignmentFinish": "Finish",
+  "assignmentCorrect": "Correct!",
+  "assignmentWrong": "Not quite",
+  "assignmentOverdue": "Deadline passed",
+  "assignmentDone": "Done",
+  "assignmentDueLabel": "Due {when}",
+  "@assignmentDueLabel": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "assignmentAttemptsLeft": "{count} attempts left",
+  "@assignmentAttemptsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assignmentNoAttemptsLeft": "No attempts left",
+  "assignmentWaitingMark": "Submitted. Your mark appears after the deadline.",
+  "assignmentYourScore": "Your score",
+  "assignmentTypeAnswer": "Type your answer",
+  "assignmentTapInOrder": "Tap the words in the right order",
+  "assignmentMatchHint": "Pick one from each side to join them",
+  "assignmentLeave": "Leave this task?",
+  "assignmentLeaveMessage": "Your answers are saved -- you can come back and carry on.",
+  "materialScopeMine": "Mine",
+  "materialScopeSchool": "School",
+  "materialByTeacher": "by {name}",
+  "@materialByTeacher": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "materialReadOnly": "Someone else wrote this. Make a copy to change it or hand it out.",
+  "materialSchoolEmpty": "Nobody else has written anything yet.",
+  "analysisByQuarter": "By quarter",
+  "analysisByMonth": "Monthly",
+  "analysisNoMonthly": "No marks in this month.",
+  "analysisBestDay": "Best day",
+  "analysisDaysWithMarks": "{count} days with marks",
+  "@analysisDaysWithMarks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiTitle": "AI assistant",
+  "aiSubtitle": "Draft a lesson or a test, then check it yourself",
+  "aiStepSource": "Source",
+  "aiStepSettings": "Settings",
+  "aiStepReview": "Check",
+  "aiSourceTopic": "Topic",
+  "aiSourceTopicHint": "Write the topic, e.g. \"Pythagoras theorem\"",
+  "aiSourcePhoto": "Textbook photo",
+  "aiSourcePhotoHint": "Photograph a page and the AI will read it",
+  "aiSourceText": "Paste text",
+  "aiSourceTextHint": "Paste text from a book or a document",
+  "aiPickPhoto": "Choose a photo",
+  "aiPhotoReady": "Photo attached",
+  "aiNeedSource": "Fill in the source first.",
+  "aiQuestionCount": "Questions",
+  "aiPageCount": "Explanation pages",
+  "aiDifficulty": "Difficulty",
+  "aiDifficultyEasy": "Easy",
+  "aiDifficultyMedium": "Medium",
+  "aiDifficultyHard": "Hard",
+  "aiNeedTypes": "Choose at least one question type.",
+  "aiGenerate": "Generate",
+  "aiWorking": "Writing the material…",
+  "aiWorkingHint": "This usually takes 20–30 seconds.",
+  "aiReviewWarning": "AI can be wrong. Read every block and fix what needs fixing before saving.",
+  "aiDropped": "{count} blocks were unusable and removed.",
+  "@aiDropped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiSaveMaterial": "Save as material",
+  "aiRegenerate": "Generate again",
+  "aiBack": "Back",
+  "aiNext": "Next",
+  "passwordChangeTitle": "Change your password",
+  "passwordChangeWhy": "This account still uses the password it shipped with. Choose your own before going any further.",
+  "passwordCurrent": "Current password",
+  "passwordNew": "New password",
+  "passwordRepeat": "Repeat new password",
+  "passwordTooShort": "At least 8 characters.",
+  "passwordMismatch": "The two passwords do not match.",
+  "passwordIsDefault": "Choose a different password from the default one.",
+  "passwordChanged": "Password changed.",
+  "passwordSave": "Save password",
+  "serverAddress": "Server address",
+  "serverAddressHint": "Leave empty to use the built-in address",
+  "serverAddressSaved": "Server address saved. Restart the app.",
+  "serverAddressCurrent": "Now: {url}",
+  "@serverAddressCurrent": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingHighAchievers": "High achievers",
+  "@ratingHighAchievers": {
+    "description": "Label for the count of students averaging 8 or above"
+  },
+  "subjectStrengths": "Strong and weak subjects",
+  "@subjectStrengths": {
+    "description": "Section title for the per-subject class breakdown"
+  },
+  "subjectCoverage": "{students} pupils / {grades} grades",
+  "@subjectCoverage": {
+    "description": "How many pupils and grades a subject average covers",
+    "placeholders": {
+      "students": {
+        "type": "int"
+      },
+      "grades": {
+        "type": "int"
+      }
+    }
+  },
+  "awaitingDetection": "Not checked yet",
+  "@awaitingDetection": {
+    "description": "Shown when the cameras have not yet decided a student is present or absent today"
+  }
 }

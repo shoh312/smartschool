@@ -7,7 +7,9 @@ import '../models/grade.dart';
 import '../providers/journal_provider.dart';
 import '../providers/student_provider.dart';
 import '../utils/date_formatters.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/metric_card.dart';
 
@@ -234,7 +236,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
         onRefresh: () =>
             context.read<JournalProvider>().loadForClass(widget.classId),
         child: journal.isLoading && journal.grades.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoadingIndicator()
             : subjects.isEmpty
             ? EmptyState(
                 icon: Icons.grade_outlined,
@@ -252,7 +254,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: MetricCard(
                               label: l10n.students,
                               value: roster.length.toString(),
-                              imageAsset: 'assets/icons/students.png',
+                              icon: Icons.groups_2_outlined,
                               color: theme.colorScheme.primary,
                             ),
                           ),
@@ -261,7 +263,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: MetricCard(
                               label: l10n.grades,
                               value: monthGrades.length.toString(),
-                              imageAsset: 'assets/icons/grades.png',
+                              icon: Icons.grading_rounded,
                               color: context.colors.success,
                             ),
                           ),
@@ -270,7 +272,7 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                             child: MetricCard(
                               label: l10n.average,
                               value: averageLabel,
-                              imageAsset: 'assets/icons/average.png',
+                              icon: Icons.trending_up_rounded,
                               color: context.colors.warning,
                             ),
                           ),
@@ -278,19 +280,22 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                    child: Wrap(
-                      spacing: 8,
-                      children: [
-                        for (final subject in subjects)
-                          ChoiceChip(
-                            label: Text(subject),
-                            selected: subject == effectiveSubject,
-                            onSelected: (_) =>
-                                setState(() => _selectedSubject = subject),
-                          ),
-                      ],
+                  // One scrolling row, not a wrapping cloud: a school teaches
+                  // a dozen-plus subjects, and letting the chips wrap pushed
+                  // the journal grid itself off the bottom of the screen.
+                  SizedBox(
+                    height: 48,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                      itemCount: subjects.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) => ChoiceChip(
+                        label: Text(subjects[index]),
+                        selected: subjects[index] == effectiveSubject,
+                        onSelected: (_) =>
+                            setState(() => _selectedSubject = subjects[index]),
+                      ),
                     ),
                   ),
                   Padding(
@@ -301,7 +306,6 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                         color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
                         border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
                       ),
                       child: Row(
                         children: [
@@ -340,22 +344,25 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                         builder: (context, constraints) {
                           final totalGridWidth =
                               dateColumns.length * _kDateColumnWidth;
+                          // 34 = 16px padding on each side of the scroll
+                          // view, plus the 1px border on each side of the
+                          // table's own container. Miss the border and the
+                          // inner Row overflows it by exactly 2px.
                           final availableGridWidth =
-                              (constraints.maxWidth - _kNameColumnWidth - 48)
+                              (constraints.maxWidth - _kNameColumnWidth - 34)
                                   .clamp(0.0, double.infinity);
                           final gridViewportWidth =
                               totalGridWidth < availableGridWidth
                               ? totalGridWidth
                               : availableGridWidth;
                           return SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            padding: (const EdgeInsets.fromLTRB(16, 0, 16, 16)).add(bottomNavPadding(context)),
                             child: Container(
                               clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
                                 color: context.colors.surface,
                                 borderRadius: AppRadius.lgRadius,
                                 border: Border.all(color: context.colors.border),
-                                boxShadow: AppShadows.card,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,

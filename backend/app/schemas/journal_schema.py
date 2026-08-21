@@ -11,12 +11,14 @@ class GradeCreate(BaseModel):
     value: int = Field(ge=1, le=10)
     comment: Optional[str] = None
     grade_date: Optional[date] = None
+    quarter: Optional[int] = Field(default=None, ge=1, le=4)
 
 
 class GradeUpdate(BaseModel):
     value: Optional[int] = Field(default=None, ge=1, le=10)
     comment: Optional[str] = None
     grade_date: Optional[date] = None
+    quarter: Optional[int] = Field(default=None, ge=1, le=4)
 
 
 class GradeResponse(BaseModel):
@@ -29,6 +31,8 @@ class GradeResponse(BaseModel):
     value: int
     comment: Optional[str] = None
     grade_date: date
+    quarter: Optional[int] = None
+    school_year: Optional[int] = None
 
     class Config:
         from_attributes = True

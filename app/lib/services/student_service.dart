@@ -8,11 +8,11 @@ class StudentService {
   final ApiClient _apiClient;
   final PublicApiClient _publicApiClient;
 
-  Future<List<Student>> fetchStudents({int? parentId}) async {
-    // A parent's own children live on the Public Server (/students/me);
-    // /students is a director-only endpoint on the local server that lists
-    // the whole school.
-    if (parentId != null) {
+  Future<List<Student>> fetchStudents({int? parentId, bool viaPublicServer = false}) async {
+    // A parent's own children (or a student's own single row) live on the
+    // Public Server (/students/me); /students is a director-only endpoint
+    // on the local server that lists the whole school.
+    if (parentId != null || viaPublicServer) {
       final data = await _publicApiClient.get('/students/me') as List<dynamic>;
       return data
           .map((item) => Student.fromJson(item as Map<String, dynamic>))
@@ -37,6 +37,8 @@ class StudentService {
     required int classId,
     required String parentPhone,
     required String imagePath,
+    String? username,
+    String? password,
   }) async {
     final data =
         await _apiClient.multipartPost(
@@ -46,6 +48,8 @@ class StudentService {
                 'last_name': lastName,
                 'class_id': classId.toString(),
                 'parent_phone': parentPhone,
+                if (username != null && username.isNotEmpty) 'username': username,
+                if (password != null && password.isNotEmpty) 'password': password,
               },
               fileField: 'file',
               filePath: imagePath,
@@ -62,6 +66,8 @@ class StudentService {
     required String parentPhone,
     required bool isActive,
     String? imagePath,
+    String? username,
+    String? password,
   }) async {
     final fields = {
       'first_name': firstName,
@@ -69,6 +75,8 @@ class StudentService {
       'class_id': classId.toString(),
       'parent_phone': parentPhone,
       'is_active': isActive.toString(),
+      if (username != null) 'username': username,
+      if (password != null && password.isNotEmpty) 'password': password,
     };
 
     if (imagePath != null) {

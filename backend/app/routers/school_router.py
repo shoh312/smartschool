@@ -112,6 +112,43 @@ def list_cameras(db: Session = Depends(get_db), director: Director = Depends(get
     return db.query(Camera).filter(Camera.school_id == director.school_id).order_by(Camera.id.desc()).all()
 
 
+@router.get("/cameras/status")
+def camera_status(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
+    """What each of this school's cameras is doing right now.
+
+    Reports the loop's own view -- connected, recognising, how many seconds
+    until the next window -- rather than anything inferred from the data it
+    produces. On a morning when nobody has arrived yet those are the same
+    empty database and completely different situations: a camera counting
+    down, and a camera that never started.
+    """
+    from app.ai.live_detection import camera_statuses
+
+    cameras = {
+        camera.id: camera
+        for camera in db.query(Camera).filter(Camera.school_id == director.school_id).all()
+    }
+    classes = {c.id: c.name for c in db.query(Class).filter(Class.school_id == director.school_id).all()}
+
+    rows = []
+    for status in camera_statuses():
+        camera = cameras.get(status.get("camera_id"))
+        if camera is None:
+            continue        # another school's camera; not this director's business
+        rows.append({
+            **status,
+            "camera_name": camera.name,
+            # `class_id` in the status is whichever class is in session right
+            # now, and is null outside lesson hours. `camera_class_id` is the
+            # room the camera is bolted to, which never changes -- a watcher
+            # following one class needs that one, or it loses its camera the
+            # moment the bell goes and reports it as dead.
+            "camera_class_id": camera.class_id,
+            "class_name": classes.get(status.get("class_id") or camera.class_id),
+        })
+    return rows
+
+
 @router.post("/cameras", response_model=CameraResponse)
 def create_camera(payload: CameraCreate, db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
     if payload.class_id:

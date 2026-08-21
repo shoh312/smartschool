@@ -8,10 +8,16 @@ import '../providers/auth_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/student_provider.dart';
 import '../routes/app_routes.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
+import '../widgets/dashboard_action_tile.dart';
 import '../widgets/empty_state.dart';
-import '../widgets/language_picker_sheet.dart';
 import '../widgets/student_tile.dart';
+import 'student_assignments_screen.dart';
+import 'student_diary_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -34,40 +40,111 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   }
 
   Future<void> _openGrades() async {
-    final children = context.read<StudentProvider>().students;
-    if (children.isEmpty) return;
+    final target = await _selectChild();
+    if (target == null || !mounted) return;
+    Navigator.pushNamed(context, AppRoutes.studentDetails, arguments: target);
+  }
 
-    if (children.length == 1) {
-      Navigator.pushNamed(
-        context,
-        AppRoutes.studentDetails,
-        arguments: children.first,
-      );
-      return;
-    }
+  Future<Student?> _selectChild() async {
+    final children = context.read<StudentProvider>().students;
+    if (children.isEmpty) return null;
+    if (children.length == 1) return children.first;
 
     final l10n = AppLocalizations.of(context)!;
-    final selected = await showDialog<Student>(
+    return showModalBottomSheet<Student>(
       context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(l10n.children),
-        children: [
-          for (final child in children)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, child),
-              child: Text(child.fullName),
-            ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: context.colors.borderStrong,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              DashboardSectionHeader(title: l10n.children),
+              for (final child in children) ...[
+                Material(
+                  color: context.colors.surfaceAlt,
+                  borderRadius: AppRadius.mdRadius,
+                  child: InkWell(
+                    borderRadius: AppRadius.mdRadius,
+                    onTap: () => Navigator.pop(context, child),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(gradient: AppGradients.primary, shape: BoxShape.circle),
+                            alignment: Alignment.center,
+                            child: Text(
+                              child.firstName.isEmpty ? '?' : child.firstName[0].toUpperCase(),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(child.fullName, style: Theme.of(context).textTheme.titleSmall),
+                          ),
+                          Icon(Icons.chevron_right_rounded, color: context.colors.textMuted),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (child != children.last) const SizedBox(height: 8),
+              ],
+            ],
+          ),
+        ),
       ),
     );
+  }
 
-    if (selected != null && mounted) {
-      Navigator.pushNamed(
-        context,
-        AppRoutes.studentDetails,
-        arguments: selected,
-      );
-    }
+  Future<void> _openDiary() async {
+    final target = await _selectChild();
+    if (target == null || !mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudentDiaryScreen(studentId: target.id, studentName: target.fullName),
+      ),
+    );
+  }
+
+  /// Read-only for a parent: the same screen the pupil uses, but with no
+  /// way in -- StudentAssignmentsScreen only offers Start to a session
+  /// signed in as the pupil themself.
+  Future<void> _openAssignments() async {
+    final target = await _selectChild();
+    if (target == null || !mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudentAssignmentsScreen(
+          studentId: target.id,
+          studentName: target.fullName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -78,14 +155,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     return AppShell(
       title: l10n.parentDashboard,
       actions: [
-        IconButton(
-          tooltip: l10n.language,
-          icon: const Icon(Icons.language_rounded),
-          onPressed: () => showLanguagePickerSheet(context),
-        ),
+        // Language moved to the Settings tab; notifications stay here
+        // because a parent has no tab for them.
         IconButton(
           tooltip: l10n.notifications,
-          icon: Image.asset('assets/icons/alerts.png', width: 24, height: 24),
+          icon: Icon(Icons.notifications_none_rounded, size: 24),
           onPressed: () =>
               Navigator.pushNamed(context, AppRoutes.notifications),
         ),
@@ -96,54 +170,85 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           await students.loadStudents(parentId: parentId);
         },
         child: students.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoadingIndicator()
             : students.students.isEmpty
             ? EmptyState(
-                imageAsset: 'assets/icons/students.png',
+                icon: Icons.groups_2_outlined,
                 title: l10n.noChildrenLinked,
                 message: l10n.assignedStudentsWillAppear,
               )
             : ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
                 itemCount: students.students.length + 2,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return Row(
+                    final tiles = [
+                      DashboardActionTile(
+                        icon: Icons.history_rounded,
+                        label: l10n.attendanceHistory,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.attendanceHistory),
+                      ),
+                      DashboardActionTile(
+                        icon: Icons.grading_rounded,
+                        label: l10n.grades,
+                        onTap: _openGrades,
+                      ),
+                      DashboardActionTile(
+                        icon: Icons.menu_book_rounded,
+                        label: l10n.ruznoma,
+                        onTap: _openDiary,
+                      ),
+                      DashboardActionTile(
+                        icon: Icons.auto_stories_rounded,
+                        label: l10n.assignmentsTitle,
+                        onTap: _openAssignments,
+                      ),
+                      // The calendar, announcements and rating are
+                      // permanent tabs in the bottom bar now, so they're
+                      // gone from here -- a tile repeating a tab is a
+                      // second door to the same room.
+                    ];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: _ParentActionTile(
-                            imageAsset: 'assets/icons/history.png',
-                            label: l10n.attendanceHistory,
-                            color: context.colors.info,
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              AppRoutes.attendanceHistory,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ParentActionTile(
-                            imageAsset: 'assets/icons/grades.png',
-                            label: l10n.grades,
-                            color: context.colors.warning,
-                            onTap: _openGrades,
-                          ),
+                        DashboardSectionHeader(title: l10n.quickActions),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            const spacing = 12.0;
+                            final columns = constraints.maxWidth > 700 ? 3 : 2;
+                            final tileWidth =
+                                (constraints.maxWidth - spacing * (columns - 1)) / columns;
+                            return Wrap(
+                              spacing: spacing,
+                              runSpacing: spacing,
+                              children: [
+                                for (var i = 0; i < tiles.length; i++)
+                                  SizedBox(
+                                    width: tileWidth,
+                                    child: FadeSlideIn(
+                                      delay: Duration(milliseconds: 40 * i),
+                                      child: tiles[i],
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     );
                   }
                   if (index == 1) {
                     return Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        l10n.children,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                      padding: const EdgeInsets.only(top: 8),
+                      child: DashboardSectionHeader(title: l10n.children),
                     );
                   }
-                  return StudentTile(student: students.students[index - 2]);
+                  final studentIndex = index - 2;
+                  return FadeSlideIn(
+                    delay: studentIndex < 12 ? Duration(milliseconds: 40 * studentIndex) : Duration.zero,
+                    child: StudentTile(student: students.students[studentIndex]),
+                  );
                 },
               ),
       ),
@@ -151,65 +256,3 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   }
 }
 
-class _ParentActionTile extends StatelessWidget {
-  const _ParentActionTile({
-    this.icon,
-    this.imageAsset,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  }) : assert(icon != null || imageAsset != null, 'Provide icon or imageAsset');
-
-  final IconData? icon;
-
-  /// Path to a custom PNG icon (e.g. 'assets/icons/history.png'), shown
-  /// instead of [icon] when set.
-  final String? imageAsset;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: context.colors.surface,
-      borderRadius: AppRadius.lgRadius,
-      child: InkWell(
-        borderRadius: AppRadius.lgRadius,
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.lgRadius,
-            border: Border.all(color: context.colors.border),
-            boxShadow: AppShadows.card,
-          ),
-          child: Row(
-            children: [
-              if (imageAsset != null)
-                Image.asset(imageAsset!, width: 36, height: 36)
-              else
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.tint(color),
-                    borderRadius: AppRadius.mdRadius,
-                  ),
-                  child: Icon(icon, color: color, size: 20),
-                ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.textPrimary),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

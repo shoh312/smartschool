@@ -5,7 +5,11 @@ import 'package:smartschool_app/generated/app_localizations.dart';
 import '../core/design_tokens.dart';
 import '../providers/school_provider.dart';
 import '../providers/student_provider.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_list_card.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
 import '../widgets/empty_state.dart';
 import 'class_live_attendance_screen.dart';
 
@@ -67,74 +71,30 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: (const EdgeInsets.fromLTRB(16, 8, 16, 24)).add(bottomNavPadding(context)),
               children: [
-                for (final schoolClass in classes)
+                // Embedded as a tab this screen has no AppBar, so the
+                // section header doubles as its page title.
+                DashboardSectionHeader(title: l10n.live),
+                for (var i = 0; i < classes.length; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: context.colors.surface,
-                        borderRadius: AppRadius.lgRadius,
-                        border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ClassLiveAttendanceScreen(
-                                classId: schoolClass.id,
-                                className: schoolClass.name,
-                              ),
+                    child: FadeSlideIn(
+                      delay: i < 12 ? Duration(milliseconds: 40 * i) : Duration.zero,
+                      child: AppListCard(
+                        leading: AppListBadge(text: '${classes[i].grade}'),
+                        title: classes[i].name,
+                        subtitle: '${countByClass[classes[i].id] ?? 0} ${l10n.students}',
+                        trailing: _CameraStatus(
+                          hasCamera: classIdsWithCamera.contains(classes[i].id),
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClassLiveAttendanceScreen(
+                              classId: classes[i].id,
+                              className: classes[i].name,
                             ),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            leading: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                gradient: AppGradients.primary,
-                                borderRadius: AppRadius.mdRadius,
-                                boxShadow: AppShadows.colored(context.colors.primary),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                schoolClass.grade.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              schoolClass.name,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                '${countByClass[schoolClass.id] ?? 0} ${l10n.students}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ),
-                            trailing: classIdsWithCamera.contains(schoolClass.id)
-                                ? Icon(
-                                    Icons.videocam_rounded,
-                                    color: context.colors.success,
-                                  )
-                                : Icon(
-                                    Icons.videocam_off_outlined,
-                                    color: context.colors.textMuted,
-                                  ),
                           ),
                         ),
                       ),
@@ -144,8 +104,38 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
             ),
     );
 
+    // Embedded as a MainScreen tab this renders without an AppBar of its
+    // own, so nothing else keeps the list out from under the status bar --
+    // hence the explicit top inset. Bottom stays unpadded on purpose: the
+    // list is meant to scroll under the floating nav pill and fade out.
     return widget.isIntegrated
-        ? body
+        ? SafeArea(bottom: false, child: body)
         : AppShell(title: l10n.live, child: body);
+  }
+}
+
+/// Whether a class has a camera feeding live attendance -- a class without
+/// one can still be opened, it just won't have anything to show, so this
+/// reads as a quiet status rather than an error.
+class _CameraStatus extends StatelessWidget {
+  const _CameraStatus({required this.hasCamera});
+
+  final bool hasCamera;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = hasCamera ? context.colors.success : context.colors.textMuted;
+    return Container(
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: AppRadius.smRadius,
+      ),
+      child: Icon(
+        hasCamera ? Icons.videocam_rounded : Icons.videocam_off_outlined,
+        color: color,
+        size: 17,
+      ),
+    );
   }
 }

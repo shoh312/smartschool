@@ -51,6 +51,7 @@ def ensure_database_schema():
         "ALTER TABLE parents ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES schools(id)",
         "ALTER TABLE cameras ADD COLUMN IF NOT EXISTS school_id INTEGER REFERENCES schools(id)",
         "ALTER TABLE directors ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN NOT NULL DEFAULT false",
+        "ALTER TABLE directors ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS phone VARCHAR",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true",
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS subject VARCHAR",
@@ -75,6 +76,19 @@ def ensure_database_schema():
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS detect_duration_seconds INTEGER",
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS wait_duration_minutes INTEGER",
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS timetable JSON",
+        "ALTER TABLE grades ADD COLUMN IF NOT EXISTS quarter INTEGER",
+        "CREATE INDEX IF NOT EXISTS ix_grades_quarter ON grades (quarter)",
+        "ALTER TABLE grades ADD COLUMN IF NOT EXISTS school_year INTEGER",
+        "CREATE INDEX IF NOT EXISTS ix_grades_school_year ON grades (school_year)",
+        "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id)",
+        "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS room VARCHAR",
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS username VARCHAR",
+        # Postgres unique indexes already allow any number of NULLs (NULL is
+        # never considered equal to another NULL), so a plain unique index
+        # here still permits every student without login credentials.
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_students_username ON students (username)",
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash VARCHAR",
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_salt VARCHAR",
     ]
 
     with engine.begin() as connection:
@@ -109,6 +123,48 @@ def ensure_default_school_and_backfill() -> int:
             )
 
         return school_id
+
+
+def ensure_grade_quarter_backfill() -> None:
+    """Grades entered before the `quarter` column existed have it NULL --
+    derive it from grade_date using the same month mapping as
+    app.utils.academic_calendar.quarter_for_date, so historical grades are
+    included in quarterly rankings instead of silently excluded.
+    """
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE grades SET quarter = CASE
+                    WHEN EXTRACT(MONTH FROM grade_date) IN (9, 10) THEN 1
+                    WHEN EXTRACT(MONTH FROM grade_date) IN (11, 12) THEN 2
+                    WHEN EXTRACT(MONTH FROM grade_date) IN (1, 2, 3) THEN 3
+                    ELSE 4
+                END
+                WHERE quarter IS NULL
+                """
+            )
+        )
+
+
+def ensure_grade_school_year_backfill() -> None:
+    """Same idea as ensure_grade_quarter_backfill, for the school_year
+    column added alongside it later -- derives the year a grade's school
+    year STARTS in (see academic_calendar.school_year_for_date: Sep-Dec
+    belongs to the same calendar year, Jan-Aug belongs to the previous one).
+    """
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE grades SET school_year = CASE
+                    WHEN EXTRACT(MONTH FROM grade_date) >= 9 THEN EXTRACT(YEAR FROM grade_date)
+                    ELSE EXTRACT(YEAR FROM grade_date) - 1
+                END
+                WHERE school_year IS NULL
+                """
+            )
+        )
 
 
 def ensure_rooms_backfill() -> None:

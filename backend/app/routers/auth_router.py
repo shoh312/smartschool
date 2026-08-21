@@ -93,6 +93,7 @@ def login_director(
         access_token=create_director_token(director),
         user_type="director",
         director=director,
+        must_change_password=bool(director.must_change_password),
     )
 
 

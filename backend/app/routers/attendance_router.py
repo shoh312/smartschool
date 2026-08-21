@@ -155,6 +155,15 @@ def _student_attendance_summary(
 
     attendance_rate = (present_days + late_days) / total_days * 100 if total_days > 0 else 0.0
 
+    # Today is read off the same rows rather than with another query -- it is
+    # already in `rows` whenever the range includes today, which the
+    # analytics screen's default 30-day window always does.
+    today = date.today()
+    today_status = next(
+        (att.status for att in rows if att.attendance_date == today),
+        None,
+    )
+
     return StudentAttendanceSummary(
         student_id=student.id,
         first_name=student.first_name,
@@ -167,6 +176,7 @@ def _student_attendance_summary(
         late_days=late_days,
         attendance_rate=round(attendance_rate, 1),
         daily_records=daily_records,
+        today_status=today_status,
     )
 
 

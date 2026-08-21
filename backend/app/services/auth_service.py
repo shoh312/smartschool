@@ -187,7 +187,14 @@ def ensure_default_director(db: Session, default_school_id: int | None = None) -
         db.commit()
         db.refresh(director)
 
-    if verify_password(DEFAULT_DIRECTOR_PASSWORD, director.hashed_password):
+    still_default = verify_password(DEFAULT_DIRECTOR_PASSWORD, director.hashed_password)
+    if director.must_change_password != still_default:
+        # Recomputed on every start rather than set once: an account whose
+        # password was reset back to the default has to be caught again.
+        director.must_change_password = still_default
+        db.commit()
+
+    if still_default:
         print(
             "\n"
             "!!! SECURITY WARNING: the default director account "
@@ -199,8 +206,18 @@ def ensure_default_director(db: Session, default_school_id: int | None = None) -
     return director
 
 
+MIN_PASSWORD_LENGTH = 8
+
+
 def change_director_password(db: Session, director: Director, current_password: str, new_password: str) -> None:
     if not verify_password(current_password, director.hashed_password):
         raise HTTPException(status_code=401, detail="invalid_current_password")
+    if len(new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail="password_too_short")
+    if new_password == DEFAULT_DIRECTOR_PASSWORD:
+        # Otherwise the forced-change screen can be satisfied by typing the
+        # very password it exists to get rid of.
+        raise HTTPException(status_code=400, detail="password_is_default")
     director.hashed_password = hash_password(new_password)
+    director.must_change_password = False
     db.commit()

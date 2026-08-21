@@ -7,7 +7,12 @@ class TokenStorage {
   static const _roleKey = 'app_role';
   static const _parentIdKey = 'parent_id';
   static const _teacherIdKey = 'teacher_id';
+  static const _studentIdKey = 'student_id';
   static const _serverUrlKey = 'server_base_url';
+  // Kept apart from _serverUrlKey, which caches the auto-discovered school
+  // server. This one is typed in by a person and must survive discovery
+  // overwriting its own value.
+  static const _publicServerUrlKey = 'public_server_base_url';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -16,6 +21,7 @@ class TokenStorage {
     required AppRole role,
     int? parentId,
     int? teacherId,
+    int? studentId,
   }) async {
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _roleKey, value: role.name);
@@ -24,6 +30,9 @@ class TokenStorage {
     }
     if (teacherId != null) {
       await _storage.write(key: _teacherIdKey, value: teacherId.toString());
+    }
+    if (studentId != null) {
+      await _storage.write(key: _studentIdKey, value: studentId.toString());
     }
   }
 
@@ -45,6 +54,11 @@ class TokenStorage {
     return value == null ? null : int.tryParse(value);
   }
 
+  Future<int?> readStudentId() async {
+    final value = await _storage.read(key: _studentIdKey);
+    return value == null ? null : int.tryParse(value);
+  }
+
   /// Last backend address that was reachable, kept across logout since it's
   /// network config, not auth state -- avoids re-discovering on every launch.
   Future<void> saveServerUrl(String url) =>
@@ -52,10 +66,17 @@ class TokenStorage {
 
   Future<String?> readServerUrl() => _storage.read(key: _serverUrlKey);
 
+  Future<void> savePublicServerUrl(String? url) => (url == null || url.isEmpty)
+      ? _storage.delete(key: _publicServerUrlKey)
+      : _storage.write(key: _publicServerUrlKey, value: url);
+
+  Future<String?> readPublicServerUrl() => _storage.read(key: _publicServerUrlKey);
+
   Future<void> clear() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _roleKey);
     await _storage.delete(key: _parentIdKey);
     await _storage.delete(key: _teacherIdKey);
+    await _storage.delete(key: _studentIdKey);
   }
 }

@@ -27,6 +27,10 @@ class DirectorResponse(BaseModel):
     email: EmailStr
     is_active: bool
     is_superadmin: bool = False
+    # Reported here as well as on login, so a director who signed in before
+    # this existed -- and still has a saved token -- is caught on the next
+    # start rather than never.
+    must_change_password: bool = False
 
     class Config:
         from_attributes = True
@@ -37,6 +41,9 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user_type: str
     director: Optional[DirectorResponse] = None
+    # True while the account is still on the password shipped in the source.
+    # The app sends the director to the change form and nowhere else.
+    must_change_password: bool = False
 
 class LoginRequest(BaseModel):
     phone: str

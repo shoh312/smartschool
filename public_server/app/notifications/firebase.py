@@ -31,14 +31,21 @@ def create_and_send_notification(db: Session, event: NotificationEvent) -> Notif
     there's no cross-school Parent-row family to fan out across, since a
     Public Server parent is one global row per phone).
     """
-    if not event.parent_id:
+    # Addressed to a parent, or -- for schoolwork reminders -- straight to
+    # the pupil on their own phone. A parent event with no parent is still
+    # a mistake worth recording rather than silently dropping.
+    if event.parent_id:
+        owner = DeviceToken.parent_id == event.parent_id
+    elif event.student_id:
+        owner = DeviceToken.student_id == event.student_id
+    else:
         event.status = "skipped"
-        event.error = "No parent assigned"
+        event.error = "No recipient assigned"
         db.commit()
         return event
 
     tokens = db.query(DeviceToken).filter(
-        DeviceToken.parent_id == event.parent_id,
+        owner,
         DeviceToken.is_active == True,
     ).all()
 

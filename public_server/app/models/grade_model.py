@@ -24,6 +24,7 @@ class Grade(Base):
     local_grade_id = Column(Integer, nullable=False)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False, index=True)
     subject = Column(String, nullable=False)
+    quarter = Column(Integer, nullable=True)
     value = Column(Integer, nullable=False)
     comment = Column(Text)
     grade_date = Column(Date, nullable=False)

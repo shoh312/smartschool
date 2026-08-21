@@ -13,7 +13,9 @@ import '../screens/student_attendance_journal_screen.dart';
 import '../screens/student_journal_screen.dart';
 import '../utils/date_formatters.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/grade_detail_sheet.dart';
 import '../widgets/metric_card.dart';
 
 class StudentDetailsScreen extends StatefulWidget {
@@ -66,9 +68,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               ),
             ],
       child: student == null
-          ? Center(child: Text(l10n.studentNotFound))
+          ? EmptyState(icon: Icons.person_off_outlined, title: l10n.noDataTitle, message: l10n.studentNotFound)
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
               children: [
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -76,7 +78,6 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                     color: context.colors.surface,
                     borderRadius: AppRadius.lgRadius,
                     border: Border.all(color: context.colors.border),
-                    boxShadow: AppShadows.card,
                   ),
                   child: Row(
                     children: [
@@ -139,7 +140,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                       ),
                     ),
                   ),
-                  icon: Image.asset('assets/icons/history.png', width: 20, height: 20),
+                  icon: Icon(Icons.history_rounded, size: 20),
                   label: Text(l10n.viewAttendanceHistoryButton),
                 ),
                 const SizedBox(height: 12),
@@ -157,7 +158,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                               ),
                             ),
                           ),
-                  icon: Image.asset('assets/icons/live_stream.png', width: 20, height: 20),
+                  icon: Icon(Icons.videocam_outlined, size: 20),
                   label: Text(l10n.viewLiveStatusButton),
                 ),
                 const SizedBox(height: 24),
@@ -170,7 +171,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   const Center(child: CircularProgressIndicator())
                 else if (journal.grades.isEmpty)
                   EmptyState(
-                    imageAsset: 'assets/icons/grades.png',
+                    icon: Icons.grading_rounded,
                     title: l10n.noGrades,
                     message: l10n.noGradesMessage,
                   )
@@ -182,7 +183,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                           child: MetricCard(
                             label: l10n.grades,
                             value: journal.grades.length.toString(),
-                            imageAsset: 'assets/icons/grades.png',
+                            icon: Icons.grading_rounded,
                             color: context.colors.success,
                           ),
                         ),
@@ -196,7 +197,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                                             .reduce((a, b) => a + b) /
                                         journal.grades.length)
                                     .toStringAsFixed(1),
-                            imageAsset: 'assets/icons/average.png',
+                            icon: Icons.trending_up_rounded,
                             color: context.colors.warning,
                           ),
                         ),
@@ -211,7 +212,6 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
                         border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
                       ),
                       child: ListTile(
                         onTap: () => _showGradeDetails(context, grade),
@@ -260,111 +260,6 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   }
 
   void _showGradeDetails(BuildContext context, Grade grade) {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          decoration: BoxDecoration(
-            color: context.colors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: context.colors.borderStrong,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _gradeColor(grade.value).withOpacity(0.15),
-                      borderRadius: AppRadius.mdRadius,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      grade.value.toString(),
-                      style: TextStyle(
-                        color: _gradeColor(grade.value),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          grade.subject,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Text(
-                          DateFormatters.shortDate(grade.gradeDate),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: context.colors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.journalTeacherLabel,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                grade.teacherName ?? '-',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.journalCommentOptional,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                (grade.comment == null || grade.comment!.isEmpty)
-                    ? l10n.journalNoComment
-                    : grade.comment!,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.mdRadius,
-                  ),
-                ),
-                child: Text(l10n.close),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    showGradeDetailSheet(context, grade: grade, dateLabel: DateFormatters.shortDate(grade.gradeDate));
   }
 }

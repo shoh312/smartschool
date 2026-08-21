@@ -1,3 +1,16 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+// Release signing lives outside the repository: key.properties and the
+// .jks are gitignored, so a checkout can still build a debug APK without
+// them, and the key that identifies this app to Android never ends up in
+// version control.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -32,11 +45,29 @@ android {
     }
 
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Falls back to debug signing only when the keystore isn't
+            // present, so a fresh checkout still builds. A real release
+            // must be signed with the stable key: Android identifies an
+            // app by its signature, and an update signed with a different
+            // key is refused as a different app.
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     

@@ -7,7 +7,9 @@ import '../models/grade.dart';
 import '../providers/journal_provider.dart';
 import '../utils/date_formatters.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/grade_detail_sheet.dart';
 import '../widgets/metric_card.dart';
 
 const double _kSubjectColumnWidth = 140;
@@ -43,11 +45,16 @@ class StudentJournalScreen extends StatefulWidget {
     required this.studentId,
     required this.studentName,
     this.parentId,
+    this.viaPublicServer = false,
   });
 
   final int studentId;
   final String studentName;
   final int? parentId;
+
+  /// Set for a student's own session (no parentId) so the request still
+  /// routes through the Public Server instead of the local server.
+  final bool viaPublicServer;
 
   @override
   State<StudentJournalScreen> createState() => _StudentJournalScreenState();
@@ -65,6 +72,7 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
       context.read<JournalProvider>().loadForStudent(
         widget.studentId,
         parentId: widget.parentId,
+        viaPublicServer: widget.viaPublicServer,
       );
     });
   }
@@ -80,113 +88,8 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
     });
   }
 
-  void _showGradeDetails(String subject, Grade grade) {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          decoration: BoxDecoration(
-            color: context.colors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: context.colors.borderStrong,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _gradeColor(context, grade.value).withOpacity(0.15),
-                      borderRadius: AppRadius.mdRadius,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      grade.value.toString(),
-                      style: TextStyle(
-                        color: _gradeColor(context, grade.value),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          subject,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Text(
-                          _dateKey(grade.gradeDate),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: context.colors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.journalTeacherLabel,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                grade.teacherName ?? '-',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.journalCommentOptional,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                (grade.comment == null || grade.comment!.isEmpty)
-                    ? l10n.journalNoComment
-                    : grade.comment!,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.mdRadius,
-                  ),
-                ),
-                child: Text(l10n.close),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _showGradeDetails(Grade grade) {
+    showGradeDetailSheet(context, grade: grade, dateLabel: _dateKey(grade.gradeDate));
   }
 
   @override
@@ -224,11 +127,14 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
     }
 
     return AppShell(
-      title: widget.studentName,
+      // Same reasoning as the rating screen: a pupil viewing their own
+      // marks needs the section named, not themselves.
+      title: widget.studentName.isEmpty ? l10n.grades : widget.studentName,
       child: RefreshIndicator(
         onRefresh: () => context.read<JournalProvider>().loadForStudent(
           widget.studentId,
           parentId: widget.parentId,
+          viaPublicServer: widget.viaPublicServer,
         ),
         child: journal.isLoading && journal.grades.isEmpty
             ? const Center(child: CircularProgressIndicator())
@@ -249,7 +155,7 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
                             child: MetricCard(
                               label: l10n.subjectsLabel,
                               value: subjects.length.toString(),
-                              imageAsset: 'assets/icons/subjects.png',
+                              icon: Icons.menu_book_outlined,
                               color: theme.colorScheme.primary,
                             ),
                           ),
@@ -258,7 +164,7 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
                             child: MetricCard(
                               label: l10n.grades,
                               value: monthGrades.length.toString(),
-                              imageAsset: 'assets/icons/grades.png',
+                              icon: Icons.grading_rounded,
                               color: context.colors.success,
                             ),
                           ),
@@ -267,7 +173,7 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
                             child: MetricCard(
                               label: l10n.average,
                               value: averageLabel,
-                              imageAsset: 'assets/icons/average.png',
+                              icon: Icons.trending_up_rounded,
                               color: context.colors.warning,
                             ),
                           ),
@@ -283,7 +189,6 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
                         color: context.colors.surface,
                         borderRadius: AppRadius.lgRadius,
                         border: Border.all(color: context.colors.border),
-                        boxShadow: AppShadows.card,
                       ),
                       child: Row(
                         children: [
@@ -313,22 +218,27 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
                       builder: (context, constraints) {
                         final totalGridWidth =
                             dateColumns.length * _kDateColumnWidth;
+                        // 34 = 16px padding on each side of the scroll view,
+                        // plus the 1px border on each side of the table's own
+                        // container. It was 48, which is 14px too much, so
+                        // the table came out visibly narrower than the metric
+                        // cards and month picker stacked above it. (The class
+                        // journal had the same bug; keep the two in step.)
                         final availableGridWidth =
-                            (constraints.maxWidth - _kSubjectColumnWidth - 48)
+                            (constraints.maxWidth - _kSubjectColumnWidth - 34)
                                 .clamp(0.0, double.infinity);
                         final gridViewportWidth =
                             totalGridWidth < availableGridWidth
                             ? totalGridWidth
                             : availableGridWidth;
                         return SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          padding: (const EdgeInsets.fromLTRB(16, 0, 16, 16)).add(bottomNavPadding(context)),
                           child: Container(
                             clipBehavior: Clip.antiAlias,
                             decoration: BoxDecoration(
                               color: context.colors.surface,
                               borderRadius: AppRadius.lgRadius,
                               border: Border.all(color: context.colors.border),
-                              boxShadow: AppShadows.card,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -436,10 +346,7 @@ class _StudentJournalScreenState extends State<StudentJournalScreen> {
                                                   isWeekend: _isWeekend(date),
                                                   zebra: entry.key.isOdd,
                                                   onTap: (grade) =>
-                                                      _showGradeDetails(
-                                                        entry.value,
-                                                        grade,
-                                                      ),
+                                                      _showGradeDetails(grade),
                                                 ),
                                             ],
                                           ),

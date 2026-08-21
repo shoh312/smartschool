@@ -14,6 +14,25 @@ class DateFormatters {
         '${value.minute.toString().padLeft(2, '0')}';
   }
 
+  /// Just the month's name, without the year -- used where the year is
+  /// already obvious from context (a date badge on a calendar card, say).
+  static String monthName(AppLocalizations l10n, int month) {
+    return switch (month) {
+      1 => l10n.month1,
+      2 => l10n.month2,
+      3 => l10n.month3,
+      4 => l10n.month4,
+      5 => l10n.month5,
+      6 => l10n.month6,
+      7 => l10n.month7,
+      8 => l10n.month8,
+      9 => l10n.month9,
+      10 => l10n.month10,
+      11 => l10n.month11,
+      _ => l10n.month12,
+    };
+  }
+
   static String monthYear(AppLocalizations l10n, DateTime month) {
     final name = switch (month.month) {
       1 => l10n.month1,

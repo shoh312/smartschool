@@ -1,4 +1,5 @@
 import '../models/grade.dart';
+import '../models/journal_scan_result.dart';
 import 'api_client.dart';
 import 'public_api_client.dart';
 
@@ -7,6 +8,26 @@ class JournalService {
 
   final ApiClient _apiClient;
   final PublicApiClient _publicApiClient;
+
+  /// Sends a photo of a paper journal page to be read via Gemini vision and
+  /// matched against the class roster server-side. Returns candidates only
+  /// -- nothing is written until the teacher reviews and confirms, at which
+  /// point [createGrade] is called once per confirmed row (same as manual
+  /// entry).
+  Future<List<JournalScanResult>> scanJournalPhoto({
+    required int classId,
+    required String subject,
+    required String imagePath,
+  }) async {
+    final data = await _apiClient.multipartPost(
+      '/journal/scan-photo',
+      fields: {'class_id': classId.toString(), 'subject': subject},
+      fileField: 'file',
+      filePath: imagePath,
+    ) as Map<String, dynamic>;
+    final results = data['results'] as List<dynamic>;
+    return results.map((item) => JournalScanResult.fromJson(item as Map<String, dynamic>)).toList();
+  }
 
   Future<Grade> createGrade({
     required int studentId,
@@ -58,12 +79,14 @@ class JournalService {
     int? classId,
     String? subject,
     int? parentId,
+    bool viaPublicServer = false,
     int limit = 200,
   }) async {
-    // parentId is a client-side routing signal only (never sent to the
-    // server) -- a parent viewing their child's grades reads from the
-    // Public Server; director/teacher views stay on the local server.
-    final client = parentId != null ? _publicApiClient : _apiClient;
+    // parentId/viaPublicServer are client-side routing signals only (never
+    // sent to the server) -- a parent or a student viewing their own grades
+    // reads from the Public Server; director/teacher views stay on the
+    // local server.
+    final client = (parentId != null || viaPublicServer) ? _publicApiClient : _apiClient;
     final data =
         await client.get(
               '/grades',

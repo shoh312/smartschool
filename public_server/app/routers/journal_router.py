@@ -1,11 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_parent
+from app.deps import PublicAuthActor, get_current_actor, get_owned_student, student_ids_for_actor
 from app.models.grade_model import Grade
-from app.models.parent_model import Parent
-from app.models.student_model import Student
 from app.schemas.journal_schema import GradeResponse
 
 router = APIRouter(tags=["journal"])
@@ -16,15 +14,11 @@ def list_grades(
     student_id: int | None = None,
     limit: int = 200,
     db: Session = Depends(get_db),
-    parent: Parent = Depends(get_current_parent),
+    actor: PublicAuthActor = Depends(get_current_actor),
 ):
-    query = db.query(Grade).join(Student, Student.id == Grade.student_id).filter(
-        Student.parent_id == parent.id
-    )
+    query = db.query(Grade).filter(Grade.student_id.in_(student_ids_for_actor(db, actor)))
     if student_id is not None:
-        student = db.query(Student).filter(Student.id == student_id).first()
-        if not student or student.parent_id != parent.id:
-            raise HTTPException(status_code=403, detail="Not your student")
+        get_owned_student(student_id, db, actor)
         query = query.filter(Grade.student_id == student_id)
 
     rows = query.order_by(Grade.grade_date.desc(), Grade.id.desc()).limit(limit).all()
@@ -40,6 +34,7 @@ def list_grades(
             value=grade.value,
             comment=grade.comment,
             grade_date=grade.grade_date,
+            quarter=grade.quarter,
         )
         for grade in rows
     ]

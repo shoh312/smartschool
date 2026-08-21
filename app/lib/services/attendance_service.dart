@@ -11,11 +11,13 @@ class AttendanceService {
   Future<List<AttendanceRecord>> history({
     int? studentId,
     int? parentId,
+    bool viaPublicServer = false,
     int limit = 100,
   }) async {
-    // A parent's own attendance history lives on the Public Server; director
-    // views (no parentId) stay on the local, camera-derived data.
-    final client = parentId != null ? _publicApiClient : _apiClient;
+    // A parent's or a student's own attendance history lives on the Public
+    // Server; director views (no parentId/viaPublicServer) stay on the
+    // local, camera-derived data.
+    final client = (parentId != null || viaPublicServer) ? _publicApiClient : _apiClient;
     final data =
         await client.get(
               '/attendance/history',

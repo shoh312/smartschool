@@ -8,18 +8,15 @@ import '../models/school_class.dart';
 import '../providers/student_provider.dart';
 import '../providers/teacher_admin_provider.dart';
 import '../utils/error_formatter.dart';
+import '../widgets/bottom_nav_inset.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
+import '../widgets/analytics/analytics_widgets.dart';
+import '../widgets/app_confirm_dialog.dart';
+import '../widgets/app_list_card.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/metric_card.dart';
 import 'class_journal_screen.dart';
-
-List<Color> _subjectPalette(BuildContext context) => [
-      context.colors.primary,
-      context.colors.accent,
-      context.colors.success,
-      context.colors.warning,
-      context.colors.info,
-    ];
 
 class ClassSubjectsScreen extends StatefulWidget {
   const ClassSubjectsScreen({super.key, required this.schoolClass});
@@ -165,28 +162,15 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
 
   Future<void> _confirmRemove(int teacherId, int assignmentId) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.removeAssignment),
-        content: Text(l10n.removeAssignmentConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              l10n.delete,
-              style: TextStyle(color: context.colors.danger),
-            ),
-          ),
-        ],
-      ),
+    final confirm = await showAppConfirmDialog(
+      context,
+      icon: Icons.person_remove_outlined,
+      title: l10n.removeAssignment,
+      message: l10n.removeAssignmentConfirm,
+      isDestructive: true,
     );
 
-    if (confirm != true || !mounted) return;
+    if (!confirm || !mounted) return;
 
     final provider = context.read<TeacherAdminProvider>();
     final success = await provider.removeClassAssignment(
@@ -253,7 +237,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
         child: provider.isClassSubjectsLoading && provider.classSubjects.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
                 children: [
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -316,7 +300,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           child: MetricCard(
                             label: l10n.students,
                             value: studentCount.toString(),
-                            imageAsset: 'assets/icons/students.png',
+                            icon: Icons.groups_2_outlined,
                             color: theme.colorScheme.primary,
                           ),
                         ),
@@ -325,7 +309,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           child: MetricCard(
                             label: l10n.subjectsLabel,
                             value: subjectCount.toString(),
-                            imageAsset: 'assets/icons/subjects.png',
+                            icon: Icons.menu_book_outlined,
                             color: context.colors.accent,
                           ),
                         ),
@@ -334,7 +318,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                           child: MetricCard(
                             label: l10n.teachers,
                             value: teacherCount.toString(),
-                            imageAsset: 'assets/icons/teachers.png',
+                            icon: Icons.school_outlined,
                             color: context.colors.success,
                           ),
                         ),
@@ -342,11 +326,7 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    l10n.subjectsAndTeachers,
-                    style: theme.textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
+                  DashboardSectionHeader(title: l10n.subjectsAndTeachers),
                   if (timetableSubjects.isEmpty)
                     SizedBox(
                       height: 220,
@@ -360,95 +340,36 @@ class _ClassSubjectsScreenState extends State<ClassSubjectsScreen> {
                     ...timetableSubjects.asMap().entries.map((entry) {
                       final subject = entry.value;
                       final assignment = assignmentsBySubject[subject];
-                      final palette = _subjectPalette(context);
-                      final color = palette[entry.key % palette.length];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: context.colors.surface,
-                          borderRadius: AppRadius.lgRadius,
-                          border: Border.all(color: context.colors.border),
-                          boxShadow: AppShadows.card,
-                        ),
-                        child: ListTile(
-                          onTap: () =>
-                              _openAssignTeacherDialog(subject, assignment),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.lgRadius,
-                          ),
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              gradient: AppGradients.tint(color),
-                              borderRadius: AppRadius.mdRadius,
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              Icons.menu_book_outlined,
-                              color: color,
-                              size: 20,
-                            ),
-                          ),
-                          title: Text(
-                            subject,
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          subtitle: assignment == null
-                              ? Text(
-                                  l10n.tapToAssignTeacher,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: context.colors.textSecondary,
-                                  ),
-                                )
-                              : Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 9,
-                                      backgroundColor: color.withValues(
-                                        alpha: 0.15,
-                                      ),
-                                      child: Text(
-                                        assignment.teacherName.isEmpty
-                                            ? '?'
-                                            : assignment.teacherName[0]
-                                                  .toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: color,
-                                        ),
-                                      ),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: FadeSlideIn(
+                          delay: entry.key < 12
+                              ? Duration(milliseconds: 40 * entry.key)
+                              : Duration.zero,
+                          child: AppListCard(
+                            leading: const AppListBadge(icon: Icons.menu_book_outlined),
+                            title: subject,
+                            subtitle: assignment?.teacherName ?? l10n.tapToAssignTeacher,
+                            onTap: () => _openAssignTeacherDialog(subject, assignment),
+                            trailing: assignment == null
+                                ? Icon(
+                                    Icons.person_add_alt_1_outlined,
+                                    color: context.colors.primary,
+                                    size: 20,
+                                  )
+                                : IconButton(
+                                    tooltip: l10n.removeAssignment,
+                                    icon: Icon(
+                                      Icons.close_rounded,
+                                      size: 20,
+                                      color: context.colors.danger,
                                     ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        assignment.teacherName,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                    onPressed: () => _confirmRemove(
+                                      assignment.teacherId,
+                                      assignment.id,
                                     ),
-                                  ],
-                                ),
-                          trailing: assignment == null
-                              ? Icon(
-                                  Icons.person_add_alt_1_outlined,
-                                  color: color,
-                                )
-                              : IconButton(
-                                  tooltip: l10n.removeAssignment,
-                                  icon: Icon(
-                                    Icons.close_rounded,
-                                    color: context.colors.danger,
                                   ),
-                                  onPressed: () => _confirmRemove(
-                                    assignment.teacherId,
-                                    assignment.id,
-                                  ),
-                                ),
+                          ),
                         ),
                       );
                     }),
