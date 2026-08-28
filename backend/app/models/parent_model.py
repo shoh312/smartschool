@@ -15,6 +15,13 @@ class Parent(Base):
 
     phone = Column(String)
 
+    # The parent signs in against the Public Server, not here. These are
+    # kept so the hash can be generated on the machine that also sends the
+    # SMS -- the plaintext must never travel through the sync outbox -- and
+    # then carried down with the rest of the parent's data.
+    password_hash = Column(String)
+    password_salt = Column(String)
+
     telegram_id = Column(String)
 
     firebase_token = Column(String)

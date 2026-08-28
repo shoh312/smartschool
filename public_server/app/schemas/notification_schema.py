@@ -15,6 +15,21 @@ class DeviceTokenCreate(BaseModel):
     platform: Optional[str] = None
 
 
+class SchoolMessageCreate(BaseModel):
+    """A message the school's own server wants a parent to see in the app.
+
+    Used for the sign-in details of a second, third or fourth child: the
+    first child's arrive by SMS because the parent has no app yet, and every
+    one after that arrives here instead -- cheaper, and it does not leave a
+    password sitting in an inbox forever.
+    """
+
+    parent_phone: str
+    title: str
+    body: str
+    event_type: str = "school_message"
+
+
 class NotificationResponse(BaseModel):
     id: int
     parent_id: Optional[int] = None

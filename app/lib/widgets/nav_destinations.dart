@@ -28,7 +28,9 @@ class NavDestinationData {
 /// each role gets the handful it actually alternates between during a day,
 /// and everything else stays a drill-down from home.
 ///
-/// Settings is last for every role, and is the only place to sign out.
+/// Profile is last for every role, and is the only place to sign out.
+/// Settings sits one tap inside it: nobody looks for "settings" to
+/// answer "whose session is this" or "how do I sign out".
 List<NavDestinationData> navDestinationsFor(AppRole? role, AppLocalizations l10n) {
   switch (role) {
     case AppRole.director:
@@ -48,15 +50,19 @@ List<NavDestinationData> navDestinationsFor(AppRole? role, AppLocalizations l10n
           activeIcon: Icons.tune_rounded,
           label: l10n.manage,
         ),
+        // Where the school stands, not what just happened in it. Alerts
+        // used to sit here, but a bell is something you answer once and
+        // leave -- the dashboard's own bell is the right size for that,
+        // while the ranking is a page a director comes back to.
         NavDestinationData(
-          icon: Icons.settings_outlined,
-          activeIcon: Icons.settings_rounded,
-          label: l10n.settings,
+          icon: Icons.leaderboard_outlined,
+          activeIcon: Icons.leaderboard_rounded,
+          label: l10n.ratingAnalytics,
         ),
         NavDestinationData(
-          icon: Icons.notifications_none_rounded,
-          activeIcon: Icons.notifications_rounded,
-          label: l10n.alerts,
+          icon: Icons.person_outline_rounded,
+          activeIcon: Icons.person_rounded,
+          label: l10n.profileTitle,
         ),
       ];
 
@@ -85,9 +91,9 @@ List<NavDestinationData> navDestinationsFor(AppRole? role, AppLocalizations l10n
           label: l10n.aiTitle,
         ),
         NavDestinationData(
-          icon: Icons.settings_outlined,
-          activeIcon: Icons.settings_rounded,
-          label: l10n.settings,
+          icon: Icons.person_outline_rounded,
+          activeIcon: Icons.person_rounded,
+          label: l10n.profileTitle,
         ),
       ];
 
@@ -117,9 +123,9 @@ List<NavDestinationData> navDestinationsFor(AppRole? role, AppLocalizations l10n
           label: l10n.ratingAnalytics,
         ),
         NavDestinationData(
-          icon: Icons.settings_outlined,
-          activeIcon: Icons.settings_rounded,
-          label: l10n.settings,
+          icon: Icons.person_outline_rounded,
+          activeIcon: Icons.person_rounded,
+          label: l10n.profileTitle,
         ),
       ];
 
@@ -149,9 +155,9 @@ List<NavDestinationData> navDestinationsFor(AppRole? role, AppLocalizations l10n
           label: l10n.ratingAnalytics,
         ),
         NavDestinationData(
-          icon: Icons.settings_outlined,
-          activeIcon: Icons.settings_rounded,
-          label: l10n.settings,
+          icon: Icons.person_outline_rounded,
+          activeIcon: Icons.person_rounded,
+          label: l10n.profileTitle,
         ),
       ];
 

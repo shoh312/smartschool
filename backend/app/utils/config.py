@@ -24,5 +24,14 @@ class Settings:
     public_server_api_key = os.getenv("PUBLIC_SERVER_API_KEY", "")
     gemini_api_key = os.getenv("GEMINI_API_KEY", "")
 
+    # The welcome SMS is sent from here rather than from the Public Server
+    # because the pupil's password exists in plaintext only on this machine,
+    # for the moment the director types it -- see credentials_service.
+    sms_provider = os.getenv("SMS_PROVIDER", "")
+    sms_robita_base = os.getenv("SMS_ROBITA_BASE", "https://sms.robita.tj")
+    sms_robita_login = os.getenv("SMS_ROBITA_LOGIN", "")
+    sms_robita_password = os.getenv("SMS_ROBITA_PASSWORD", "")
+    sms_robita_sender = os.getenv("SMS_ROBITA_SENDER", "0175")
+
 
 settings = Settings()

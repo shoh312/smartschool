@@ -63,6 +63,8 @@ def ensure_database_schema() -> None:
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_students_username ON students (username)",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash VARCHAR",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_salt VARCHAR",
+        "ALTER TABLE parents ADD COLUMN IF NOT EXISTS password_hash VARCHAR",
+        "ALTER TABLE parents ADD COLUMN IF NOT EXISTS password_salt VARCHAR",
     ]
     with engine.begin() as connection:
         for statement in statements:

@@ -21,6 +21,8 @@ class StudentAuthService {
     final studentId = data['student_id'] as int;
     await _tokenStorage.saveSession(
       token: data['access_token'] as String,
+      displayName: data['full_name'] as String?,
+      displayDetail: data['class_name'] as String?,
       role: AppRole.student,
       studentId: studentId,
     );

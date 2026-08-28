@@ -7,6 +7,12 @@ from pydantic import BaseModel, model_validator
 class SyncParent(BaseModel):
     phone: str
     full_name: Optional[str] = None
+    # Issued by the school when the first child is registered, and carried
+    # here because this is where the parent signs in. Optional: schools
+    # running an older backend send neither, and parents who set their own
+    # password through the app have one this side only.
+    password_hash: Optional[str] = None
+    password_salt: Optional[str] = None
 
 
 class SyncStudent(BaseModel):

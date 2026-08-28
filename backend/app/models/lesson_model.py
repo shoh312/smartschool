@@ -26,6 +26,16 @@ class Lesson(Base):
 
     duration_minutes = Column(Integer, nullable=False, default=45)
 
+    # Set when this row was generated from a camera position rather than
+    # typed into the timetable.
+    #
+    # An academy keeps no lesson timetable -- its schedule is the camera's
+    # list of groups. But the diary, the subject register and per-lesson
+    # absence all read lessons, so a position writes matching lessons here
+    # and every one of those keeps working with no special case. Deleting
+    # the position deletes them again.
+    position_id = Column(Integer, ForeignKey("camera_positions.id", ondelete="CASCADE"), nullable=True, index=True)
+
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
 
     # Free text, same as `subject` -- no separate Room entity (see the

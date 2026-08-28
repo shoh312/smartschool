@@ -1,4 +1,5 @@
 import '../models/grade.dart';
+import '../models/lesson_absence.dart';
 import '../models/journal_scan_result.dart';
 import 'api_client.dart';
 import 'public_api_client.dart';
@@ -27,6 +28,28 @@ class JournalService {
     ) as Map<String, dynamic>;
     final results = data['results'] as List<dynamic>;
     return results.map((item) => JournalScanResult.fromJson(item as Map<String, dynamic>)).toList();
+  }
+
+  /// Which pupils the cameras did not see, per lesson of a subject.
+  ///
+  /// Separate from the grades so the journal can show a mark and an absence
+  /// in the same cell -- a pupil marked absent two sweeps in and graded
+  /// later, having walked in during the lesson, is a real Tuesday.
+  Future<List<LessonAbsence>> listAbsences({
+    required int classId,
+    String? subject,
+  }) async {
+    final data = await _apiClient.get(
+      '/journal/absences',
+      query: {
+        'class_id': classId.toString(),
+        if (subject != null) 'subject': subject,
+      },
+    ) as List<dynamic>;
+
+    return data
+        .map((item) => LessonAbsence.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Grade> createGrade({

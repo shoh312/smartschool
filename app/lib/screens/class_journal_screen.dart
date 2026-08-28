@@ -230,6 +230,17 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
       )[_dateKey(grade.gradeDate)] = grade;
     }
 
+    // Absences the cameras recorded for this subject. A set per pupil rather
+    // than a map: several lessons of one subject on one day still make one
+    // cell, and the cell only has to know whether they were missing.
+    final absentByStudentAndDate = <int, Set<String>>{};
+    for (final absence in journal.absences) {
+      if (effectiveSubject != null && absence.subject != effectiveSubject) continue;
+      absentByStudentAndDate
+          .putIfAbsent(absence.studentId, () => <String>{})
+          .add(_dateKey(absence.date));
+    }
+
     return AppShell(
       title: widget.className,
       child: RefreshIndicator(
@@ -508,6 +519,11 @@ class _ClassJournalScreenState extends State<ClassJournalScreen> {
                                                             .id]?[_dateKey(
                                                           date,
                                                         )],
+                                                    absent: absentByStudentAndDate[entry
+                                                            .value
+                                                            .id]
+                                                        ?.contains(_dateKey(date)) ??
+                                                        false,
                                                     isWeekend: _isWeekend(date),
                                                     zebra: entry.key.isOdd,
                                                     onTap: (grade) =>
@@ -580,9 +596,16 @@ class _ReadOnlyGradeCell extends StatelessWidget {
     required this.isWeekend,
     required this.zebra,
     required this.onTap,
+    this.absent = false,
   });
 
   final Grade? grade;
+
+  /// The cameras did not see this pupil in this subject's lesson. Shown only
+  /// when there is no mark: a pupil who was marked absent early and graded
+  /// later did turn up, and the mark is the truer record of that.
+  final bool absent;
+
   final bool isWeekend;
   final bool zebra;
   final ValueChanged<Grade> onTap;
@@ -599,7 +622,7 @@ class _ReadOnlyGradeCell extends StatelessWidget {
 
     final cell = Center(
       child: grade == null
-          ? null
+          ? (absent ? const _AbsentMark() : null)
           : Container(
               width: 30,
               height: 30,
@@ -633,6 +656,37 @@ class _ReadOnlyGradeCell extends StatelessWidget {
               borderRadius: AppRadius.smRadius,
               child: cell,
             ),
+    );
+  }
+}
+
+/// The mark a camera leaves: "н" for неявка, the letter Tajik and Russian
+/// paper journals have always used for an absence.
+///
+/// Outlined rather than filled, unlike a grade -- a teacher scanning the
+/// column should be able to tell at a glance which cells someone decided
+/// and which the system did.
+class _AbsentMark extends StatelessWidget {
+  const _AbsentMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.smRadius,
+        border: Border.all(color: context.colors.danger.withOpacity(0.55)),
+      ),
+      child: Text(
+        'н',
+        style: TextStyle(
+          color: context.colors.danger,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 }

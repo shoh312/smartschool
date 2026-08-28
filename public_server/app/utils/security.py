@@ -43,6 +43,40 @@ def verify_parent_access_token(token: str) -> int:
         ) from exc
 
 
+def create_setup_token(parent_id: int, ttl: timedelta) -> str:
+    """Proof that this phone answered its SMS, and nothing more.
+
+    Deliberately a different payload key from the access token: a token
+    minted for choosing a password must not open the child's marks, and a
+    30-day access token must not be usable to overwrite the password. Each
+    verifier reads only its own key, so neither is accepted in the other's
+    place.
+    """
+    payload = {
+        "setup_parent_id": parent_id,
+        "exp": (datetime.utcnow() + ttl).isoformat(),
+    }
+    payload_text = json.dumps(payload, separators=(",", ":"))
+    encoded = base64.urlsafe_b64encode(payload_text.encode("utf-8")).decode("utf-8")
+    return f"{encoded}.{_sign(encoded)}"
+
+
+def verify_setup_token(token: str) -> int:
+    try:
+        encoded, signature = token.split(".", 1)
+        if not hmac.compare_digest(signature, _sign(encoded)):
+            raise ValueError
+        payload = json.loads(base64.urlsafe_b64decode(encoded.encode("utf-8")))
+        if datetime.fromisoformat(payload["exp"]) < datetime.utcnow():
+            raise ValueError
+        return int(payload["setup_parent_id"])
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="setup_token_invalid",
+        ) from exc
+
+
 def create_student_access_token(student_id: int) -> str:
     payload = {
         "student_id": student_id,

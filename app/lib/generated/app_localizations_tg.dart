@@ -113,6 +113,10 @@ class AppLocalizationsTg extends AppLocalizations {
   String get invalidCurrentPasswordMessage => 'Пароли ҷорӣ нодуруст аст.';
 
   @override
+  String get usernameTakenMessage =>
+      'Ин воридшавӣ аллакай банд аст. Дигареро интихоб кунед.';
+
+  @override
   String get needSupport => 'Кӯмак лозим аст? ';
 
   @override
@@ -1630,4 +1634,121 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get awaitingDetection => 'Ҳанӯз тафтиш нашуд';
+
+  @override
+  String get profileTitle => 'Профил';
+
+  @override
+  String get streakDaysInARow => 'рӯз пайиҳам';
+
+  @override
+  String streakBest(int days) {
+    return 'Беҳтарин натиҷа: $days рӯз';
+  }
+
+  @override
+  String get streakStartToday =>
+      'Пагоҳ ба мактаб биё — ҳисоб аз нав сар мешавад';
+
+  @override
+  String get identifierLabel => 'Телефон, почта ё логин';
+
+  @override
+  String get identifierHint => '98 764 40 02';
+
+  @override
+  String get codeTitle => 'Рақамро тасдиқ кунед';
+
+  @override
+  String codeSentTo(String phone) {
+    return 'Рамз ба $phone фиристода шуд';
+  }
+
+  @override
+  String get codeNotDelivered =>
+      'SMS ҳанӯз пайваст нашудааст. Рамзро аз мактаб пурсед.';
+
+  @override
+  String get codeLabel => 'Рамз аз SMS';
+
+  @override
+  String get codeResend => 'Аз нав фиристодан';
+
+  @override
+  String get codeVerify => 'Давом додан';
+
+  @override
+  String get setupTitle => 'Парол гузоред';
+
+  @override
+  String get setupSubtitle =>
+      'Минбаъд бо рақами телефон ва ҳамин парол ворид мешавед.';
+
+  @override
+  String get setupSave => 'Нигоҳ доштан ва ворид шудан';
+
+  @override
+  String get parentNoAccountHint =>
+      'Ин рақам сабт нашудааст. Ба мактаб муроҷиат кунед.';
+
+  @override
+  String get lessonTimeInvalid => 'Ба намуди СС:ДД нависед, масалан 08:30';
+
+  @override
+  String get registerTitle => 'Бақайдгирӣ';
+
+  @override
+  String get registerSubtitle =>
+      'Рақамеро нависед, ки дар мактаб сабт шудааст. Ба он рамз меояд.';
+
+  @override
+  String get registerAction => 'Ҳисоб надоред? Ба қайд гиред';
+
+  @override
+  String get copyAction => 'Нусхабардорӣ';
+
+  @override
+  String get copiedToClipboard => 'Нусха гирифта шуд';
+
+  @override
+  String get schoolSettings => 'Танзимоти мактаб';
+
+  @override
+  String get liveVideoSetting => 'Видеои жонли';
+
+  @override
+  String get liveVideoSettingHint =>
+      'Ҳангоми хомӯш будан ҳеҷ кас дар мактаб камераро кушода наметавонад';
+
+  @override
+  String get liveVideoOffByDirector =>
+      'Видеои жонли аз ҷониби директор хомӯш карда шудааст';
+
+  @override
+  String get groupModeSetting => 'Реҷаи гурӯҳҳо';
+
+  @override
+  String get groupModeSettingHint =>
+      'Барои академияҳо: як синфхона, дар як рӯз якчанд гурӯҳ. Камера ба синфхона вобаста мешавад ва ҷадвал муайян мекунад, ки кадом гурӯҳ дар пеши он аст';
+
+  @override
+  String get cameraGroups => 'Гурӯҳҳо';
+
+  @override
+  String get cameraGroupsHint => 'Дар пеши ин камера кӣ ва кай меистад';
+
+  @override
+  String get addGroupSlot => 'Илова кардани гурӯҳ';
+
+  @override
+  String get everyDay => 'Ҳар рӯз';
+
+  @override
+  String get noGroupSlots => 'Ҳанӯз гурӯҳ нест';
+
+  @override
+  String get slotSaved => 'Илова шуд';
+
+  @override
+  String get deleteSlot => 'Нест кардан';
 }

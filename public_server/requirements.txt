@@ -6,3 +6,7 @@ python-dotenv==1.2.2
 pydantic==2.13.4
 email-validator==2.3.0
 firebase_admin==7.4.0
+# Used by robita_sms to drive the SMS panel. It arrives anyway as a
+# dependency of firebase_admin, which is luck rather than a contract --
+# dropping push notifications would have taken SMS down with it.
+requests==2.32.3

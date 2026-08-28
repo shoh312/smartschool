@@ -1,0 +1,555 @@
+[
+  {
+    "id": 774,
+    "student_id": 61,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 775,
+    "student_id": 62,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 776,
+    "student_id": 63,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 777,
+    "student_id": 64,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 778,
+    "student_id": 65,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 783,
+    "student_id": 70,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 788,
+    "student_id": 76,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 793,
+    "student_id": 80,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 798,
+    "student_id": 29,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 803,
+    "student_id": 34,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 808,
+    "student_id": 39,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 813,
+    "student_id": 44,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 818,
+    "student_id": 49,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 823,
+    "student_id": 54,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 828,
+    "student_id": 59,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 833,
+    "student_id": 87,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 840,
+    "student_id": 94,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 845,
+    "student_id": 99,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 850,
+    "student_id": 104,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 779,
+    "student_id": 66,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 784,
+    "student_id": 71,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 789,
+    "student_id": 77,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 794,
+    "student_id": 81,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 799,
+    "student_id": 30,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 804,
+    "student_id": 35,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 809,
+    "student_id": 40,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 814,
+    "student_id": 45,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 819,
+    "student_id": 50,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 824,
+    "student_id": 55,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 829,
+    "student_id": 60,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 834,
+    "student_id": 88,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 838,
+    "student_id": 92,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 843,
+    "student_id": 97,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 848,
+    "student_id": 102,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 780,
+    "student_id": 67,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 785,
+    "student_id": 72,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 790,
+    "student_id": 78,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 795,
+    "student_id": 82,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 800,
+    "student_id": 31,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 805,
+    "student_id": 36,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 810,
+    "student_id": 41,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 815,
+    "student_id": 46,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 820,
+    "student_id": 51,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 825,
+    "student_id": 56,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 830,
+    "student_id": 84,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 835,
+    "student_id": 89,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 837,
+    "student_id": 91,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 842,
+    "student_id": 96,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 847,
+    "student_id": 101,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 852,
+    "student_id": 75,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 781,
+    "student_id": 68,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 786,
+    "student_id": 73,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 791,
+    "student_id": 79,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 796,
+    "student_id": 83,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 801,
+    "student_id": 32,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 806,
+    "student_id": 37,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 811,
+    "student_id": 42,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 816,
+    "student_id": 47,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 821,
+    "student_id": 52,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 826,
+    "student_id": 57,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 831,
+    "student_id": 85,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 836,
+    "student_id": 90,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 841,
+    "student_id": 95,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 846,
+    "student_id": 100,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 851,
+    "student_id": 105,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 782,
+    "student_id": 69,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 787,
+    "student_id": 74,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 792,
+    "student_id": 24,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 797,
+    "student_id": 28,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 802,
+    "student_id": 33,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 807,
+    "student_id": 38,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 812,
+    "student_id": 43,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 817,
+    "student_id": 48,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 822,
+    "student_id": 53,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 827,
+    "student_id": 58,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 832,
+    "student_id": 86,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 839,
+    "student_id": 93,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 844,
+    "student_id": 98,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  },
+  {
+    "id": 849,
+    "student_id": 103,
+    "attendance_date": "2026-08-16",
+    "status": "absent",
+    "detected_at": "2026-08-16T11:44:05.609764"
+  }
+]

@@ -6,6 +6,8 @@ import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../models/camera_config.dart';
 import '../providers/school_provider.dart';
+import '../services/school_service.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/ws_stream_player.dart';
@@ -27,12 +29,29 @@ class ClassLiveAttendanceScreen extends StatefulWidget {
 
 class _ClassLiveAttendanceScreenState
     extends State<ClassLiveAttendanceScreen> {
+  /// The camera the server found by looking at the room's timetable, when the
+  /// class itself owns none. Null until that answer comes back -- and null
+  /// forever when nothing watches this class at all.
+  CameraConfig? _byPosition;
+  bool _asked = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final school = context.read<SchoolProvider>();
       if (school.cameras.isEmpty) await school.loadSchoolData();
+      if (!mounted || _cameraForClass(school) != null) return;
+
+      // Nothing is bolted to this class. In group mode that is the normal
+      // case rather than a missing camera: the camera belongs to the room and
+      // the timetable says whose group is in front of it, so ask the server
+      // which one that is instead of showing "no camera" to a director who
+      // can see the camera on the wall.
+      final found = await context
+          .read<SchoolService>()
+          .fetchCameraForClass(widget.classId);
+      if (mounted) setState(() { _byPosition = found; _asked = true; });
     });
   }
 
@@ -42,7 +61,7 @@ class _ClassLiveAttendanceScreenState
         return camera;
       }
     }
-    return null;
+    return _byPosition;
   }
 
   @override
@@ -50,6 +69,13 @@ class _ClassLiveAttendanceScreenState
     final school = context.watch<SchoolProvider>();
     final l10n = AppLocalizations.of(context)!;
     final camera = _cameraForClass(school);
+
+    if (camera == null && !_asked) {
+      return AppShell(
+        title: widget.className,
+        child: const AppLoadingIndicator(),
+      );
+    }
 
     if (camera == null) {
       return AppShell(

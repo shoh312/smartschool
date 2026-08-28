@@ -63,6 +63,28 @@ def _unique_username(db: Session, first_name: str, last_name: str, taken: set[st
     return candidate
 
 
+def issue_login_for(
+    db: Session,
+    student: Student,
+    password: str | None = None,
+) -> tuple[str, str]:
+    """One pupil, at the moment they are registered. Returns (username,
+    plaintext password).
+
+    Separate from `issue_logins` because that one deliberately skips a pupil
+    who already has a username -- correct when re-running it for a whole
+    class, wrong here, where the director may have typed a username but left
+    the password blank and would otherwise end up with an account nobody can
+    sign into.
+    """
+    if not student.username:
+        student.username = _unique_username(db, student.first_name, student.last_name, set())
+
+    plaintext = password or generate_password()
+    student.password_salt, student.password_hash = hash_student_password(plaintext)
+    return student.username, plaintext
+
+
 def issue_logins(
     db: Session,
     students: list[Student],

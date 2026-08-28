@@ -111,6 +111,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidCurrentPasswordMessage => 'Current password is incorrect.';
 
   @override
+  String get usernameTakenMessage =>
+      'This login is already taken. Please choose another one.';
+
+  @override
   String get needSupport => 'Need support? ';
 
   @override
@@ -1623,4 +1627,121 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get awaitingDetection => 'Not checked yet';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get streakDaysInARow => 'days in a row';
+
+  @override
+  String streakBest(int days) {
+    return 'Best run: $days days';
+  }
+
+  @override
+  String get streakStartToday =>
+      'Come to school tomorrow and the count starts again';
+
+  @override
+  String get identifierLabel => 'Phone, email or login';
+
+  @override
+  String get identifierHint => '98 764 40 02';
+
+  @override
+  String get codeTitle => 'Confirm your number';
+
+  @override
+  String codeSentTo(String phone) {
+    return 'We sent a code to $phone';
+  }
+
+  @override
+  String get codeNotDelivered =>
+      'SMS is not set up yet. Ask the school for the code.';
+
+  @override
+  String get codeLabel => 'Code from the SMS';
+
+  @override
+  String get codeResend => 'Send again';
+
+  @override
+  String get codeVerify => 'Continue';
+
+  @override
+  String get setupTitle => 'Set your password';
+
+  @override
+  String get setupSubtitle =>
+      'You will sign in with your phone number and this password.';
+
+  @override
+  String get setupSave => 'Save and sign in';
+
+  @override
+  String get parentNoAccountHint =>
+      'This number is not registered. Ask the school to add it.';
+
+  @override
+  String get lessonTimeInvalid => 'Use HH:MM, for example 08:30';
+
+  @override
+  String get registerTitle => 'Register';
+
+  @override
+  String get registerSubtitle =>
+      'Enter the number the school has on file. We will send a code to it.';
+
+  @override
+  String get registerAction => 'Don\'t have an account? Register';
+
+  @override
+  String get copyAction => 'Copy';
+
+  @override
+  String get copiedToClipboard => 'Copied';
+
+  @override
+  String get schoolSettings => 'School settings';
+
+  @override
+  String get liveVideoSetting => 'Live video';
+
+  @override
+  String get liveVideoSettingHint =>
+      'When off, nobody in the school can open a camera';
+
+  @override
+  String get liveVideoOffByDirector =>
+      'Live video is turned off by the director';
+
+  @override
+  String get groupModeSetting => 'Group mode';
+
+  @override
+  String get groupModeSettingHint =>
+      'For academies: one room, several groups a day. A camera is tied to the room and the schedule decides whose lesson is in front of it';
+
+  @override
+  String get cameraGroups => 'Groups';
+
+  @override
+  String get cameraGroupsHint => 'Who is in front of this camera, and when';
+
+  @override
+  String get addGroupSlot => 'Add group';
+
+  @override
+  String get everyDay => 'Every day';
+
+  @override
+  String get noGroupSlots => 'No groups yet';
+
+  @override
+  String get slotSaved => 'Added';
+
+  @override
+  String get deleteSlot => 'Delete';
 }

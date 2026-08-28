@@ -6,6 +6,7 @@ import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../models/school_class.dart';
 import '../providers/school_provider.dart';
+import '../services/school_service.dart';
 import '../widgets/analytics/analytics_widgets.dart';
 import '../widgets/app_confirm_dialog.dart';
 import '../widgets/app_list_card.dart';
@@ -39,13 +40,26 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
 
   Map<String, List<_LessonData>> _timetable = {};
 
+  /// An academy keeps its schedule on the camera, not on the class.
+  bool _groupMode = false;
+
   @override
   void initState() {
     super.initState();
     _resetTimetable();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SchoolProvider>().loadSchoolData();
+      _loadGroupMode();
     });
+  }
+
+  Future<void> _loadGroupMode() async {
+    try {
+      final settings = await context.read<SchoolService>().fetchSettings();
+      if (mounted) setState(() => _groupMode = settings.groupMode);
+    } catch (_) {
+      // Left off, which is the ordinary school layout.
+    }
   }
 
   @override
@@ -410,20 +424,29 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
                             ),
                           ),
                         ),
-                        IconButton(
-                          tooltip: l10n.lessonSchedule(schoolClass.name),
-                          icon: Icon(
-                            Icons.schedule_outlined,
-                            size: 20,
-                            color: context.colors.textMuted,
-                          ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LessonScheduleScreen(schoolClass: schoolClass),
+                        // Hidden in group mode, where the schedule is
+                        // the camera's list of groups instead: an
+                        // academy has no lesson timetable to keep, and
+                        // two places to enter one is what made this
+                        // confusing. Schools that give every class its
+                        // own room still need it -- the diary, the
+                        // subject register and per-lesson absence all
+                        // read from it.
+                        if (!_groupMode)
+                          IconButton(
+                            tooltip: l10n.lessonSchedule(schoolClass.name),
+                            icon: Icon(
+                              Icons.schedule_outlined,
+                              size: 20,
+                              color: context.colors.textMuted,
+                            ),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LessonScheduleScreen(schoolClass: schoolClass),
+                              ),
                             ),
                           ),
-                        ),
                         IconButton(
                           icon: Icon(
                             Icons.edit_outlined,

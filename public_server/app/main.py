@@ -13,6 +13,7 @@ from app.models.student_analytics_model import StudentAnalytics
 from app.models.diary_model import DiaryEntry
 from app.models.calendar_event_model import CalendarEvent
 from app.models.announcement_model import Announcement
+from app.models.verification_code_model import VerificationCode
 from app.models.material_model import (
     Material,
     MaterialAssignment,

@@ -110,6 +110,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get invalidCurrentPasswordMessage => 'Текущий пароль неверен.';
 
   @override
+  String get usernameTakenMessage => 'Этот логин уже занят. Выберите другой.';
+
+  @override
   String get needSupport => 'Нужна помощь? ';
 
   @override
@@ -1624,4 +1627,118 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get awaitingDetection => 'Ещё не проверено';
+
+  @override
+  String get profileTitle => 'Профиль';
+
+  @override
+  String get streakDaysInARow => 'дней подряд';
+
+  @override
+  String streakBest(int days) {
+    return 'Лучший результат: $days дней';
+  }
+
+  @override
+  String get streakStartToday => 'Приходи завтра — счёт начнётся заново';
+
+  @override
+  String get identifierLabel => 'Телефон, почта или логин';
+
+  @override
+  String get identifierHint => '98 764 40 02';
+
+  @override
+  String get codeTitle => 'Подтвердите номер';
+
+  @override
+  String codeSentTo(String phone) {
+    return 'Код отправлен на $phone';
+  }
+
+  @override
+  String get codeNotDelivered => 'SMS ещё не подключены. Спросите код в школе.';
+
+  @override
+  String get codeLabel => 'Код из SMS';
+
+  @override
+  String get codeResend => 'Отправить снова';
+
+  @override
+  String get codeVerify => 'Далее';
+
+  @override
+  String get setupTitle => 'Придумайте пароль';
+
+  @override
+  String get setupSubtitle =>
+      'Входить будете по номеру телефона и этому паролю.';
+
+  @override
+  String get setupSave => 'Сохранить и войти';
+
+  @override
+  String get parentNoAccountHint =>
+      'Этот номер не зарегистрирован. Обратитесь в школу.';
+
+  @override
+  String get lessonTimeInvalid => 'Формат ЧЧ:ММ, например 08:30';
+
+  @override
+  String get registerTitle => 'Регистрация';
+
+  @override
+  String get registerSubtitle =>
+      'Введите номер, который записан в школе. На него придёт код.';
+
+  @override
+  String get registerAction => 'Нет аккаунта? Зарегистрируйтесь';
+
+  @override
+  String get copyAction => 'Копировать';
+
+  @override
+  String get copiedToClipboard => 'Скопировано';
+
+  @override
+  String get schoolSettings => 'Настройки школы';
+
+  @override
+  String get liveVideoSetting => 'Онлайн-видео';
+
+  @override
+  String get liveVideoSettingHint =>
+      'Когда выключено, никто в школе не может открыть камеру';
+
+  @override
+  String get liveVideoOffByDirector => 'Онлайн-видео отключено директором';
+
+  @override
+  String get groupModeSetting => 'Режим групп';
+
+  @override
+  String get groupModeSettingHint =>
+      'Для академий: один кабинет, несколько групп в день. Камера привязана к кабинету, а расписание решает, чья группа перед ней';
+
+  @override
+  String get cameraGroups => 'Группы';
+
+  @override
+  String get cameraGroupsHint => 'Кто находится перед этой камерой и когда';
+
+  @override
+  String get addGroupSlot => 'Добавить группу';
+
+  @override
+  String get everyDay => 'Каждый день';
+
+  @override
+  String get noGroupSlots => 'Групп пока нет';
+
+  @override
+  String get slotSaved => 'Добавлено';
+
+  @override
+  String get deleteSlot => 'Удалить';
 }

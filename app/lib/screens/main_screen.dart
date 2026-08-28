@@ -9,15 +9,16 @@ import '../providers/nav_provider.dart';
 import '../providers/school_provider.dart';
 import '../providers/student_provider.dart';
 import '../providers/teacher_admin_provider.dart';
+import '../services/analytics_service.dart';
 import '../screens/director_dashboard_screen.dart';
 import '../screens/live_attendance_screen.dart';
-import '../screens/notification_screen.dart';
 import '../screens/student_management_screen.dart';
 import '../screens/class_management_screen.dart';
 import '../screens/ai_material_screen.dart';
 import '../screens/announcements_screen.dart';
 import '../screens/camera_management_screen.dart';
 import '../screens/class_diary_screen.dart';
+import '../screens/ranking_list_screen.dart';
 import '../screens/parent_dashboard_screen.dart';
 import '../screens/school_calendar_screen.dart';
 import '../screens/student_analytics_screen.dart';
@@ -26,7 +27,7 @@ import '../screens/student_home_screen.dart';
 import '../screens/student_journal_screen.dart';
 import '../screens/teacher_dashboard_screen.dart';
 import '../screens/material_library_screen.dart';
-import '../screens/settings_screen.dart';
+import '../screens/profile_screen.dart';
 import '../screens/teacher_management_screen.dart';
 import '../widgets/analytics/analytics_widgets.dart';
 import '../widgets/app_list_card.dart';
@@ -52,8 +53,8 @@ class MainScreen extends StatelessWidget {
           DirectorDashboardScreen(isIntegrated: true),
           LiveAttendanceScreen(isIntegrated: true),
           _ManagementTab(),
-          SettingsScreen(),
-          NotificationScreen(isIntegrated: true),
+          _SchoolRankingTab(),
+          ProfileScreen(),
         ];
       case AppRole.teacher:
         return const [
@@ -61,7 +62,7 @@ class MainScreen extends StatelessWidget {
           MaterialLibraryScreen(),
           ClassDiaryScreen(),
           AiMaterialScreen(),
-          SettingsScreen(),
+          ProfileScreen(),
         ];
       case AppRole.parent:
         return const [
@@ -69,7 +70,7 @@ class MainScreen extends StatelessWidget {
           _ParentTab(_ParentSection.announcements),
           _ParentTab(_ParentSection.calendar),
           _ParentTab(_ParentSection.rating),
-          SettingsScreen(),
+          ProfileScreen(),
         ];
       case AppRole.student:
         return const [
@@ -77,7 +78,7 @@ class MainScreen extends StatelessWidget {
           _StudentTab(_StudentSection.assignments),
           _StudentTab(_StudentSection.grades),
           _StudentTab(_StudentSection.rating),
-          SettingsScreen(),
+          ProfileScreen(),
         ];
       case null:
         return const [SizedBox.shrink()];
@@ -339,5 +340,22 @@ class _ParentTabState extends State<_ParentTab> {
           parentId: context.read<AuthProvider>().parentId,
         ),
     };
+  }
+}
+
+/// The school ranking, as a tab rather than a pushed screen.
+///
+/// Exists only because [MainScreen._pagesFor] is const and cannot reach
+/// l10n for the title; everything else is [RankingListScreen] unchanged.
+class _SchoolRankingTab extends StatelessWidget {
+  const _SchoolRankingTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return RankingListScreen(
+      scope: RankingScope.school,
+      title: l10n.schoolRanking,
+    );
   }
 }

@@ -18,7 +18,6 @@ import 'announcements_screen.dart';
 import 'class_attendance_analytics_screen.dart';
 import 'class_diary_screen.dart';
 import 'needs_attention_screen.dart';
-import 'ranking_list_screen.dart';
 import 'school_calendar_screen.dart';
 
 class DirectorDashboardScreen extends StatefulWidget {
@@ -131,19 +130,6 @@ class _DirectorDashboardScreenState extends State<DirectorDashboardScreen> {
                 // No "Grades" tile here: the journal already lives one tap
                 // inside Management > Classes, and a second door to it made
                 // the same destination appear in two unrelated places.
-                DashboardActionTile(
-                  icon: Icons.leaderboard_rounded,
-                  label: l10n.ratingAnalytics,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RankingListScreen(
-                        scope: RankingScope.school,
-                        title: l10n.schoolRanking,
-                      ),
-                    ),
-                  ),
-                ),
                 DashboardActionTile(
                   icon: Icons.warning_amber_rounded,
                   label: l10n.needsAttention,

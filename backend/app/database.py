@@ -8,7 +8,50 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:admin@localhost/smartschool")
 
-engine = create_engine(DATABASE_URL)
+# `idle_in_transaction_session_timeout` is the safety net, and it exists
+# because the failure it prevents took the whole school offline twice.
+#
+# A session that opens a transaction and then stops talking -- a camera
+# thread holding one open, or a killed process whose socket Postgres has not
+# noticed yet -- blocks every later ALTER TABLE. The startup migrations are
+# ALTERs, so the next server to start queues behind the dead session, and
+# every request that touches those tables queues behind the migration. From
+# the outside the app simply stops responding, with no error anywhere.
+#
+# Sixty seconds is far longer than any legitimate transaction here (the
+# longest is a student registration with face extraction) and far shorter
+# than a school day.
+#
+# pool_pre_ping because the Wi-Fi on this machine changes address regularly,
+# which silently kills pooled connections; without it the first request after
+# a network change fails instead of reconnecting.
+# SQLAlchemy's default pool is five connections with ten of overflow, which
+# is sized for a small web app and not for this one. Counted honestly, a
+# quiet moment here already wants more than fifteen: six background loops
+# each holding one while they sweep, a camera thread with a session open for
+# as long as it runs, every open websocket, and then the ordinary requests --
+# a phone polling live status, a director's app loading classes and students,
+# a teacher saving a grade.
+#
+# Past the limit SQLAlchemy does not queue politely, it waits thirty seconds
+# and then raises, and every one of those requests becomes a 500. That is
+# what it looked like from the outside: adding a student from the phone
+# failed, the class list failed, live status failed, all at once and with no
+# obvious cause, while the database itself sat almost idle.
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=20,
+    max_overflow=30,
+    # Fail loudly instead of hanging half a minute first. If the pool is ever
+    # genuinely exhausted again, a request that gives up in five seconds is a
+    # bug report; one that gives up in thirty is an outage.
+    pool_timeout=5,
+    # Connections are recycled every half hour so a long-lived one never
+    # outlives what the network or Postgres is willing to keep open.
+    pool_recycle=1800,
+    connect_args={"options": "-c idle_in_transaction_session_timeout=60000"},
+)
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -89,6 +132,26 @@ def ensure_database_schema():
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_students_username ON students (username)",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash VARCHAR",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_salt VARCHAR",
+        "ALTER TABLE parents ADD COLUMN IF NOT EXISTS password_hash VARCHAR",
+        "ALTER TABLE parents ADD COLUMN IF NOT EXISTS password_salt VARCHAR",
+        "ALTER TABLE schools ADD COLUMN IF NOT EXISTS live_video_enabled BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE schools ADD COLUMN IF NOT EXISTS group_mode BOOLEAN NOT NULL DEFAULT FALSE",
+        # One camera, several groups through the day -- see CameraPosition.
+        """
+        CREATE TABLE IF NOT EXISTS camera_positions (
+            id SERIAL PRIMARY KEY,
+            camera_id INTEGER NOT NULL REFERENCES cameras(id) ON DELETE CASCADE,
+            class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+            day_of_week INTEGER,
+            start_time VARCHAR NOT NULL,
+            end_time VARCHAR NOT NULL,
+            created_at TIMESTAMP DEFAULT now()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_camera_positions_camera_id ON camera_positions (camera_id)",
+        "ALTER TABLE camera_positions ADD COLUMN IF NOT EXISTS subject VARCHAR",
+        "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS position_id INTEGER REFERENCES camera_positions(id) ON DELETE CASCADE",
+        "CREATE INDEX IF NOT EXISTS ix_lessons_position_id ON lessons (position_id)",
     ]
 
     with engine.begin() as connection:

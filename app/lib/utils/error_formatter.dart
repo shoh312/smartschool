@@ -28,6 +28,7 @@ const _knownBackendCodes = {
   'invalid_credentials',
   'account_inactive',
   'invalid_current_password',
+  'username_taken',
 };
 
 /// Turns a code produced by [classifyError] (or a raw exception passed
@@ -56,6 +57,8 @@ String humanReadableError(Object? errorOrCode, AppLocalizations l10n) {
         return l10n.accountInactiveMessage;
       case 'invalid_current_password':
         return l10n.invalidCurrentPasswordMessage;
+      case 'username_taken':
+        return l10n.usernameTakenMessage;
     }
   }
   return l10n.unknownErrorMessage;

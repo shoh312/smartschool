@@ -40,3 +40,43 @@ class CameraResponse(CameraCreate):
 
     class Config:
         from_attributes = True
+
+
+class SchoolSettings(BaseModel):
+    """The two switches a director owns for their whole school."""
+
+    live_video_enabled: bool
+    group_mode: bool
+
+    class Config:
+        from_attributes = True
+
+
+class SchoolSettingsUpdate(BaseModel):
+    live_video_enabled: Optional[bool] = None
+    group_mode: Optional[bool] = None
+
+
+class CameraPositionCreate(BaseModel):
+    class_id: int
+    start_time: str
+    end_time: str
+    # Defaults to the group's own name, which for an academy is
+    # usually the subject anyway ("PYTHON 4").
+    subject: Optional[str] = None
+    # None means "every day", which is how most academy timetables run.
+    day_of_week: Optional[int] = None
+
+
+class CameraPositionResponse(BaseModel):
+    id: int
+    camera_id: int
+    class_id: int
+    class_name: Optional[str] = None
+    subject: Optional[str] = None
+    day_of_week: Optional[int] = None
+    start_time: str
+    end_time: str
+
+    class Config:
+        from_attributes = True

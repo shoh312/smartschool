@@ -1,0 +1,80 @@
+# Maktab serveri + o'z PostgreSQL i.
+#
+#   docker compose up -d
+#
+# .env shu papkadan o'qiladi. Ochiq serverdan farqli o'laroq bu yerda
+# `network_mode: host` ishlatiladi -- sababi pastda tushuntirilgan.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartschool
+      POSTGRES_USER: smartschool
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD .env da belgilanishi kerak}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # Faqat shu mashinaga ochiq. Ilova host tarmog'ida ishlagani uchun unga
+    # 127.0.0.1 orqali yetadi, tarmoqdagi boshqa hech kimga esa yetmaydi.
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartschool -d smartschool"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Maktab serveri uchta narsani tarmoqdan talab qiladi va uchalasi ham
+    # oddiy Docker tarmog'ida ishlamaydi:
+    #
+    #   1. Ilova serverni LAN da o'zi topadi -- telefon UDP eshittirish
+    #      yuboradi, server javob beradi (app/discovery.py). Eshittirish
+    #      ko'prik tarmog'idagi konteynerga umuman yetib bormaydi.
+    #   2. Kameraga RTSP bilan ulanish (192.168.0.64).
+    #   3. Telefon va Windows ilovasi 8000-portga kirishi.
+    #
+    # host rejimi uchalasini ham hal qiladi: konteyner mashinaning o'z
+    # tarmog'ida turadi. Linux'da bu to'liq ishlaydi -- Docker Desktop dagi
+    # yarim ishlaydigan host rejimidan farqli.
+    network_mode: host
+
+    environment:
+      DATABASE_URL: postgresql://smartschool:${POSTGRES_PASSWORD}@127.0.0.1:5432/smartschool
+      SMARTSCHOOL_AUTH_SECRET: ${SMARTSCHOOL_AUTH_SECRET:?openssl rand -hex 32 bilan yarating}
+      JWT_SECRET: ${JWT_SECRET:?openssl rand -hex 32 bilan yarating}
+      # Birinchi direktorning logini va paroli -- faqat bo'sh bazada
+      # ishlatiladi. Parolni bo'sh qoldirsangiz server tasodifiy parol
+      # yaratadi va birinchi ishga tushishda bir marta jurnalga yozadi
+      # (`docker compose logs app`).
+      SMARTSCHOOL_ADMIN_EMAIL: ${SMARTSCHOOL_ADMIN_EMAIL:-}
+      SMARTSCHOOL_ADMIN_PASSWORD: ${SMARTSCHOOL_ADMIN_PASSWORD:-}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_MINUTES: ${JWT_ACCESS_TOKEN_MINUTES:-1440}
+      LEFT_SCHOOL_AFTER_MINUTES: ${LEFT_SCHOOL_AFTER_MINUTES:-30}
+      PUBLIC_SERVER_URL: ${PUBLIC_SERVER_URL:-}
+      PUBLIC_SERVER_API_KEY: ${PUBLIC_SERVER_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SMS_PROVIDER: ${SMS_PROVIDER:-}
+      SMS_ROBITA_BASE: ${SMS_ROBITA_BASE:-https://sms.robita.tj}
+      SMS_ROBITA_LOGIN: ${SMS_ROBITA_LOGIN:-}
+      SMS_ROBITA_PASSWORD: ${SMS_ROBITA_PASSWORD:-}
+      SMS_ROBITA_SENDER: ${SMS_ROBITA_SENDER:-0175}
+
+    volumes:
+      # Yuz modellari ~300 MB. Volume siz har `docker compose build` dan
+      # keyin qaytadan yuklanadi -- va internet uzilgan kunda kamera
+      # umuman ishga tushmaydi.
+      - insightface_models:/home/smartschool/.insightface
+      - ./uploads:/app/uploads
+
+volumes:
+  db_data:
+  insightface_models:

@@ -55,7 +55,16 @@ def _student_payload(student: Student, class_obj: "Class | None") -> dict:
 
 
 def _parent_payload(parent: Parent) -> dict:
-    return {"phone": parent.phone, "full_name": parent.full_name}
+    return {
+        "phone": parent.phone,
+        "full_name": parent.full_name,
+        # The hash, never the password. It is generated on this machine (see
+        # credentials_service) because that is where the SMS is sent from,
+        # and it has to reach the Public Server because that is where the
+        # parent actually signs in.
+        "password_hash": parent.password_hash,
+        "password_salt": parent.password_salt,
+    }
 
 
 def _resolve_parent_and_class(db: Session, student: Student):

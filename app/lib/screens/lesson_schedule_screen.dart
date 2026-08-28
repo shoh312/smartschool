@@ -265,6 +265,13 @@ class _LessonFormDialogState extends State<_LessonFormDialog> {
     _startTimeController = TextEditingController(text: existing?.startTime ?? '');
     _durationController = TextEditingController(text: (existing?.durationMinutes ?? 45).toString());
     _roomController = TextEditingController(text: existing?.room ?? '');
+    // Save is disabled until there is a subject *and* a time, and it read
+    // the time straight off the controller -- which does not rebuild
+    // anything on its own. Choosing the subject first and typing the time
+    // second therefore left the button dead for good: nothing ever called
+    // setState again, and the only way out was to touch the dropdown once
+    // more. Which is exactly how a director would fill this in.
+    _startTimeController.addListener(_onTimeChanged);
     if (existing != null) {
       for (final a in widget.assignments) {
         if (a.teacherId == existing.teacherId && a.subject == existing.subject) {
@@ -275,8 +282,31 @@ class _LessonFormDialogState extends State<_LessonFormDialog> {
     }
   }
 
+  void _onTimeChanged() => setState(() {});
+
+  /// A time the backend cannot parse is worse than a rejected one: the
+  /// lesson appears in the timetable and is then silently skipped by the
+  /// camera window and by absence marking.
+  bool get _timeIsValid =>
+      RegExp(r'^([01]?\d|2[0-3]):[0-5]\d$').hasMatch(_startTimeController.text.trim());
+
+  Future<void> _pickTime() async {
+    final parts = _startTimeController.text.split(':');
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: int.tryParse(parts.first) ?? 8,
+        minute: parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0,
+      ),
+    );
+    if (picked == null) return;
+    _startTimeController.text =
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+  }
+
   @override
   void dispose() {
+    _startTimeController.removeListener(_onTimeChanged);
     _startTimeController.dispose();
     _durationController.dispose();
     _roomController.dispose();
@@ -309,7 +339,18 @@ class _LessonFormDialogState extends State<_LessonFormDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _startTimeController,
-              decoration: const InputDecoration(labelText: 'HH:MM', hintText: '08:00'),
+              keyboardType: TextInputType.datetime,
+              decoration: InputDecoration(
+                labelText: 'HH:MM',
+                hintText: '08:00',
+                errorText: _startTimeController.text.trim().isEmpty || _timeIsValid
+                    ? null
+                    : l10n.lessonTimeInvalid,
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.schedule_rounded, size: 20),
+                  onPressed: _pickTime,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -328,7 +369,7 @@ class _LessonFormDialogState extends State<_LessonFormDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
         ElevatedButton(
-          onPressed: _selectedAssignment == null || _startTimeController.text.trim().isEmpty
+          onPressed: _selectedAssignment == null || !_timeIsValid
               ? null
               : () => Navigator.pop(
                     context,

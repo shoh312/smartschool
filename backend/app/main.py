@@ -1,8 +1,10 @@
 import asyncio
 import threading
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.database import (
     engine,
@@ -111,6 +113,29 @@ app.include_router(diary_router)
 app.include_router(calendar_router)
 app.include_router(announcement_router)
 app.include_router(material_router)
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    """Turns a rejected form back into a message the app can show.
+
+    FastAPI's own handler echoes the offending input back in the error, and
+    on a multipart request that input is the uploaded photo -- megabytes of
+    JPEG. Encoding it as JSON calls bytes.decode(), which dies on the first
+    byte that is not UTF-8, and the clean 422 ("parent_phone is required")
+    becomes an opaque 500 the director sees as "error" with nothing to act
+    on. Registering a student is the one form in the app that sends a file,
+    which is why this only ever bit there.
+
+    So the input is dropped and only the location and the reason are kept.
+    """
+    safe = [
+        {"loc": [str(part) for part in error.get("loc", [])],
+         "msg": error.get("msg", ""),
+         "type": error.get("type", "")}
+        for error in exc.errors()
+    ]
+    return JSONResponse(status_code=422, content={"detail": safe})
+
 
 @app.get("/")
 def root():

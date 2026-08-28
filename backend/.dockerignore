@@ -1,0 +1,24 @@
+# Maxfiy sozlamalar image ichiga tushmaydi -- compose ularni ishga tushish
+# paytida .env dan o'qiydi.
+.env
+.env.*
+!.env.example
+firebase-credentials.json
+*.pem
+*.key
+
+# Windows'da qurilgan, konteynerda yaroqsiz.
+venv/
+__pycache__/
+*.pyc
+
+# Ish natijasi, kod emas.
+logs/
+*.log
+*.sql
+*.dump
+uploads/
+
+tests/
+.pytest_cache/
+.git/

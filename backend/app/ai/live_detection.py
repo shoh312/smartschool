@@ -5,17 +5,21 @@ import numpy as np
 import insightface
 import threading
 import time
-from datetime import date
+from datetime import date, datetime, timedelta
 from datetime import time as dt_time
 
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 
+from app.models.camera_position_model import CameraPosition
+from app.models.school_model import School
 from app.models.student import Student
+from app.services.camera_position_service import Slot, active_slot
 from app.services.attendance_service import (
     DetectionCycleCounter,
     mark_absent_after_detection_cycles,
+    mark_absent_for_lesson,
     mark_left_school_students,
     record_detection,
     record_lesson_detection,
@@ -83,7 +87,18 @@ from app.stream.stream_manager import stream_manager
 CAMERA_SOURCE = "rtsp://169.254.233.44:554/stream1?udp"
 
 # Cosine similarity threshold: 0.0-1.0, yuqoriroq = qattiqroq
-SIMILARITY_THRESHOLD = 0.42
+#
+# Lowered from 0.42 to 0.40 for the beta, deliberately and with the cost
+# understood: a lower bar recognises pupils further from the lens and in
+# worse light, and it also lets two similar faces clear it. What stops that
+# turning into "marked the wrong child present" is MIN_MATCH_MARGIN below --
+# a match still has to beat the runner-up by a clear margin, so a borderline
+# face that resembles two pupils equally is rejected rather than guessed.
+#
+# Raise it back towards 0.45 once the school reports a wrong name; that is
+# the failure this trades against, and it is worse than a missed detection
+# because a parent is told their child arrived when they did not.
+SIMILARITY_THRESHOLD = 0.40
 
 # Tuned for rosters of up to ~25 known faces per class. A flat threshold
 # alone gets less reliable as the roster grows -- two different students can
@@ -131,6 +146,11 @@ def camera_statuses() -> list[dict]:
         next_at = row.pop("_next_detection_at", None)
         row["seconds_to_detect"] = (
             max(0, round(next_at - now)) if next_at else None
+        )
+        closes_at = row.pop("_arrival_closes_at", None)
+        row["roll_call"] = bool(closes_at)
+        row["seconds_to_roll_call_close"] = (
+            max(0, round(closes_at - now)) if closes_at else None
         )
         started_at = row.pop("_detect_started_at", None)
         row["detecting_for"] = (
@@ -289,6 +309,117 @@ EMBEDDING_DIM = 512
 # would just lose the back row again.
 FRAME_SKIP = 20
 
+# Shortest gap between two detection passes.
+#
+# The worker skips a pass while the previous one is still running, which
+# stops a backlog but not saturation: each pass ends and the next begins,
+# so a ten-second window is ten seconds of every core at full tilt. The
+# capture thread sharing that machine fell from 24 fps to 8, and the live
+# view visibly froze for the length of every window -- and the detector
+# itself, measured against this camera, slowed from 193ms when the machine
+# was free to over 3 seconds when it was fighting itself.
+#
+# Half a second between passes still gives roughly twenty looks at the room
+# per window, far more than the two cycles it takes to call somebody
+# absent, and each look is now the fast kind. Slower in name, more
+# recognitions in practice, and a preview that keeps moving.
+DETECTION_MIN_INTERVAL = 0.5
+
+# The roll call at the start of a lesson.
+#
+# The duty cycle alone answers "is the room occupied" well and "who turned
+# up for this lesson" badly: ten seconds of looking, then twenty minutes of
+# nothing, so a pupil who arrives at 14:02 and sits with their back to the
+# lens at 14:00 is called absent on the strength of one glance, and the
+# correction only comes at 14:20 -- long after their parent was told.
+#
+# So the first ten minutes of every lesson are treated differently: the
+# camera stays on and looks once every ten seconds, roughly sixty looks at
+# the room, and the verdict is passed once at the end of it. That is when a
+# register is actually decided in a classroom, and it is late enough that
+# somebody walking in from the corridor is still counted as having come.
+#
+# After it closes the ordinary cycle takes over unchanged -- ten seconds of
+# detection every twenty minutes -- and it never calls anyone absent again
+# for that lesson. A pupil seen during the roll call has arrived, and the
+# rest of the lesson cannot take that back.
+ARRIVAL_WINDOW_MINUTES = 10
+ARRIVAL_SCAN_SECONDS = 10
+
+# When the camera picks up a lesson whose roll call has already run out --
+# the server was restarted mid-lesson, the camera reconnected late -- the
+# window is not simply skipped. Nobody has looked at this room yet, so it
+# gets this long to look before it is allowed to call anybody absent.
+ARRIVAL_MIN_LOOK_SECONDS = 60
+
+
+def lesson_verdict_passed(db, lesson_id: int, day: date) -> bool:
+    """Has this lesson's register already been decided today?
+
+    An absence can only be written by a roll call closing (or by the bell,
+    once the lesson is over) -- a camera never writes one on its own. So one
+    absent row is proof the verdict has been passed, and it is proof that
+    survives a restart, which the in-memory flag does not.
+
+    Without this, every restart during a lesson opened a fresh roll call and
+    judged the class again. A pupil enrolled after the first verdict was
+    marked absent a minute later; one already marked absent had their parent
+    told twice. The register is meant to be decided once.
+    """
+    from app.models.lesson_attendance_model import LessonAttendance
+
+    return (
+        db.query(LessonAttendance)
+        .filter(
+            LessonAttendance.lesson_id == lesson_id,
+            LessonAttendance.attendance_date == day,
+            LessonAttendance.status == "absent",
+        )
+        .first()
+        is not None
+    )
+
+
+def _lesson_present_count(db, lesson_id: int, day: date) -> int:
+    """How many pupils the register credits with attending this lesson."""
+    from app.models.lesson_attendance_model import LessonAttendance
+
+    return (
+        db.query(LessonAttendance)
+        .filter(
+            LessonAttendance.lesson_id == lesson_id,
+            LessonAttendance.attendance_date == day,
+            LessonAttendance.status != "absent",
+        )
+        .count()
+    )
+
+
+def arrival_deadline_for(
+    start: dt_time | None,
+    now: float,
+    today: date | None = None,
+) -> float | None:
+    """When a lesson's roll call closes, as epoch seconds.
+
+    Pure so the rule can be tested without a camera or a clock. Returns None
+    for a lesson with no start time -- there is nothing to anchor a roll call
+    to, and the caller falls back to counting sweeps instead.
+    """
+    if start is None:
+        return None
+    closes = datetime.combine(today or date.today(), start) + timedelta(
+        minutes=ARRIVAL_WINDOW_MINUTES
+    )
+    deadline = closes.timestamp()
+    if deadline <= now:
+        # The window is already spent -- the server restarted mid-lesson, or
+        # the camera reconnected late. Nobody has looked at this room yet, so
+        # it gets a short look before it is allowed to call anyone absent,
+        # rather than passing a verdict on no evidence at all.
+        return now + ARRIVAL_MIN_LOOK_SECONDS
+    return deadline
+
 DETECT_SECONDS = 10
 
 WAIT_MINUTES = 20
@@ -407,11 +538,56 @@ def _run_camera(camera_id: int, camera_source: str):
 def _run_camera_once(camera_id: int, camera_source: str):
     db = SessionLocal()
 
+    def _class_from_positions(s, cam):
+        """Whose group is in this room right now, in group mode.
+
+        A school gives every class its own room, so a camera belongs to a
+        class and the class's own timetable is the window. An academy runs
+        Python 4 through a room at nine and Java 2 through the same room at
+        two -- a camera bound to one class would recognise one group and mark
+        the other absent every day, silently. So here the camera belongs to
+        the room, and the slot in force decides whose faces to load.
+
+        Returns None outside every slot, which idles the camera exactly the
+        way being outside lesson hours does.
+        """
+        now = datetime.now()
+        rows = s.query(CameraPosition).filter(CameraPosition.camera_id == cam.id).all()
+        slot = active_slot(
+            [
+                Slot(id=row.id, class_id=row.class_id, start_time=row.start_time,
+                     end_time=row.end_time, day_of_week=row.day_of_week)
+                for row in rows
+            ],
+            now.weekday(),
+            now.strftime("%H:%M"),
+        )
+        return slot.class_id if slot else None
+
     def _load_config():
         s = SessionLocal()
         try:
             cam = s.query(Camera).filter(Camera.id == camera_id).first()
-            if not cam or not cam.class_id:
+            if not cam:
+                return DETECT_SECONDS, WAIT_MINUTES * 60, None
+
+            school = s.query(School).filter(School.id == cam.school_id).first()
+            if school is not None and school.group_mode:
+                class_id = _class_from_positions(s, cam)
+                if class_id is None:
+                    return DETECT_SECONDS, WAIT_MINUTES * 60, None
+                group = s.query(Class).filter(Class.id == class_id).first()
+                if group is None:
+                    return DETECT_SECONDS, WAIT_MINUTES * 60, None
+                # The slot is the window here, so the class's own start_time
+                # and timetable are not consulted -- only its duty cycle.
+                ds = group.detect_duration_seconds
+                ds = DETECT_SECONDS if ds is None else ds
+                ws = group.wait_duration_minutes
+                ws = WAIT_MINUTES if ws is None else ws
+                return ds, ws * 60, group.id
+
+            if not cam.class_id:
                 return DETECT_SECONDS, WAIT_MINUTES * 60, None
             school_class = s.query(Class).filter(Class.id == cam.class_id).first()
             if not school_class or not _in_time_window(
@@ -462,12 +638,58 @@ def _run_camera_once(camera_id: int, camera_source: str):
     # student is only re-processed once the next lesson starts.
     lesson_seen: set[int] = set()
 
+    # Sweeps completed inside the lesson that is running now. Counted per
+    # lesson rather than per day (the day-level counter below is a separate
+    # thing) because every lesson is its own register: a pupil present for
+    # Maths and gone by Physics has to be marked absent from Physics, and
+    # that cannot be decided by how many times the room was looked at since
+    # morning.
+    lesson_cycles = 0
+
+    # When this lesson's roll call closes, and whether its verdict has been
+    # passed. Both reset with the bell, below.
+    #
+    # Seeded from the lesson resolved above, not left empty for the first
+    # refresh to fill in. The refresh only reacts to the lesson *changing*,
+    # so a thread that starts up mid-lesson -- which is every restart during
+    # the school day -- saw no change, opened no roll call, and quietly fell
+    # back to the old two-sweep rule for the rest of that lesson.
+    arrival_finalised = (
+        lesson_verdict_passed(db, active_lesson_id, date.today())
+        if active_lesson_id is not None
+        else False
+    )
+    arrival_opened_at = time.time()
+    arrival_deadline: float | None = (
+        arrival_deadline_for(active_lesson_start, arrival_opened_at)
+        if active_lesson_id is not None and not arrival_finalised
+        else None
+    )
+
     def _refresh_lesson(cid: int | None) -> None:
-        nonlocal active_lesson_id, active_lesson_start, lesson_seen
+        nonlocal active_lesson_id, active_lesson_start, lesson_seen, lesson_cycles
+        nonlocal arrival_deadline, arrival_finalised, arrival_opened_at
         new_lesson_id, new_lesson_start = _load_active_lesson(cid)
         if new_lesson_id != active_lesson_id:
             active_lesson_id, active_lesson_start = new_lesson_id, new_lesson_start
             lesson_seen = set()
+            # Back to zero with the bell: the next lesson gets its own two
+            # sweeps before anyone is called absent from it.
+            lesson_cycles = 0
+            arrival_finalised = (
+                lesson_verdict_passed(db, new_lesson_id, date.today())
+                if new_lesson_id is not None
+                else False
+            )
+            arrival_opened_at = time.time()
+            arrival_deadline = (
+                arrival_deadline_for(new_lesson_start, arrival_opened_at)
+                if new_lesson_id is not None and not arrival_finalised
+                else None
+            )
+            if arrival_deadline is not None:
+                print(f"[+] Camera {camera_id}: lesson {new_lesson_id} roll call open, "
+                      f"closes in {int(arrival_deadline - time.time())}s")
 
     stagger_offset = (camera_id % STAGGER_BUCKET) * STAGGER_SECONDS_PER_CAMERA
 
@@ -514,6 +736,7 @@ def _run_camera_once(camera_id: int, camera_source: str):
     # queues if the previous detection is still running).
     detection_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     detection_future: concurrent.futures.Future | None = None
+    last_detection_at = 0.0
 
     print(f"[+] Camera {camera_id}: detect={detect_seconds}s, wait={wait_seconds//60}m, stagger={stagger_offset}s, class_id={class_id}")
 
@@ -521,6 +744,21 @@ def _run_camera_once(camera_id: int, camera_source: str):
     last_frame_hash = None
     same_frame_count = 0
     while True:
+        # Ends whatever transaction the previous pass opened.
+        #
+        # This session lives as long as the camera thread does -- weeks --
+        # and every read through it starts a transaction that SQLAlchemy
+        # leaves open until something commits or rolls back. Nothing here
+        # did, so the session sat "idle in transaction" indefinitely, and
+        # every ALTER TABLE in the startup migrations queued behind it. The
+        # visible symptom was the whole app hanging with no error: requests
+        # blocked behind a migration that was blocked behind a camera.
+        #
+        # Rolling back is right rather than committing: writes here go
+        # through their own sessions in attendance_service, so there is never
+        # anything of ours to keep.
+        db.rollback()
+
         now = time.time()
 
         if now - last_refresh >= 60:
@@ -543,6 +781,34 @@ def _run_camera_once(camera_id: int, camera_source: str):
             last_refresh = now
 
         if class_id is None:
+            # Nobody is timetabled into the room, so there is nobody to
+            # recognise -- but a director asking to see the room is a
+            # different question from whether a lesson is running. The camera
+            # used to disconnect outright here, so opening the live view out
+            # of hours showed nothing at all and looked like a broken stream
+            # rather than an empty schedule.
+            if stream_manager.has_viewers(camera_id):
+                if cap is None:
+                    cap = _connect()
+                    if cap is None:
+                        time.sleep(2)
+                        continue
+                    consecutive_read_failures = 0
+                    print(f"[+] Camera {camera_id}: connected for live view (no lesson)")
+                ret, frame = cap.read()
+                if ret:
+                    stream_manager.update_frame(frame, camera_id=camera_id)
+                else:
+                    consecutive_read_failures += 1
+                    if consecutive_read_failures >= 50:
+                        cap.release()
+                        cap = None
+                        consecutive_read_failures = 0
+                set_camera_status(camera_id, class_id=None, connected=True,
+                                  detecting=False, phase="dars vaqti emas",
+                                  _next_detection_at=None)
+                continue
+
             if cap is not None:
                 cap.release()
                 cap = None
@@ -552,6 +818,37 @@ def _run_camera_once(camera_id: int, camera_source: str):
                               _next_detection_at=None)
             time.sleep(2)
             continue
+
+        # The roll call outranks the duty cycle. While it is open the camera
+        # is not waiting for its next twenty-minute slot -- the lesson has
+        # just begun and this is the only stretch that decides who came.
+        in_arrival = (
+            active_lesson_id is not None
+            and arrival_deadline is not None
+            and not arrival_finalised
+        )
+        # Staggered even here. The roll call is time-critical but ten
+        # minutes long, so spending a camera's own few seconds of offset on
+        # it costs nothing, and a school with several cameras still does not
+        # reconnect all of them on the same tick of the clock.
+        if (
+            in_arrival
+            and not detection_enabled
+            and now < arrival_deadline
+            and now >= arrival_opened_at + stagger_offset
+        ):
+            detection_enabled = True
+            detect_start_time = now
+            known_encodings, known_students = _load_roster(class_id)
+            set_camera_status(camera_id, class_id=class_id, connected=True,
+                              detecting=True, phase="ro'yxat",
+                              roster=len(known_students),
+                              seen=len(lesson_seen),
+                              _detect_started_at=now,
+                              _arrival_closes_at=arrival_deadline,
+                              _next_detection_at=None)
+            print(f"[+] Camera {camera_id}: roll call scanning "
+                  f"({int(arrival_deadline - now)}s left, {len(known_students)} on the roster)")
 
         if not detection_enabled:
             time_until_detect = next_detection_time - now
@@ -573,7 +870,6 @@ def _run_camera_once(camera_id: int, camera_source: str):
                     same_frame_count = 0
                     last_frame_hash = None
                     print(f"[+] Camera {camera_id}: connected for live view")
-                cap.grab()
                 ret, frame = cap.read()
                 if ret:
                     stream_manager.update_frame(frame, camera_id=camera_id)
@@ -637,16 +933,16 @@ def _run_camera_once(camera_id: int, camera_source: str):
             same_frame_count = 0
             last_frame_hash = None
 
-        # One grab, not three. Draining the decoder's buffer keeps the live
-        # view from drifting seconds behind reality, but discarding three
-        # frames for every one kept also capped the preview at a measured
-        # 10 fps off a 25 fps camera, which is most of why it looked jerky.
+        # No pre-grab. Discarding a frame to stay current only helps a loop
+        # that has fallen behind the camera -- and grabbing was what put it
+        # behind. cv2.read() is already grab+retrieve, so the pair decoded
+        # two 2560x1440 frames to keep one: measured against this camera,
+        # 13.5 fps for grab+read against 29.6 fps for read alone.
         #
-        # One is enough to stay current: reading flat out kept pace with the
-        # camera in real time, so there is no backlog to clear -- and the
-        # per-frame cost on this thread is now ~1ms of encoding (see
-        # stream_manager) rather than 4ms, leaving room for the extra frames.
-        cap.grab()
+        # At 13.5 against a 25 fps camera the backlog grew by eleven frames
+        # a second and the drain never caught up, which is what the preview
+        # freezing and jumping actually was. Reading flat out outruns the
+        # camera, so there is nothing to drain in the first place.
         ret, frame = cap.read()
         if not ret:
             consecutive_read_failures += 1
@@ -666,7 +962,13 @@ def _run_camera_once(camera_id: int, camera_source: str):
         # repeatedly, the decoder has silently stalled while still reporting
         # ret=True (a soft freeze), which the read-failure counter above
         # can't see. Detect it separately and force the same reconnect path.
-        frame_hash = hashlib.md5(frame.tobytes()).digest()
+        # Hashed from every 16th pixel, not the whole frame. A 2560x1440
+        # frame is 11 MB, and md5 over all of it ran on the same thread that
+        # has to keep reading frames -- paid on every single pass, purely to
+        # notice a stall. The subsample still changes constantly on a live
+        # feed and still stops dead on a frozen one, which is all this needs
+        # to tell apart.
+        frame_hash = hashlib.md5(frame[::16, ::16].tobytes()).digest()
         if frame_hash == last_frame_hash:
             same_frame_count += 1
             if same_frame_count >= 90:
@@ -693,7 +995,25 @@ def _run_camera_once(camera_id: int, camera_source: str):
         # window. Hand it to a dedicated worker instead and keep grabbing
         # frames immediately; if the previous detection hasn't finished yet,
         # skip this one rather than queue a backlog or block waiting for it.
-        if detection_future is None or detection_future.done():
+        # One look every ten seconds during the roll call, not as fast as the
+        # machine allows. Sixty unhurried looks over ten minutes find a class
+        # more reliably than a burst that saturates the CPU, and they leave
+        # the live view watchable while they do it.
+        scan_interval = ARRIVAL_SCAN_SECONDS if in_arrival else DETECTION_MIN_INTERVAL
+        if (detection_future is None or detection_future.done()) and (
+            now - last_detection_at >= scan_interval
+        ):
+            last_detection_at = now
+            if in_arrival:
+                # Refreshed on every look so anything watching from outside
+                # can see the register filling up rather than only its total
+                # at the end.
+                set_camera_status(camera_id, class_id=class_id, connected=True,
+                                  detecting=True, phase="ro'yxat",
+                                  roster=len(known_students),
+                                  seen=len(lesson_seen),
+                                  _arrival_closes_at=arrival_deadline,
+                                  _next_detection_at=None)
             detection_future = detection_executor.submit(
                 _detect_faces_and_save,
                 frame.copy(),
@@ -705,13 +1025,19 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 lesson_seen,
             )
 
-        if elapsed >= detect_seconds:
+        # The roll call ends on the clock, not after detect_seconds: it runs
+        # for its whole ten minutes and closes when the lesson is ten minutes
+        # old. Every window after it is an ordinary one.
+        roll_call_closing = in_arrival and now >= arrival_deadline
+        if roll_call_closing or (not in_arrival and elapsed >= detect_seconds):
             detection_enabled = False
             next_detection_time = now + wait_seconds
             print(f"[+] Camera {camera_id}: AI paused for {wait_seconds//60} minutes...")
             set_camera_status(camera_id, class_id=class_id, connected=False,
                               detecting=False, phase="kutish",
                               roster=len(known_students),
+                              seen=len(lesson_seen),
+                              _arrival_closes_at=None,
                               _next_detection_at=next_detection_time)
             mark_left_school_students(db)
 
@@ -721,12 +1047,69 @@ def _run_camera_once(camera_id: int, camera_source: str):
             # the second pass on, the room has been checked twice and anyone
             # still unseen is genuinely not there.
             today = date.today()
+
+            if roll_call_closing:
+                # The verdict, passed once. Ten minutes and some sixty looks
+                # at the room are far more evidence than the two sweeps the
+                # counter below waits for, so the day-level register is
+                # settled here too and the parents of anyone missing are told
+                # now rather than after the next twenty-minute wait.
+                arrival_finalised = True
+                # The roll call counts as one of the day's sweeps; the
+                # unconditional record below is the second, which leaves the
+                # day counter satisfied so a later window does not start the
+                # two-sweep count from scratch.
+                cycle_counter.record(today)
+                if class_id is not None:
+                    day_absent = mark_absent_after_detection_cycles(db, class_id, today)
+                    lesson_absent = (
+                        mark_absent_for_lesson(db, class_id, active_lesson_id, today)
+                        if active_lesson_id is not None else []
+                    )
+                    # Read back off the register rather than counting what
+                    # this window happened to see. A thread that started
+                    # mid-lesson has an empty seen-set and would report "0
+                    # present" for a class it had just filled in correctly,
+                    # which reads as a failure and is not one.
+                    present = (
+                        _lesson_present_count(db, active_lesson_id, today)
+                        if active_lesson_id is not None else 0
+                    )
+                    print(f"[+] Camera {camera_id}: roll call closed -- "
+                          f"{present} present, {len(lesson_absent)} newly absent from the "
+                          f"lesson, {len(day_absent)} newly absent for the day")
+
             enough_passes = cycle_counter.record(today)
-            if enough_passes and class_id is not None:
+            if not roll_call_closing and enough_passes and class_id is not None:
                 marked = mark_absent_after_detection_cycles(db, class_id, today)
                 if marked:
                     print(f"[+] Camera {camera_id}: cycle {cycle_counter.count}, "
                           f"marked {len(marked)} absent")
+
+            # The same two-sweep rule, applied to the lesson in progress so
+            # the subject's own register fills in while the lesson is still
+            # running. One sweep proves nothing here either -- a pupil who
+            # walked in during the previous minute, or who had their back to
+            # the lens, is missed by a single look.
+            # Only ever a fallback now. A lesson whose roll call has closed
+            # has had its answer, and no later sweep may overturn it: a pupil
+            # counted in during the first ten minutes came to school, whether
+            # or not the lens finds them again at twenty past. This runs for
+            # a lesson that never had a roll call at all -- no start time to
+            # anchor one to -- where two sweeps remain the best evidence
+            # available.
+            if (
+                class_id is not None
+                and active_lesson_id is not None
+                and arrival_deadline is None
+                and not arrival_finalised
+            ):
+                lesson_cycles += 1
+                if lesson_cycles >= ABSENT_AFTER_CYCLES:
+                    missing = mark_absent_for_lesson(db, class_id, active_lesson_id, today)
+                    if missing:
+                        print(f"[+] Camera {camera_id}: lesson {active_lesson_id} "
+                              f"sweep {lesson_cycles}, marked {len(missing)} absent")
 
             known_encodings, known_students = _load_roster(class_id)
             # No need to keep the stream open through the whole wait window

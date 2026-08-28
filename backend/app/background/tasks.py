@@ -55,19 +55,43 @@ def _live_status_payload(db):
     }
 
 
+def _attendance_pass() -> dict:
+    db = SessionLocal()
+    try:
+        mark_absent_students(db)
+        mark_absent_for_finished_lessons(db)
+        mark_left_school_students(db)
+        send_pending_notifications(db)
+        return _live_status_payload(db)
+    finally:
+        db.close()
+
+
 async def attendance_background_loop():
     while True:
-        db = SessionLocal()
-        try:
-            mark_absent_students(db)
-            mark_absent_for_finished_lessons(db)
-            mark_left_school_students(db)
-            send_pending_notifications(db)
-            await manager.broadcast(_live_status_payload(db))
-        finally:
-            db.close()
-
+        # Off the event loop. These are synchronous SQLAlchemy calls that
+        # sweep every school's attendance, and awaiting nothing while they
+        # run meant the loop simply stopped for as long as they took --
+        # every request, every websocket, the live video included. Measured
+        # against the camera, the picture stalled up to three seconds at a
+        # time while the capture thread beside it kept producing 20 frames a
+        # second that nothing was free to send.
+        payload = await asyncio.to_thread(_attendance_pass)
+        await manager.broadcast(payload)
         await asyncio.sleep(30)
+
+
+def _analytics_pass() -> None:
+    db = SessionLocal()
+    try:
+        quarter = current_quarter()
+        students = db.query(Student).filter(Student.is_active == True).all()
+        for student in students:
+            overview = analytics_service.build_student_overview(db, student, quarter)
+            enqueue_student_analytics_event(db, student, overview)
+        db.commit()
+    finally:
+        db.close()
 
 
 async def analytics_sync_loop():
@@ -79,18 +103,37 @@ async def analytics_sync_loop():
     for everyone who *wasn't* the one just graded.
     """
     while True:
-        db = SessionLocal()
-        try:
-            quarter = current_quarter()
-            students = db.query(Student).filter(Student.is_active == True).all()
-            for student in students:
-                overview = analytics_service.build_student_overview(db, student, quarter)
-                enqueue_student_analytics_event(db, student, overview)
-            db.commit()
-        finally:
-            db.close()
-
+        # Threaded for the same reason as the attendance sweep: this rebuilds
+        # an overview for every active student in the school, and it ran
+        # inline on the event loop.
+        await asyncio.to_thread(_analytics_pass)
         await asyncio.sleep(300)
+
+
+def _diary_pass() -> None:
+    db = SessionLocal()
+    try:
+        class_ids = [row[0] for row in db.query(Class.id).all()]
+        for class_id in class_ids:
+            for on_date in (date.today(), date.today() + timedelta(days=1)):
+                for entry in diary_service.resolve_diary_for_class(db, class_id, on_date):
+                    enqueue_diary_event(
+                        db,
+                        class_id,
+                        on_date,
+                        entry["lesson_id"],
+                        entry["subject"],
+                        entry["room"],
+                        entry["teacher_name"],
+                        on_date.weekday(),
+                        entry["start_time"],
+                        entry["duration_minutes"],
+                        entry["homework"],
+                        entry["teacher_comment"],
+                    )
+        db.commit()
+    finally:
+        db.close()
 
 
 async def diary_sync_loop():
@@ -101,28 +144,7 @@ async def diary_sync_loop():
     even before any teacher has written a single homework note for it.
     """
     while True:
-        db = SessionLocal()
-        try:
-            class_ids = [row[0] for row in db.query(Class.id).all()]
-            for class_id in class_ids:
-                for on_date in (date.today(), date.today() + timedelta(days=1)):
-                    for entry in diary_service.resolve_diary_for_class(db, class_id, on_date):
-                        enqueue_diary_event(
-                            db,
-                            class_id,
-                            on_date,
-                            entry["lesson_id"],
-                            entry["subject"],
-                            entry["room"],
-                            entry["teacher_name"],
-                            on_date.weekday(),
-                            entry["start_time"],
-                            entry["duration_minutes"],
-                            entry["homework"],
-                            entry["teacher_comment"],
-                        )
-            db.commit()
-        finally:
-            db.close()
-
+        # Threaded like the other sweeps -- this one walks every class and
+        # resolves two days of diary for each.
+        await asyncio.to_thread(_diary_pass)
         await asyncio.sleep(900)
