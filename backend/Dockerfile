@@ -20,16 +20,28 @@ COPY requirements-docker.txt .
 #
 # insightface o'z Cython kengaytmasini yig'adi, shuning uchun compiler
 # kerak. libgomp1 esa qoladi: onnxruntime ishga tushganda uni qidiradi.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential cmake \
+    && pip install --no-cache-dir -r requirements-docker.txt \
+    && apt-get purge -y build-essential cmake \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ishga tushish uchun kerakli tizim kutubxonalari -- ataylab pip dan KEYIN,
+# alohida qatlamda.
 #
-# OpenCV ning kutubxonalari (libgl1, libxcb1 va qolganlari) ham shu yerda.
-# Ular oyna chizish uchun kerak va bu serverda hech qachon oyna chizilmaydi
-# -- lekin insightface `opencv-python` ni talab qiladi, headless variantini
-# emas, va u ishga tushishning o'zida shu kutubxonalarni qidiradi. Ularsiz
-# konteyner `ImportError: libxcb.so.1` bilan qulab tushadi.
+# Ular yuqoridagi RUN ichida turganda har qo'shilgan kutubxona pip qatlamini
+# ham bekor qilardi, ya'ni bitta paket nomi uchun insightface o'z Cython
+# kengaytmasini qaytadan kompilyatsiya qilardi -- sekin mashinada sakson
+# daqiqa. Bu yerda esa qayta ishlaydigani faqat shu qatorning o'zi, bir
+# necha soniya.
+#
+# Nima uchun kerak: insightface `opencv-python` ni talab qiladi, headless
+# variantini emas, va u import bo'lishning o'zida oyna chizish
+# kutubxonalarini qidiradi. Ularsiz konteyner `ImportError: libxcb.so.1`
+# bilan qulab tushadi -- bu serverda hech qachon oyna chizilmasa ham.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
         libgl1 \
         libglib2.0-0 \
         libgomp1 \
@@ -37,9 +49,6 @@ RUN apt-get update \
         libxcb1 \
         libxext6 \
         libxrender1 \
-    && pip install --no-cache-dir -r requirements-docker.txt \
-    && apt-get purge -y build-essential cmake \
-    && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .

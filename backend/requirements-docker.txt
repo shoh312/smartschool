@@ -30,18 +30,10 @@ bcrypt==4.0.1
 
 # Yuz tanish.
 #
-# headless variant serverda to'g'riroq -- ekran yo'q va kodda birorta
-# cv2.imshow ham yo'q. Lekin u yagona bo'lib qolmaydi: insightface o'z
-# bog'liqligi sifatida to'liq `opencv-python` ni ham tortib keladi, ikkalasi
-# bitta cv2/ papkasiga yozadi, va oxirida qolgani X11 kutubxonalarini
-# qidiradigani bo'lib chiqishi mumkin. Shuning uchun ular Dockerfile da
-# o'rnatiladi -- qaysi biri qolishidan qat'i nazar ishlaydi.
-#
-# Bu qator ataylab o'chirilmayapti. Uni olib tashlash to'g'riroq ko'rinadi,
-# ammo requirements ning har qanday o'zgarishi pip qatlamini bekor qiladi,
-# va o'rnatilgan mashinada bu sakson daqiqalik qayta yig'ish degani --
-# insightface o'z Cython kengaytmasini qaytadan kompilyatsiya qiladi.
-# Tozalik uchun to'lanadigan narx juda katta.
+# opencv-python emas, headless: serverda ekran yo'q va kodda birorta
+# cv2.imshow ham yo'q (tekshirilgan). Oddiy opencv libGL va X11
+# kutubxonalarini talab qiladi -- ular faqat oyna chizish uchun kerak,
+# bu yerda esa hech qachon oyna chizilmaydi.
 opencv-python-headless==4.13.0.92
 insightface==1.0.1
 onnxruntime==1.26.0
