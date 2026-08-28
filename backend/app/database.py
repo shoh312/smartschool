@@ -182,10 +182,21 @@ def ensure_default_school_and_backfill() -> int:
         ).scalar()
 
         if school_id is None:
+            # Every NOT NULL column named explicitly, rather than trusting the
+            # table to have defaults.
+            #
+            # It twice did not. `default=` on the model is applied by the ORM
+            # and this INSERT is raw SQL; the migration's `ADD COLUMN ...
+            # DEFAULT` only fires on a database that predates the column, and
+            # a brand new one has it built by create_all instead. Both
+            # safeguards were real and both missed this line, so the first
+            # startup of a fresh install died inserting its own seed row.
+            #
+            # Spelling the values out here does not depend on either.
             school_id = connection.execute(
                 text(
-                    "INSERT INTO schools (name, is_active) "
-                    "VALUES ('Default School', true) RETURNING id"
+                    "INSERT INTO schools (name, is_active, live_video_enabled, group_mode) "
+                    "VALUES ('Default School', true, true, false) RETURNING id"
                 )
             ).scalar()
 
