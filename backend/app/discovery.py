@@ -9,6 +9,8 @@ client then talks to whichever address the reply actually came from.
 import asyncio
 import socket
 
+from app.utils.config import settings
+
 DISCOVERY_PORT = 8734
 MAGIC_REQUEST = b"SMARTSCHOOL_DISCOVER_V1"
 MAGIC_RESPONSE_PREFIX = b"SMARTSCHOOL_HERE:"
@@ -29,7 +31,8 @@ class _DiscoveryProtocol(asyncio.DatagramProtocol):
         self.transport.sendto(response, addr)
 
 
-async def start_discovery_responder(api_port: int = 8000) -> None:
+async def start_discovery_responder(api_port: int | None = None) -> None:
+    api_port = api_port or settings.school_server_port
     loop = asyncio.get_running_loop()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

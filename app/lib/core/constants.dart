@@ -2,12 +2,22 @@ class AppConstants {
   /// The ports the two servers listen on. Named here because the LAN scan
   /// needs them as numbers, not buried inside a URL string it would have to
   /// parse back out.
-  static const int schoolServerPort = 8000;
+  // The school's machine already ran something on 8000, so the server was
+  // moved. Only the subnet scan uses this number -- when the broadcast is
+  // answered the reply carries the real port, so a school on a different one
+  // still works without rebuilding the app.
+  static const int schoolServerPort = 8080;
   static const int publicServerPort = 8200;
 
+  /// Where the school server is, when the LAN scan finds nothing.
+  ///
+  /// This used to point at an address the school stopped using, which meant
+  /// a phone that failed to discover anything fell back to a machine that no
+  /// longer existed and simply looked broken. Pointing it at the school
+  /// server's actual address makes the fallback do what its name promises.
   static const _fallbackApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.43.3:8000',
+    defaultValue: 'http://192.168.0.124:8080',
   );
 
   /// Set at startup once the backend is auto-discovered on the local network
@@ -40,7 +50,11 @@ class AppConstants {
   /// `localhost` to reach the host machine.
   static const String _compiledPublicServerBaseUrl = String.fromEnvironment(
     'PUBLIC_SERVER_BASE_URL',
-    defaultValue: 'http://localhost:8200',
+    // The hosted Public Server. `localhost` was right while it ran on the
+    // same machine as the app during development, and wrong the moment it
+    // moved to a rented box: a freshly installed phone pointed at itself and
+    // no parent could log in until somebody typed the address into Settings.
+    defaultValue: 'http://64.188.67.36:8200',
   );
 
   /// Overridden from Settings and remembered on the device.

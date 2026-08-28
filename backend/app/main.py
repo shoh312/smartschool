@@ -64,6 +64,7 @@ from app.background.sync_worker import sync_background_loop
 from app.background.attempt_pull_worker import attempt_pull_loop
 from app.database import SessionLocal
 from app.discovery import start_discovery_responder
+from app.utils.config import settings
 from app.services.auth_service import ensure_default_director
 from app.ai.live_detection import start_detection_background
 
@@ -158,5 +159,5 @@ async def start_background_tasks():
     # The one loop that reads FROM the Public Server: pupils' finished test
     # work, which is written there because that's where the pupil is.
     asyncio.create_task(attempt_pull_loop())
-    asyncio.create_task(start_discovery_responder())
+    asyncio.create_task(start_discovery_responder(settings.school_server_port))
     threading.Thread(target=start_detection_background, daemon=True).start()

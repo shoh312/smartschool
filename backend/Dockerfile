@@ -55,4 +55,9 @@ USER smartschool
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Port .env dan olinadi: maktabning mashinasida 8000 boshqa xizmat tomonidan
+# band bo'lishi mumkin, va host tarmog'ida ishlaganimiz uchun uni chetlab
+# o'tib bo'lmaydi. Shell orqali chaqirilyapti -- exec shaklida ${...}
+# almashtirilmaydi va uvicorn portni "${SCHOOL_SERVER_PORT:-8000}" degan
+# matn deb qabul qiladi.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${SCHOOL_SERVER_PORT:-8000}"]
