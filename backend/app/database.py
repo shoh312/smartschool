@@ -255,7 +255,24 @@ def ensure_rooms_backfill() -> None:
     """Migrate data from old Room/RoomPosition model to Class fields and
     Camera.class_id. Copies room_position data into class columns and sets
     camera.class_id from the active room_position's class_id.
+
+    Skipped entirely when the old tables are absent, which is every
+    installation created after that model was replaced. Without the check
+    this raised `relation "room_positions" does not exist` and took the
+    whole server down before it served a request -- a migration whose only
+    purpose is to carry old data forward, refusing to start a database that
+    has no old data.
     """
+    with engine.begin() as connection:
+        legacy_tables_exist = connection.execute(
+            text(
+                "SELECT to_regclass('public.room_positions') IS NOT NULL "
+                "AND to_regclass('public.rooms') IS NOT NULL"
+            )
+        ).scalar()
+        if not legacy_tables_exist:
+            return
+
     with engine.begin() as connection:
         connection.execute(
             text(
