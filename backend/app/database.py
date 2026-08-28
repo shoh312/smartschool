@@ -136,6 +136,16 @@ def ensure_database_schema():
         "ALTER TABLE parents ADD COLUMN IF NOT EXISTS password_salt VARCHAR",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS live_video_enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS group_mode BOOLEAN NOT NULL DEFAULT FALSE",
+        # The two ALTERs above only fire on a database that predates these
+        # columns. On a brand new one create_all builds the table first, and
+        # it wrote NOT NULL with no default at all -- so the very next thing
+        # startup does, inserting its own "Default School" row with a plain
+        # INSERT, failed and took the whole server down before it had served
+        # a single request. Setting the default explicitly repairs a table
+        # already created that way; the model now carries a server_default so
+        # freshly created ones never need repairing.
+        "ALTER TABLE schools ALTER COLUMN live_video_enabled SET DEFAULT TRUE",
+        "ALTER TABLE schools ALTER COLUMN group_mode SET DEFAULT FALSE",
         # One camera, several groups through the day -- see CameraPosition.
         """
         CREATE TABLE IF NOT EXISTS camera_positions (
