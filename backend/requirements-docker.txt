@@ -30,17 +30,19 @@ bcrypt==4.0.1
 
 # Yuz tanish.
 #
-# opencv bu yerda ataylab yozilmagan: uni insightface o'zi bilan olib
-# keladi, va aynan `opencv-python` ni -- headless variantini emas.
+# headless variant serverda to'g'riroq -- ekran yo'q va kodda birorta
+# cv2.imshow ham yo'q. Lekin u yagona bo'lib qolmaydi: insightface o'z
+# bog'liqligi sifatida to'liq `opencv-python` ni ham tortib keladi, ikkalasi
+# bitta cv2/ papkasiga yozadi, va oxirida qolgani X11 kutubxonalarini
+# qidiradigani bo'lib chiqishi mumkin. Shuning uchun ular Dockerfile da
+# o'rnatiladi -- qaysi biri qolishidan qat'i nazar ishlaydi.
 #
-# Avval headless yozilgan edi ("serverda ekran yo'q, cv2.imshow ham yo'q,
-# demak X11 kutubxonalari ortiqcha"). Mantiq to'g'ri, natija esa noto'g'ri:
-# pip ikkalasini ham o'rnatdi, ular bitta cv2/ papkasiga yozadi va
-# keyingisi oldingisini bosib ketadi. Konteyner ishga tushganda
-# `ImportError: libxcb.so.1` bilan qulab tushdi.
-#
-# Bitta opencv bo'lgani -- ikkitasidan yaxshiroq. Kerakli tizim
-# kutubxonalari Dockerfile da o'rnatiladi.
+# Bu qator ataylab o'chirilmayapti. Uni olib tashlash to'g'riroq ko'rinadi,
+# ammo requirements ning har qanday o'zgarishi pip qatlamini bekor qiladi,
+# va o'rnatilgan mashinada bu sakson daqiqalik qayta yig'ish degani --
+# insightface o'z Cython kengaytmasini qaytadan kompilyatsiya qiladi.
+# Tozalik uchun to'lanadigan narx juda katta.
+opencv-python-headless==4.13.0.92
 insightface==1.0.1
 onnxruntime==1.26.0
 numpy==2.4.5
