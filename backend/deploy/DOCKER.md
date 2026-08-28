@@ -11,6 +11,25 @@ ko'chirish kerak bo'lsa, oxiridagi qo'shimchani o'qing.
 
 ---
 
+## Eng oson yo'l: bitta skript
+
+Quyidagi barcha qadamlarni o'zi bajaradi — Docker o'rnatadi, papkani
+joyiga ko'chiradi, `.env` yaratadi (bir necha savol beradi), konteynerlarni
+yig'adi va kompyuter yonganda o'zi ko'tariladigan qilib qo'yadi:
+
+```bash
+sudo bash /opt/smartschool/backend/deploy/install.sh
+```
+
+Qayta ishga tushirish xavfsiz: har qadam avval tekshiradi, mavjud `.env` ga
+tegmaydi. `git pull` dan keyin ham shu skript yangilash yo'li bo'lib xizmat
+qiladi.
+
+Nima bo'layotganini qadamma-qadam ko'rmoqchi bo'lsangiz — pastdagi bo'limlar
+aynan o'sha ishlarni qo'lda tushuntiradi.
+
+---
+
 ## 1. Kompyuterni tayyorlash
 
 Kamera bilan **bir tarmoqda** bo'lishi shart. Aks holda tanish umuman
