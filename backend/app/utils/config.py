@@ -7,6 +7,16 @@ load_dotenv()
 
 
 class Settings:
+    # The port this server listens on.
+    #
+    # Configurable because the school's machine may already be using 8000 for
+    # something else, and because the number has to be right in two places at
+    # once: uvicorn binds it, and the discovery responder announces it to the
+    # phones. Announcing one port while listening on another leaves the app
+    # finding a server it cannot then talk to -- which looks exactly like the
+    # server being down.
+    school_server_port = int(os.getenv("SCHOOL_SERVER_PORT", "8000"))
+
     attendance_late_after = time(8, 15)
     left_school_after_minutes = int(os.getenv("LEFT_SCHOOL_AFTER_MINUTES", "30"))
     firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")

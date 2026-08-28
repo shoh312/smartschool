@@ -47,6 +47,9 @@ services:
     network_mode: host
 
     environment:
+      # Uvicorn shu portni tinglaydi, va qidiruv javobida telefonlarga ham
+      # aynan shu port e'lon qilinadi -- ikkalasi bitta qiymatdan oladi.
+      SCHOOL_SERVER_PORT: ${SCHOOL_SERVER_PORT:-8000}
       DATABASE_URL: postgresql://smartschool:${POSTGRES_PASSWORD}@127.0.0.1:5432/smartschool
       SMARTSCHOOL_AUTH_SECRET: ${SMARTSCHOOL_AUTH_SECRET:?openssl rand -hex 32 bilan yarating}
       JWT_SECRET: ${JWT_SECRET:?openssl rand -hex 32 bilan yarating}

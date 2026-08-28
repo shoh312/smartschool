@@ -97,6 +97,8 @@ fi
 say ".env"
 if [[ -f .env ]]; then
     ok "allaqachon bor -- tegilmadi"
+    PORT="$(grep -E '^SCHOOL_SERVER_PORT=' .env | cut -d= -f2 | tr -d ' ')"
+    PORT="${PORT:-8000}"
 else
     command -v openssl >/dev/null 2>&1 || { apt-get update -qq; apt-get install -y -qq openssl; }
 
@@ -107,8 +109,17 @@ else
     read -rp "  Ochiq server kaliti (bootstrap_school.py chiqargan)     : " PUBLIC_KEY
     read -rp "  Direktor logini [director@smartschool.com]              : " ADMIN_EMAIL
     read -rp "  Direktor paroli  [tasodifiy yaratiladi]                 : " ADMIN_PASS
+    read -rp "  Server porti [8000]                                     : " PORT
 
     ADMIN_EMAIL="${ADMIN_EMAIL:-director@smartschool.com}"
+    PORT="${PORT:-8000}"
+
+    # Port band bo'lsa oldindan aytamiz. Konteyner host tarmog'ida ishlaydi,
+    # ya'ni bandlikni chetlab o'tolmaydi -- ilova ko'tarilmaydi yoki, undan
+    # ham yomoni, telefon boshqa xizmatga ulanib "404" oladi.
+    if ss -tlnH "sport = :$PORT" 2>/dev/null | grep -q .; then
+        warn "$PORT porti allaqachon band -- boshqasini tanlang yoki egasini to'xtating"
+    fi
 
     # Manzil oxiridagi ortiqcha belgilar -- nusxalashda tez-tez qo'shilib
     # qoladi va sinxronizatsiya jimgina ishlamay turadi.
@@ -125,6 +136,7 @@ JWT_SECRET=$(openssl rand -hex 32)
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_MINUTES=1440
 LEFT_SCHOOL_AFTER_MINUTES=30
+SCHOOL_SERVER_PORT=$PORT
 
 # Birinchi direktor -- faqat bo'sh bazada ishlatiladi.
 SMARTSCHOOL_ADMIN_EMAIL=$ADMIN_EMAIL
@@ -152,14 +164,14 @@ docker compose up -d --build
 
 say "Kutish"
 for _ in $(seq 1 60); do
-    if curl -fsS -o /dev/null http://localhost:8000/docs 2>/dev/null; then
+    if curl -fsS -o /dev/null http://localhost:${PORT}/docs 2>/dev/null; then
         ok "server javob beryapti"
         break
     fi
     sleep 5
 done
 
-if ! curl -fsS -o /dev/null http://localhost:8000/docs 2>/dev/null; then
+if ! curl -fsS -o /dev/null http://localhost:${PORT}/docs 2>/dev/null; then
     warn "server hali javob bermayapti. Jurnalni ko'ring:"
     warn "  docker compose logs --tail 50 app"
 fi

@@ -30,11 +30,17 @@ bcrypt==4.0.1
 
 # Yuz tanish.
 #
-# opencv-python emas, headless: serverda ekran yo'q va kodda birorta
-# cv2.imshow ham yo'q (tekshirilgan). Oddiy opencv libGL va X11
-# kutubxonalarini talab qiladi -- ular faqat oyna chizish uchun kerak,
-# bu yerda esa hech qachon oyna chizilmaydi.
-opencv-python-headless==4.13.0.92
+# opencv bu yerda ataylab yozilmagan: uni insightface o'zi bilan olib
+# keladi, va aynan `opencv-python` ni -- headless variantini emas.
+#
+# Avval headless yozilgan edi ("serverda ekran yo'q, cv2.imshow ham yo'q,
+# demak X11 kutubxonalari ortiqcha"). Mantiq to'g'ri, natija esa noto'g'ri:
+# pip ikkalasini ham o'rnatdi, ular bitta cv2/ papkasiga yozadi va
+# keyingisi oldingisini bosib ketadi. Konteyner ishga tushganda
+# `ImportError: libxcb.so.1` bilan qulab tushdi.
+#
+# Bitta opencv bo'lgani -- ikkitasidan yaxshiroq. Kerakli tizim
+# kutubxonalari Dockerfile da o'rnatiladi.
 insightface==1.0.1
 onnxruntime==1.26.0
 numpy==2.4.5
