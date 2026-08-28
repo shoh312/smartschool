@@ -5,19 +5,71 @@ import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../core/language_options.dart';
 import '../models/app_role.dart';
+import '../models/school_settings.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/school_service.dart';
 import '../services/token_storage.dart';
-import '../routes/app_routes.dart';
-import '../widgets/app_confirm_dialog.dart';
+import '../utils/error_formatter.dart';
 import '../widgets/bottom_nav_inset.dart';
 import '../widgets/dashboard/dashboard_widgets.dart';
 import '../widgets/flag_badge.dart';
-import 'change_password_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  SchoolSettings? _school;
+  bool _savingSchool = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSchoolSettings());
+  }
+
+  /// Only a director has these, and only a director's token can read
+  /// them -- so a teacher opening Settings simply never sees the
+  /// section rather than seeing it fail.
+  Future<void> _loadSchoolSettings() async {
+    if (context.read<AuthProvider>().role != AppRole.director) return;
+    try {
+      final settings = await context.read<SchoolService>().fetchSettings();
+      if (mounted) setState(() => _school = settings);
+    } catch (_) {
+      // The rest of Settings works without it; the section stays hidden.
+    }
+  }
+
+  Future<void> _saveSchool({bool? liveVideo, bool? groupMode}) async {
+    final previous = _school;
+    // Moved before the request so the switch answers the finger, not
+    // the network; put back below if the server refuses.
+    setState(() {
+      _savingSchool = true;
+      _school = _school?.copyWith(liveVideoEnabled: liveVideo, groupMode: groupMode);
+    });
+    try {
+      final saved = await context.read<SchoolService>().updateSettings(
+        liveVideoEnabled: liveVideo,
+        groupMode: groupMode,
+      );
+      if (mounted) setState(() => _school = saved);
+    } catch (exception) {
+      if (!mounted) return;
+      setState(() => _school = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(humanReadableError(classifyError(exception), AppLocalizations.of(context)!))),
+      );
+    } finally {
+      if (mounted) setState(() => _savingSchool = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +142,42 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 26),
+          // Two switches that change what the whole school sees, so they sit
+          // above the address field rather than below it: this is the part a
+          // director actually comes here to change.
+          if (isDirector && _school != null) ...[
+            DashboardSectionHeader(title: l10n.schoolSettings),
+            Container(
+              decoration: BoxDecoration(
+                color: context.colors.surface,
+                borderRadius: AppRadius.lgRadius,
+                border: Border.all(color: context.colors.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  _SettingSwitch(
+                    icon: Icons.videocam_outlined,
+                    title: l10n.liveVideoSetting,
+                    subtitle: l10n.liveVideoSettingHint,
+                    value: _school!.liveVideoEnabled,
+                    enabled: !_savingSchool,
+                    onChanged: (value) => _saveSchool(liveVideo: value),
+                  ),
+                  Divider(height: 1, indent: 56, color: context.colors.border),
+                  _SettingSwitch(
+                    icon: Icons.groups_2_outlined,
+                    title: l10n.groupModeSetting,
+                    subtitle: l10n.groupModeSettingHint,
+                    value: _school!.groupMode,
+                    enabled: !_savingSchool,
+                    onChanged: (value) => _saveSchool(groupMode: value),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 26),
+          ],
           // The address only ever needs touching when the school is being set
           // up or moved, which is the director's job. Everyone else's app
           // reaches the Public Server at the address it was built with, and
@@ -129,77 +217,6 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 26),
           ],
-          // Directors are the only role with a password of their own to
-          // change here; the others are issued theirs by the school.
-          if (isDirector) ...[
-            Container(
-              decoration: BoxDecoration(
-                color: context.colors.surface,
-                borderRadius: AppRadius.lgRadius,
-                border: Border.all(color: context.colors.border),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ChangePasswordScreen(forced: false),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      Icon(Icons.lock_outline_rounded,
-                          color: context.colors.textSecondary, size: 24),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          l10n.passwordChangeTitle,
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w600,
-                            color: context.colors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.chevron_right_rounded,
-                          color: context.colors.textMuted, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-          ],
-          Container(
-            decoration: BoxDecoration(
-              color: context.colors.surface,
-              borderRadius: AppRadius.lgRadius,
-              border: Border.all(color: context.colors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => _confirmLogout(context, l10n),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Row(
-                  children: [
-                    Icon(Icons.logout_rounded, color: context.colors.danger, size: 24),
-                    const SizedBox(width: 14),
-                    Text(
-                      l10n.logout,
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                        color: context.colors.danger,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -261,24 +278,6 @@ class SettingsScreen extends StatelessWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(l10n.serverAddressSaved)));
-  }
-
-  Future<void> _confirmLogout(BuildContext context, AppLocalizations l10n) async {
-    final confirmed = await showAppConfirmDialog(
-      context,
-      icon: Icons.logout_rounded,
-      title: l10n.logout,
-      message: l10n.logoutConfirmMessage,
-      confirmLabel: l10n.logout,
-      isDestructive: true,
-    );
-
-    if (!confirmed || !context.mounted) return;
-
-    await context.read<AuthProvider>().logout();
-    if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
-    }
   }
 
   Widget _buildThemeOption(
@@ -349,6 +348,51 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One switch with its reason underneath.
+///
+/// The subtitle is not decoration: both of these change what other people in
+/// the school can see, and a director flipping them deserves to know which
+/// one does what before they find out from a teacher.
+class _SettingSwitch extends StatelessWidget {
+  const _SettingSwitch({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile.adaptive(
+      value: value,
+      onChanged: enabled ? onChanged : null,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      secondary: Icon(icon, size: 24, color: context.colors.textSecondary),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15.5,
+          fontWeight: FontWeight.w600,
+          color: context.colors.textPrimary,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12.5, color: context.colors.textSecondary),
       ),
     );
   }

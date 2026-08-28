@@ -7,6 +7,8 @@ import 'firebase_options.dart';
 import 'core/app.dart';
 import 'providers/app_providers.dart';
 import 'providers/language_provider.dart';
+import 'providers/theme_provider.dart';
+import 'services/app_preferences.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -26,9 +28,19 @@ void main() async {
     debugPrint('Firebase initialization error: $e');
   }
 
+  // Read before the first frame: theme and language decide what every
+  // screen looks like, and applying them a frame later would repaint the
+  // whole app in front of the user.
+  final preferences = AppPreferences();
+  final themeMode = ThemeProvider.parse(await preferences.readThemeMode());
+  final locale = LanguageProvider.parse(await preferences.readLanguageCode());
+
   runApp(
     MultiProvider(
-      providers: buildAppProviders(),
+      providers: buildAppProviders(
+        initialThemeMode: themeMode,
+        initialLocale: locale,
+      ),
       child: const SmartSchoolRoot(),
     ),
   );

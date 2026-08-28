@@ -38,6 +38,21 @@ def verify_student_password(password: str, salt: str, expected_hash: str) -> boo
     return secrets.compare_digest(digest, expected_hash)
 
 
+# Deliberately not the full alphabet. These credentials are read off an SMS
+# and typed by hand, often by a parent on a phone keyboard, so the pairs that
+# get mistyped are left out: 0/O, 1/l/I, 5/S, 8/B. A shorter alphabet costs
+# some entropy -- 8 characters from these 49 is still about 45 bits, which is
+# far beyond guessing a school account -- and buys back every support call
+# that starts with "it says wrong password".
+_PASSWORD_ALPHABET = "abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRTUVWXYZ23467"
+
+PASSWORD_LENGTH = 8
+
+
+def generate_password(length: int = PASSWORD_LENGTH) -> str:
+    return "".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(length))
+
+
 def create_jwt_access_token(subject: str, claims: dict[str, Any] | None = None) -> str:
     expire_at = datetime.utcnow() + timedelta(
         minutes=settings.jwt_access_token_minutes

@@ -6,6 +6,8 @@ import '../core/design_tokens.dart';
 import '../models/camera_config.dart';
 import '../models/school_class.dart';
 import '../providers/school_provider.dart';
+import '../services/school_service.dart';
+import 'camera_groups_screen.dart';
 import '../widgets/analytics/analytics_widgets.dart';
 import '../widgets/app_confirm_dialog.dart';
 import '../widgets/app_list_card.dart';
@@ -31,12 +33,28 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
   CameraConfig? _editingCamera;
   bool _formOpen = false;
 
+  /// Whether this school runs several groups through one room. Off by
+  /// default, which is every ordinary school: one class, one room, and
+  /// nothing to schedule.
+  bool _groupMode = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SchoolProvider>().loadSchoolData();
+      _loadGroupMode();
     });
+  }
+
+  Future<void> _loadGroupMode() async {
+    try {
+      final settings = await context.read<SchoolService>().fetchSettings();
+      if (mounted) setState(() => _groupMode = settings.groupMode);
+    } catch (_) {
+      // Left off: the camera list is the point of this screen and it
+      // works without knowing.
+    }
   }
 
   @override
@@ -213,6 +231,21 @@ class _CameraManagementScreenState extends State<CameraManagementScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Only in group mode: with one class per
+                          // room there is no schedule to keep, and a
+                          // button leading to an empty screen is
+                          // worse than no button.
+                          if (_groupMode)
+                            IconButton(
+                              tooltip: l10n.cameraGroups,
+                              icon: Icon(Icons.schedule_outlined, size: 20, color: context.colors.primary),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CameraGroupsScreen(camera: camera),
+                                ),
+                              ),
+                            ),
                           IconButton(
                             icon: Icon(Icons.edit_outlined, size: 20, color: context.colors.textMuted),
                             onPressed: () => _prepareEdit(camera, provider.classes),

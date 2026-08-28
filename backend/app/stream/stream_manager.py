@@ -1,23 +1,35 @@
 import threading
+import time
 from typing import Optional
 
 import cv2
 
 # What the live view is for: someone glancing at a phone to see the room is
 # covered and the camera is pointed the right way. That does not need the
-# camera's full frame at OpenCV's default JPEG quality of 95 -- measured on
-# the installed 1280x720 camera, that was 197 KB a frame, roughly 16 Mbit/s
-# once the capture loop is running, and 4ms of encoding on the same thread
-# that has to keep reading frames.
+# camera's full frame at OpenCV's default JPEG quality of 95.
 #
-# Half size at quality 70 measures 25 KB and 1ms: eight times less to push
-# over the socket and four times less work to produce it, for a preview that
-# still reads clearly on a phone.
+# Sized to a fixed width rather than to a fraction of the camera's own. The
+# fraction was written for a 1280x720 camera, where halving it produced a
+# 25 KB frame; the same rule against the 2560x1440 camera now installed
+# produced 154 KB -- about 28 Mbit/s once the capture loop is running, which
+# is more than a phone on wi-fi absorbs, and the picture froze and jumped
+# rather than played. A rule in pixels holds whatever camera is bolted up
+# next; a rule in halves silently gets four times worse.
+#
+# 960px at quality 65 measures 78 KB, and the cap below keeps it to 15 fps:
+# roughly 9 Mbit/s, a third of what a phone was being asked to swallow.
 #
 # Detection is unaffected -- it works from the original frame (see
 # live_detection.py), never from what is encoded here.
-PREVIEW_SCALE = 0.5
-PREVIEW_JPEG_QUALITY = 70
+PREVIEW_MAX_WIDTH = 960
+PREVIEW_JPEG_QUALITY = 65
+
+# A room does not move fast enough to need every frame of a 25 fps camera,
+# and the frames nobody can receive in time are the ones that arrive late
+# and in bursts -- which is what stuttering actually is. Encoding fewer,
+# further apart, is smoother than encoding all of them.
+PREVIEW_MAX_FPS = 15
+_MIN_FRAME_INTERVAL = 1.0 / PREVIEW_MAX_FPS
 
 _ENCODE_PARAMS = [int(cv2.IMWRITE_JPEG_QUALITY), PREVIEW_JPEG_QUALITY]
 
@@ -42,12 +54,36 @@ class StreamManager:
 
     def __init__(self):
         self._frames: dict[int, bytes] = {}
+        self._last_encoded_at: dict[int, float] = {}
         self._viewers: dict[int, int] = {}
         self._viewers_lock = threading.Lock()
 
     def update_frame(self, frame, camera_id: int = 0):
-        if PREVIEW_SCALE != 1.0:
-            frame = cv2.resize(frame, (0, 0), fx=PREVIEW_SCALE, fy=PREVIEW_SCALE)
+        # Dropped before the resize, not after: skipping the encode is only
+        # half the saving, and the resize of a 2560x1440 frame is the other
+        # half of what this thread would otherwise spend.
+        now = time.monotonic()
+        if now - self._last_encoded_at.get(camera_id, 0.0) < _MIN_FRAME_INTERVAL:
+            return
+        self._last_encoded_at[camera_id] = now
+
+        height, width = frame.shape[:2]
+        if width > PREVIEW_MAX_WIDTH:
+            scale = PREVIEW_MAX_WIDTH / width
+            frame = cv2.resize(
+                frame,
+                (PREVIEW_MAX_WIDTH, max(1, int(round(height * scale)))),
+                # Linear, not INTER_AREA. Area sampling gives a visibly
+                # cleaner downscale and costs 31ms against this camera's
+                # frame where linear costs 10 -- and insightface leaves
+                # OpenCV on a single thread once its models load, which
+                # takes area to 52ms and linear to 9. Measured inside the
+                # running server, the resize and encode together were 85ms
+                # a frame, on the same thread that has to keep reading: the
+                # preview it produced was 5 fps. A preview nobody is
+                # pixel-peeping does not need the better filter.
+                interpolation=cv2.INTER_LINEAR,
+            )
         ok, buffer = cv2.imencode('.jpg', frame, _ENCODE_PARAMS)
         if not ok:
             return

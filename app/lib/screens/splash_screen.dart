@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/constants.dart';
 import '../core/design_tokens.dart';
 import '../models/app_role.dart';
 import '../providers/auth_provider.dart';
@@ -78,22 +77,17 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  gradient: AppGradients.primary,
-                  shape: BoxShape.circle,
-                  boxShadow: AppShadows.colored(context.colors.primary),
-                ),
-                child: const Icon(
-                  Icons.school_rounded,
-                  size: 72,
-                  color: Colors.white,
-                ),
+              // The logo carries its own colour, so it sits on the page
+              // rather than inside a tinted disc -- a gradient circle behind
+              // a gradient mark muddies both.
+              Image.asset(
+                'assets/brand/logo.png',
+                width: 132,
+                fit: BoxFit.contain,
               ),
               const SizedBox(height: 32),
               Text(
-                'SmartSchool',
+                'SmartFlow',
                 style: theme.textTheme.headlineLarge?.copyWith(
                   color: context.colors.textPrimary,
                 ),

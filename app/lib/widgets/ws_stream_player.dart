@@ -48,7 +48,13 @@ class _WsStreamPlayerState extends State<WsStreamPlayer> {
     _channel = WebSocketChannel.connect(uri);
     _subscription = _channel!.stream.listen(
       (message) {
-        if (message is List<int>) {
+        // Cast when the socket already hands over a Uint8List, which it
+        // does on every platform this ships to -- copying each frame was
+        // ~80 KB of pointless allocation fifteen times a second, on the
+        // thread that then has to decode it.
+        if (message is Uint8List) {
+          _decode(message);
+        } else if (message is List<int>) {
           _decode(Uint8List.fromList(message));
         }
       },

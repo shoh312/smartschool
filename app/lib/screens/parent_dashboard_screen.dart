@@ -17,6 +17,7 @@ import '../widgets/dashboard_action_tile.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/student_tile.dart';
 import 'student_assignments_screen.dart';
+import 'student_attendance_journal_screen.dart';
 import 'student_diary_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
@@ -119,6 +120,24 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     );
   }
 
+  /// A parent asks "was my child at school", which is a question about one
+  /// child and one month -- so this opens the pupil's own month calendar,
+  /// not the flat school-wide list the director reads.
+  Future<void> _openAttendance() async {
+    final target = await _selectChild();
+    if (target == null || !mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudentAttendanceJournalScreen(
+          studentId: target.id,
+          studentName: target.fullName,
+          parentId: context.read<AuthProvider>().parentId,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openDiary() async {
     final target = await _selectChild();
     if (target == null || !mounted) return;
@@ -185,9 +204,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   if (index == 0) {
                     final tiles = [
                       DashboardActionTile(
-                        icon: Icons.history_rounded,
+                        icon: Icons.event_available_rounded,
                         label: l10n.attendanceHistory,
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.attendanceHistory),
+                        onTap: _openAttendance,
                       ),
                       DashboardActionTile(
                         icon: Icons.grading_rounded,

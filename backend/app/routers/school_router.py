@@ -4,9 +4,22 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_director
 from app.models.camera_model import Camera
+from app.models.camera_position_model import CameraPosition
 from app.models.class_model import Class
+from app.models.lesson_model import Lesson
 from app.models.director_model import Director
-from app.schemas.school_schema import CameraCreate, CameraResponse, ClassCreate, ClassResponse
+from app.models.school_model import School
+from app.schemas.school_schema import (
+    CameraCreate,
+    CameraPositionCreate,
+    CameraPositionResponse,
+    CameraResponse,
+    ClassCreate,
+    ClassResponse,
+    SchoolSettings,
+    SchoolSettingsUpdate,
+)
+from app.services.camera_position_service import Slot, conflicts_with, normalise_time, valid_time
 
 router = APIRouter(tags=["school"], dependencies=[Depends(get_current_director)])
 
@@ -199,3 +212,233 @@ def delete_camera(camera_id: int, db: Session = Depends(get_db), director: Direc
     db.delete(camera)
     db.commit()
     return {"message": "Camera deleted"}
+
+
+@router.get("/school/settings", response_model=SchoolSettings)
+def get_school_settings(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
+    school = db.query(School).filter(School.id == director.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    return school
+
+
+@router.put("/school/settings", response_model=SchoolSettings)
+def update_school_settings(
+    payload: SchoolSettingsUpdate,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """Both switches change what everyone else in the school sees, which is
+    why they are the director's and not a per-device preference."""
+    school = db.query(School).filter(School.id == director.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    if payload.live_video_enabled is not None:
+        school.live_video_enabled = payload.live_video_enabled
+    if payload.group_mode is not None:
+        school.group_mode = payload.group_mode
+
+    db.commit()
+    db.refresh(school)
+    return school
+
+
+# Mon-Sat: an academy that works Saturdays is the normal case here, and a
+# lesson on a day nobody comes simply never matches anything.
+_WORKING_DAYS = (0, 1, 2, 3, 4, 5)
+
+
+def _sync_lessons_for_position(db: Session, position: CameraPosition) -> None:
+    """Writes the lessons a position implies, so the rest of the app keeps
+    working in group mode.
+
+    An academy keeps no lesson timetable -- but the diary, the subject
+    register and the per-lesson \"absent\" mark all read lessons. Deriving
+    them from the position means the director enters the schedule once, on
+    the camera, and every one of those features keeps working with no
+    special case anywhere.
+
+    A slot with no weekday repeats every day, so it becomes one lesson per
+    working day. They are removed with the position (position_id cascades).
+    """
+    minutes = _minutes_between(position.start_time, position.end_time)
+    days = [position.day_of_week] if position.day_of_week is not None else list(_WORKING_DAYS)
+    for day in days:
+        db.add(Lesson(
+            class_id=position.class_id,
+            subject=position.subject or "",
+            day_of_week=day,
+            start_time=position.start_time,
+            duration_minutes=minutes,
+            position_id=position.id,
+        ))
+
+
+def _minutes_between(start: str, end: str) -> int:
+    sh, sm = (int(part) for part in start.split(":"))
+    eh, em = (int(part) for part in end.split(":"))
+    return max(5, (eh * 60 + em) - (sh * 60 + sm))
+
+
+def _require_camera(db: Session, camera_id: int, director: Director) -> Camera:
+    camera = db.query(Camera).filter(
+        Camera.id == camera_id,
+        Camera.school_id == director.school_id,
+    ).first()
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    return camera
+
+
+def _position_rows(db: Session, camera_id: int) -> list[CameraPosition]:
+    return db.query(CameraPosition).filter(
+        CameraPosition.camera_id == camera_id
+    ).order_by(CameraPosition.start_time.asc()).all()
+
+
+def _as_response(db: Session, row: CameraPosition) -> CameraPositionResponse:
+    school_class = db.query(Class).filter(Class.id == row.class_id).first()
+    return CameraPositionResponse(
+        id=row.id,
+        camera_id=row.camera_id,
+        class_id=row.class_id,
+        class_name=school_class.name if school_class else None,
+        subject=row.subject,
+        day_of_week=row.day_of_week,
+        start_time=row.start_time,
+        end_time=row.end_time,
+    )
+
+
+@router.get("/cameras/{camera_id}/positions", response_model=list[CameraPositionResponse])
+def list_camera_positions(
+    camera_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    _require_camera(db, camera_id, director)
+    return [_as_response(db, row) for row in _position_rows(db, camera_id)]
+
+
+@router.post("/cameras/{camera_id}/positions", response_model=CameraPositionResponse)
+def create_camera_position(
+    camera_id: int,
+    payload: CameraPositionCreate,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """Adds one slot: from when to when, and whose group.
+
+    Overlaps are refused rather than stored. Two groups in one room at one
+    time is not a schedule the camera can act on -- it would load one roster
+    and mark the other group absent, every day, with nothing to show why.
+    """
+    _require_camera(db, camera_id, director)
+
+    school_class = db.query(Class).filter(
+        Class.id == payload.class_id,
+        Class.school_id == director.school_id,
+    ).first()
+    if not school_class:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    if not valid_time(payload.start_time) or not valid_time(payload.end_time):
+        raise HTTPException(status_code=422, detail="Вақт бояд ба намуди HH:MM бошад")
+
+    start = normalise_time(payload.start_time)
+    end = normalise_time(payload.end_time)
+    if start >= end:
+        raise HTTPException(status_code=422, detail="Вақти анҷом бояд аз оғоз дертар бошад")
+
+    existing = [
+        Slot(id=row.id, class_id=row.class_id, start_time=row.start_time,
+             end_time=row.end_time, day_of_week=row.day_of_week)
+        for row in _position_rows(db, camera_id)
+    ]
+    clash = conflicts_with(existing, Slot(
+        id=None, class_id=payload.class_id, start_time=start,
+        end_time=end, day_of_week=payload.day_of_week,
+    ))
+    if clash is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Ин вақт бо %s–%s банд аст" % (clash.start_time, clash.end_time),
+        )
+
+    row = CameraPosition(
+        camera_id=camera_id,
+        class_id=payload.class_id,
+        subject=(payload.subject or school_class.name).strip(),
+        day_of_week=payload.day_of_week,
+        start_time=start,
+        end_time=end,
+    )
+    db.add(row)
+    db.flush()
+    _sync_lessons_for_position(db, row)
+    db.commit()
+    db.refresh(row)
+    return _as_response(db, row)
+
+
+@router.delete("/cameras/{camera_id}/positions/{position_id}", status_code=204)
+def delete_camera_position(
+    camera_id: int,
+    position_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    _require_camera(db, camera_id, director)
+    row = db.query(CameraPosition).filter(
+        CameraPosition.id == position_id,
+        CameraPosition.camera_id == camera_id,
+    ).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Position not found")
+    db.delete(row)
+    db.commit()
+
+
+@router.get("/classes/{class_id}/camera", response_model=CameraResponse)
+def camera_for_class(
+    class_id: int,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """The camera that watches this class, however it is attached.
+
+    A school bolts a camera to a class and that is the answer. An academy
+    bolts it to a *room*, and which group is in front of it is a question for
+    the timetable -- so a group-mode camera has no class_id at all, and the
+    live view found nothing to show for any group. Looking through the
+    positions as well is what makes "watch this group" work in both.
+    """
+    school_class = db.query(Class).filter(
+        Class.id == class_id,
+        Class.school_id == director.school_id,
+    ).first()
+    if not school_class:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    direct = db.query(Camera).filter(
+        Camera.class_id == class_id,
+        Camera.school_id == director.school_id,
+        Camera.is_active == True,  # noqa: E712
+    ).first()
+    if direct:
+        return direct
+
+    by_position = (
+        db.query(Camera)
+        .join(CameraPosition, CameraPosition.camera_id == Camera.id)
+        .filter(
+            CameraPosition.class_id == class_id,
+            Camera.school_id == director.school_id,
+            Camera.is_active == True,  # noqa: E712
+        )
+        .first()
+    )
+    if not by_position:
+        raise HTTPException(status_code=404, detail="No camera for this class")
+    return by_position

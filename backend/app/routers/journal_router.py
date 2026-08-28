@@ -5,7 +5,10 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.deps import AuthActor, get_current_actor, get_current_teacher
+from app.models.class_model import Class
 from app.models.journal_model import Grade
+from app.models.lesson_attendance_model import LessonAttendance
+from app.models.lesson_model import Lesson
 from app.models.student import Student
 from app.models.teacher_model import Teacher
 from app.schemas.journal_schema import GradeCreate, GradeResponse, GradeUpdate
@@ -228,6 +231,64 @@ def list_grades(
         query = query.filter(Grade.subject == subject)
 
     return query.order_by(Grade.grade_date.desc(), Grade.id.desc()).limit(limit).all()
+
+
+@router.get("/journal/absences")
+def list_absences(
+    class_id: int,
+    subject: str | None = None,
+    db: Session = Depends(get_db),
+    actor: AuthActor = Depends(get_current_actor),
+):
+    """Which pupils the cameras did not see in which lesson of which subject.
+
+    The register and the marks are the same page to a teacher, but they come
+    from different tables: a mark is something a person wrote, an absence is
+    something nobody did. Kept as separate rows rather than a magic grade
+    value, so a pupil can be marked absent from a lesson they were also
+    graded in (they came late, after the sweep), and so the marks stay
+    exactly what the teacher entered.
+
+    Returns one entry per absent lesson: several on one day means several
+    lessons of that subject that day, which the journal grid shows as one
+    cell.
+    """
+    if actor.role == "teacher":
+        if not teacher_can_grade_class(db, actor.teacher.id, class_id, subject):
+            raise HTTPException(
+                status_code=403,
+                detail="You are not assigned to teach this class",
+            )
+    elif actor.role == "director":
+        school_class = db.query(Class).filter(
+            Class.id == class_id,
+            Class.school_id == actor.director.school_id,
+        ).first()
+        if not school_class:
+            raise HTTPException(status_code=404, detail="Class not found")
+    else:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    query = (
+        db.query(LessonAttendance, Lesson.subject)
+        .join(Lesson, Lesson.id == LessonAttendance.lesson_id)
+        .filter(
+            Lesson.class_id == class_id,
+            LessonAttendance.status == "absent",
+        )
+    )
+    if subject is not None:
+        query = query.filter(Lesson.subject == subject)
+
+    return [
+        {
+            "student_id": row.LessonAttendance.student_id,
+            "subject": row.subject,
+            "date": row.LessonAttendance.attendance_date.isoformat(),
+            "lesson_id": row.LessonAttendance.lesson_id,
+        }
+        for row in query.order_by(LessonAttendance.attendance_date.desc()).limit(2000).all()
+    ]
 
 
 @router.patch("/grades/{grade_id}", response_model=GradeResponse)

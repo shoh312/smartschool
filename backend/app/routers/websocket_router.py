@@ -1,8 +1,11 @@
 import asyncio
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
 
+from app.database import get_db
 from app.deps import get_current_director_ws
+from app.models.school_model import School
 from app.websocket.manager import manager
 from app.stream.stream_manager import stream_manager
 
@@ -26,8 +29,20 @@ async def attendance_websocket(
 async def stream_websocket(
     websocket: WebSocket,
     camera_id: int = 0,
-    _director=Depends(get_current_director_ws),
+    director=Depends(get_current_director_ws),
+    db: Session = Depends(get_db),
 ):
+    # The same switch the HTTP endpoints honour. Enforcing it only there left
+    # the one path the app actually watches through wide open, so a director
+    # who turned live video off was still being streamed.
+    school = db.query(School).filter(School.id == director.school_id).first()
+    if school is not None and not school.live_video_enabled:
+        # Accept first, then close -- the same handshake convention the token
+        # check uses, so the client sees a clean end rather than a raw abort.
+        await websocket.accept()
+        await websocket.close(code=1008, reason='live_video_disabled')
+        return
+
     await websocket.accept()
     # Tells the camera thread somebody is actually watching, so it keeps the
     # stream open instead of dropping it between detection windows -- which
@@ -40,7 +55,12 @@ async def stream_websocket(
             if frame is not None and frame is not last_frame:
                 await websocket.send_bytes(frame)
                 last_frame = frame
-            await asyncio.sleep(0.05)
+            # Polled well inside the encoder's own 15 fps ceiling. At 50ms
+            # the wait was a large fraction of the gap between frames, so
+            # frames went out in an uneven cadence -- which the eye reads as
+            # stutter even when every frame arrives. The cost of looking more
+            # often is a dictionary lookup.
+            await asyncio.sleep(0.015)
     except WebSocketDisconnect:
         pass
     finally:

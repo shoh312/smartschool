@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  White, not one of the logo's own colours: the mark already carries a blue
+  and a green, and a third hue behind them fights both.
+-->
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>

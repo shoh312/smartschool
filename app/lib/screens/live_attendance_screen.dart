@@ -4,6 +4,7 @@ import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../core/design_tokens.dart';
 import '../providers/school_provider.dart';
+import '../services/school_service.dart';
 import '../providers/student_provider.dart';
 import '../widgets/analytics/analytics_widgets.dart';
 import '../widgets/app_list_card.dart';
@@ -23,13 +24,57 @@ class LiveAttendanceScreen extends StatefulWidget {
 }
 
 class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
+  /// Null until the school's own setting has been read. Nothing is
+  /// shown either way in that moment -- flashing the class list and
+  /// then replacing it with "turned off" is worse than a blank second.
+  bool? _liveEnabled;
+
+  /// Groups a room-mounted camera covers through its timetable. In group mode
+  /// a camera carries no class id at all, so without this every group would
+  /// wear the "no camera" mark while a camera was pointed straight at it.
+  Set<int> _coveredByPosition = const {};
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SchoolProvider>().loadSchoolData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<StudentProvider>().loadStudents();
+      _loadLiveSetting();
+      // Awaited: the coverage pass reads the camera list this call fills in.
+      await context.read<SchoolProvider>().loadSchoolData();
+      if (mounted) await _loadPositionCoverage();
     });
+  }
+
+  Future<void> _loadPositionCoverage() async {
+    final service = context.read<SchoolService>();
+    final cameras = context.read<SchoolProvider>().cameras;
+    final covered = <int>{};
+    for (final camera in cameras.where((c) => c.isActive && c.classId == null)) {
+      try {
+        for (final position in await service.fetchPositions(camera.id)) {
+          covered.add(position.classId);
+        }
+      } catch (_) {
+        // A camera whose slots cannot be read simply contributes nothing;
+        // the list is still correct for every other one.
+      }
+    }
+    if (mounted && covered.isNotEmpty) {
+      setState(() => _coveredByPosition = covered);
+    }
+  }
+
+  Future<void> _loadLiveSetting() async {
+    try {
+      final settings = await context.read<SchoolService>().fetchSettings();
+      if (mounted) setState(() => _liveEnabled = settings.liveVideoEnabled);
+    } catch (_) {
+      // Unreadable setting must not hide a working camera: the server
+      // refuses the stream itself when it is off, so the worst case
+      // here is the old behaviour rather than a blank screen.
+      if (mounted) setState(() => _liveEnabled = true);
+    }
   }
 
   @override
@@ -48,13 +93,26 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     final classIdsWithCamera = school.cameras
         .where((c) => c.isActive && c.classId != null)
         .map((c) => c.classId)
-        .toSet();
+        .toSet()
+      ..addAll(_coveredByPosition);
 
     final classes = List.of(school.classes)
       ..sort((a, b) {
         final byGrade = b.grade.compareTo(a.grade);
         return byGrade != 0 ? byGrade : a.name.compareTo(b.name);
       });
+
+    if (_liveEnabled == false) {
+      return AppShell(
+        title: l10n.live,
+        showAppBar: !widget.isIntegrated,
+        child: EmptyState(
+          icon: Icons.videocam_off_outlined,
+          title: l10n.liveVideoOffByDirector,
+          message: l10n.liveVideoSettingHint,
+        ),
+      );
+    }
 
     final body = RefreshIndicator(
       onRefresh: () async {

@@ -19,13 +19,20 @@ def _next_backoff(attempts: int) -> datetime:
 
 async def drain_outbox_once(db) -> None:
     now = datetime.utcnow()
-    pending = (
-        db.query(SyncOutboxEntry)
-        .filter(SyncOutboxEntry.status == "pending", SyncOutboxEntry.next_attempt_at <= now)
-        .order_by(SyncOutboxEntry.id.asc())
-        .limit(BATCH_SIZE)
-        .all()
-    )
+
+    def _pending():
+        return (
+            db.query(SyncOutboxEntry)
+            .filter(SyncOutboxEntry.status == "pending", SyncOutboxEntry.next_attempt_at <= now)
+            .order_by(SyncOutboxEntry.id.asc())
+            .limit(BATCH_SIZE)
+            .all()
+        )
+
+    # Threaded: this runs every two seconds, and a synchronous query on the
+    # event loop is a stall the whole server shares -- most visibly the live
+    # video, which is being pushed frame by frame from that same loop.
+    pending = await asyncio.to_thread(_pending)
     if not pending:
         return
 

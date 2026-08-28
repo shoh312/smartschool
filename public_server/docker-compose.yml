@@ -1,0 +1,65 @@
+# Public Server + its own PostgreSQL.
+#
+#   docker compose up -d
+#
+# Reads .env from this directory. Copy .env.example to .env first and fill
+# it in -- the two `:?` variables below refuse to start without a value, on
+# purpose: a server that comes up happily with a default signing secret is
+# a server anyone can mint a parent token for.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartschool_public
+      POSTGRES_USER: smartschool
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD .env da belgilanishi kerak}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # Not published to the host. Nothing outside this compose file has any
+    # business reaching the database, and a Postgres port open to the
+    # internet is found by scanners within the hour.
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartschool -d smartschool_public"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        # Waits for Postgres to actually accept connections, not merely for
+        # its container to exist -- the app creates its tables on startup and
+        # would otherwise crash-loop through the first few seconds.
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://smartschool:${POSTGRES_PASSWORD}@db:5432/smartschool_public
+      SMARTSCHOOL_PUBLIC_AUTH_SECRET: ${SMARTSCHOOL_PUBLIC_AUTH_SECRET:?openssl rand -hex 32 bilan yarating}
+      # Push notifications stay off unless a credentials file is mounted
+      # below. The server runs without them; notification rows are recorded
+      # and left pending.
+      FIREBASE_CREDENTIALS: ${FIREBASE_CREDENTIALS:-}
+      SMS_PROVIDER: ${SMS_PROVIDER:-}
+      SMS_ROBITA_BASE: ${SMS_ROBITA_BASE:-https://sms.robita.tj}
+      SMS_ROBITA_LOGIN: ${SMS_ROBITA_LOGIN:-}
+      SMS_ROBITA_PASSWORD: ${SMS_ROBITA_PASSWORD:-}
+      SMS_ROBITA_SENDER: ${SMS_ROBITA_SENDER:-0175}
+    ports:
+      # Left as 8200 so it cannot collide with whatever else the box runs.
+      # For "http://<ip>" with no port in the app's server-address field,
+      # change this to "80:8200".
+      - "8200:8200"
+    volumes:
+      # Uncomment together with FIREBASE_CREDENTIALS to enable push. Mounted
+      # rather than copied in, so the key never becomes part of an image.
+      # - ./firebase-credentials.json:/app/firebase-credentials.json:ro
+      - app_logs:/app/logs
+
+volumes:
+  db_data:
+  app_logs:

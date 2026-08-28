@@ -1,0 +1,42 @@
+# Maktab serverini kompyuter yonganda o'zi ishga tushiradi.
+#
+#   cp deploy/smartschool-school.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable smartschool-school
+#
+# Bu maktab serveri sutka bo'yi ishlamaydi: kechqurun o'chiriladi, ertalab
+# darsdan oldin yoqiladi. Ya'ni "bir marta qo'lda ishga tushirib qo'yish"
+# yetarli emas -- har yoqilganda kimdir terminal ochib buyruq yozishi kerak
+# bo'lardi, va bir kuni yozmay qoladi. O'sha kuni kamera hech kimni
+# ko'rmaydi, ota-onalarga hech narsa bormaydi, va buni tushga yaqin
+# payqashadi.
+#
+# Docker konteynerlari `restart: unless-stopped` bilan ham qayta ishga
+# tushadi. Bu xizmat esa ustiga qo'shimcha kafolat: `docker compose up -d`
+# ni har yuklanishda bajaradi, ya'ni konteyner biror sababdan o'chirilgan
+# bo'lsa ham ertalab qaytadan ko'tariladi.
+
+[Unit]
+Description=SmartFlow maktab serveri (Docker Compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/smartschool/backend
+
+# Kamera va tarmoq kompyuterdan sekinroq yonadi. Ilova ularsiz ham ishga
+# tushaveradi va o'zi qayta ulanishga uradi, lekin jurnal toza bo'lishi
+# uchun bir oz kutib turamiz.
+ExecStartPre=/bin/sleep 10
+
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose stop
+
+# Yuz modellari yuklanishi va image tekshirilishi uzoq cho'zilishi mumkin.
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

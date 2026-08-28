@@ -6,6 +6,7 @@ import '../core/design_tokens.dart';
 import '../models/attendance.dart';
 import '../providers/attendance_provider.dart';
 import '../utils/date_formatters.dart';
+import '../widgets/attendance/attendance_streak.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/bottom_nav_inset.dart';
 import '../widgets/empty_state.dart';
@@ -146,6 +147,8 @@ class _StudentAttendanceJournalScreenState
         .where((r) => r.status == AttendanceStatus.absent)
         .length;
 
+    final streak = computeAttendanceStreak(provider.history);
+
     final firstOfMonth = DateTime(_viewedMonth.year, _viewedMonth.month, 1);
     final daysInMonth = DateTime(_viewedMonth.year, _viewedMonth.month + 1, 0).day;
     final leadingEmpty = firstOfMonth.weekday - 1;
@@ -174,6 +177,13 @@ class _StudentAttendanceJournalScreenState
             : ListView(
                 padding: (const EdgeInsets.all(16)).add(bottomNavPadding(context)),
                 children: [
+                  // "How am I doing" before "which day was it": the counts
+                  // below answer a question you only ask once you have a
+                  // reason to look.
+                  if (!streak.isEmpty) ...[
+                    AttendanceStreakCard(streak: streak),
+                    const SizedBox(height: 12),
+                  ],
                   IntrinsicHeight(
                     child: Row(
                       children: [

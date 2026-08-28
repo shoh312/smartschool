@@ -92,17 +92,42 @@ def _attendance_message(status: str, student_name: str, attendance) -> tuple[str
     return template["title"], body
 
 
-def _upsert_parent(db: Session, phone: str, full_name: str | None) -> Parent:
+def _upsert_parent(
+    db: Session,
+    phone: str,
+    full_name: str | None,
+    password_hash: str | None = None,
+    password_salt: str | None = None,
+) -> Parent:
     normalized = normalize_phone(phone)
     parent = db.query(Parent).filter(Parent.phone == normalized).first()
     if parent:
         if full_name and parent.full_name != full_name:
             parent.full_name = full_name
+        # Only ever fills a gap, never overwrites. The school issues a
+        # password once, but a parent can change it here afterwards, and the
+        # school's copy of the old hash arrives again with every grade and
+        # every absence -- writing it back would undo their change on the
+        # next mark their child got.
+        if password_hash and not parent.password_hash:
+            parent.password_hash = password_hash
+            parent.password_salt = password_salt
         return parent
 
-    parent = Parent(phone=normalized, full_name=full_name or normalized)
+    parent = Parent(
+        phone=normalized,
+        full_name=full_name or normalized,
+        password_hash=password_hash,
+        password_salt=password_salt,
+    )
     db.add(parent)
     db.flush()
+
+    # No SMS from here any more. Registering is something the parent starts
+    # themselves, from the Register button on the sign-in screen, and a code
+    # they did not ask for arriving alongside one they did was half of what
+    # made the sign-in confusing. scripts/invite_parents.py still exists for
+    # the families who were registered before any of this and need a nudge.
     return parent
 
 
@@ -159,7 +184,13 @@ def apply_sync_event(db: Session, school: School, event: SyncEvent) -> None:
         return
 
     parent = (
-        _upsert_parent(db, event.parent.phone, event.parent.full_name)
+        _upsert_parent(
+            db,
+            event.parent.phone,
+            event.parent.full_name,
+            event.parent.password_hash,
+            event.parent.password_salt,
+        )
         if event.parent is not None
         else None
     )
@@ -351,6 +382,14 @@ def _apply_attendance(db: Session, school: School, student: Student, event: Sync
         AttendanceStatus.school_id == school.id,
         AttendanceStatus.local_attendance_id == event.attendance.local_id,
     ).first()
+
+    # A record the school has withdrawn -- an absence marked on a day that
+    # turned out to have no lessons, say. Nothing to notify: the parent was
+    # already told, and the correction is the row going away.
+    if event.operation == "delete":
+        if attendance:
+            db.delete(attendance)
+        return
 
     previous_status = attendance.status if attendance else None
     is_new = attendance is None

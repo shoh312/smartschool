@@ -38,6 +38,7 @@
   "invalidCredentialsMessage": "Incorrect email or password.",
   "accountInactiveMessage": "Your account is inactive. Please contact your administrator.",
   "invalidCurrentPasswordMessage": "Current password is incorrect.",
+  "usernameTakenMessage": "This login is already taken. Please choose another one.",
   "needSupport": "Need support? ",
   "contact": "Contact",
   "roleDirector": "Director",
@@ -790,5 +791,64 @@
   "awaitingDetection": "Not checked yet",
   "@awaitingDetection": {
     "description": "Shown when the cameras have not yet decided a student is present or absent today"
-  }
+  },
+  "profileTitle": "Profile",
+  "@profileTitle": {
+    "description": "Title of the profile screen, which replaced Settings in the bottom bar"
+  },
+  "streakDaysInARow": "days in a row",
+  "@streakDaysInARow": {
+    "description": "Follows the streak number on the attendance page"
+  },
+  "streakBest": "Best run: {days} days",
+  "@streakBest": {
+    "description": "The longest run of school days attended in the loaded history",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "streakStartToday": "Come to school tomorrow and the count starts again",
+  "@streakStartToday": {
+    "description": "Shown instead of the best run when the streak is zero"
+  },
+  "identifierLabel": "Phone, email or login",
+  "identifierHint": "98 764 40 02",
+  "codeTitle": "Confirm your number",
+  "codeSentTo": "We sent a code to {phone}",
+  "@codeSentTo": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "codeNotDelivered": "SMS is not set up yet. Ask the school for the code.",
+  "codeLabel": "Code from the SMS",
+  "codeResend": "Send again",
+  "codeVerify": "Continue",
+  "setupTitle": "Set your password",
+  "setupSubtitle": "You will sign in with your phone number and this password.",
+  "setupSave": "Save and sign in",
+  "parentNoAccountHint": "This number is not registered. Ask the school to add it.",
+  "lessonTimeInvalid": "Use HH:MM, for example 08:30",
+  "registerTitle": "Register",
+  "registerSubtitle": "Enter the number the school has on file. We will send a code to it.",
+  "registerAction": "Don't have an account? Register",
+  "copyAction": "Copy",
+  "copiedToClipboard": "Copied",
+  "schoolSettings": "School settings",
+  "liveVideoSetting": "Live video",
+  "liveVideoSettingHint": "When off, nobody in the school can open a camera",
+  "liveVideoOffByDirector": "Live video is turned off by the director",
+  "groupModeSetting": "Group mode",
+  "groupModeSettingHint": "For academies: one room, several groups a day. A camera is tied to the room and the schedule decides whose lesson is in front of it",
+  "cameraGroups": "Groups",
+  "cameraGroupsHint": "Who is in front of this camera, and when",
+  "addGroupSlot": "Add group",
+  "everyDay": "Every day",
+  "noGroupSlots": "No groups yet",
+  "slotSaved": "Added",
+  "deleteSlot": "Delete"
 }

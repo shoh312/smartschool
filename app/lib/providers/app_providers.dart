@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -32,12 +33,15 @@ import 'teacher_admin_provider.dart';
 import 'teacher_provider.dart';
 import 'theme_provider.dart';
 
-List<SingleChildWidget> buildAppProviders() {
+List<SingleChildWidget> buildAppProviders({
+  ThemeMode? initialThemeMode,
+  Locale? initialLocale,
+}) {
   return [
     Provider(create: (_) => TokenStorage()),
     // ... (rest of providers)
-    ChangeNotifierProvider(create: (_) => LanguageProvider()),
-    ChangeNotifierProvider(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider(create: (_) => LanguageProvider(initialLocale: initialLocale)),
+    ChangeNotifierProvider(create: (_) => ThemeProvider(initialMode: initialThemeMode)),
     ChangeNotifierProvider(create: (_) => NavProvider()),
     ProxyProvider<TokenStorage, ApiClient>(
       update: (_, storage, __) => ApiClient(tokenStorage: storage),

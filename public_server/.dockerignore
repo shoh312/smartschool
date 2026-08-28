@@ -1,0 +1,23 @@
+# Secrets never go into an image. An image is copied, pushed, cached and
+# shared far more casually than a server is, and anything baked into a layer
+# stays in that layer even if a later one deletes it.
+.env
+.env.*
+!.env.example
+firebase-credentials.json
+*.pem
+*.key
+
+# Built on the host, useless (and Windows-shaped) inside the container.
+venv/
+__pycache__/
+*.pyc
+
+# Runtime output, not source.
+logs/
+*.sql
+*.dump
+
+tests/
+.pytest_cache/
+.git/

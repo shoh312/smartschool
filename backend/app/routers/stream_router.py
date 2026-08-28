@@ -1,7 +1,11 @@
 import asyncio
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
+from app.database import get_db
 from app.deps import get_current_director
+from app.models.director_model import Director
+from app.models.school_model import School
+from sqlalchemy.orm import Session
 from app.stream.stream_manager import stream_manager
 
 router = APIRouter(prefix="/stream", tags=["Stream"], dependencies=[Depends(get_current_director)])
@@ -24,8 +28,20 @@ async def frame_generator(camera_id: int = 0):
         stream_manager.remove_viewer(camera_id)
 
 
+def _require_live_enabled(db: Session, director: Director) -> None:
+    """The director's switch, enforced here and not only in the app."""
+    school = db.query(School).filter(School.id == director.school_id).first()
+    if school is not None and not school.live_video_enabled:
+        raise HTTPException(status_code=403, detail='live_video_disabled')
+
+
 @router.get("/live")
-async def video_feed(camera_id: int = 0):
+async def video_feed(
+    camera_id: int = 0,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    _require_live_enabled(db, director)
     return StreamingResponse(
         frame_generator(camera_id),
         media_type="multipart/x-mixed-replace; boundary=frame"
@@ -33,7 +49,12 @@ async def video_feed(camera_id: int = 0):
 
 
 @router.get("/frame")
-async def get_frame(camera_id: int = 0):
+async def get_frame(
+    camera_id: int = 0,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    _require_live_enabled(db, director)
     frame = await stream_manager.get_frame(camera_id=camera_id)
     if frame is None:
         return Response(status_code=204)

@@ -14,6 +14,14 @@ class Parent(Base):
     # is already known from the synced student it belongs to.
     phone = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String)
+
+    # Set by the parent themself, after an SMS code proved the number is
+    # theirs -- see auth_router. Null for every parent registered before
+    # passwords existed; those are sent through the same set-password flow
+    # on their next sign-in rather than being locked out.
+    password_hash = Column(String)
+    password_salt = Column(String)
+
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

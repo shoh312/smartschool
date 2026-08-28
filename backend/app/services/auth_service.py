@@ -2,6 +2,8 @@ import base64
 import hashlib
 import hmac
 import json
+import os
+import secrets
 from datetime import datetime, timedelta
 
 from fastapi import HTTPException, status
@@ -18,7 +20,17 @@ from app.utils.security import (
     verify_password,
 )
 
-DEFAULT_DIRECTOR_EMAIL = "director@smartschool.com"
+# The first director's login, on an install that has none yet.
+#
+# Configurable because it is a fact about one school, not about the system:
+# an academy called CICT wants director@cict.tj and would rather not explain
+# to its own director why they sign in as somebody else's school. The
+# fallback keeps every existing install working -- their director already
+# exists under this address and nothing here touches it.
+DEFAULT_DIRECTOR_EMAIL = (
+    os.getenv("SMARTSCHOOL_ADMIN_EMAIL", "").strip().lower()
+    or "director@smartschool.com"
+)
 DEFAULT_DIRECTOR_PASSWORD = "12345678"
 
 
@@ -165,22 +177,55 @@ def create_director_token(director: Director) -> str:
     )
 
 
+def _initial_director_password() -> tuple[str, bool]:
+    """Password for the first director of a fresh install, and whether it was
+    invented here.
+
+    DEFAULT_DIRECTOR_PASSWORD sits in a public repository, which means every
+    fresh install's superadmin password would be readable on the internet.
+    The school server only listens on the school's own network, but that is
+    not enough to shrug at: anyone on that wifi could become superadmin, and
+    a superadmin can create a director for any school in the system.
+
+    So the password comes from the environment, and when nothing is set one
+    is generated and printed once. Either way it is not in the repository.
+
+    Installations that already have a director never reach this -- their
+    password is whatever they set, and nothing here touches it.
+    """
+    from_env = os.getenv("SMARTSCHOOL_ADMIN_PASSWORD", "").strip()
+    if from_env:
+        return from_env, False
+    return secrets.token_urlsafe(12), True
+
+
 def ensure_default_director(db: Session, default_school_id: int | None = None) -> Director:
     director = db.query(Director).filter(
         Director.email == DEFAULT_DIRECTOR_EMAIL
     ).first()
     if not director:
+        initial_password, generated = _initial_director_password()
         director = Director(
             school_id=default_school_id,
             full_name="SmartSchool Director",
             email=DEFAULT_DIRECTOR_EMAIL,
-            hashed_password=hash_password(DEFAULT_DIRECTOR_PASSWORD),
+            hashed_password=hash_password(initial_password),
             is_active=True,
             is_superadmin=True,
         )
         db.add(director)
         db.commit()
         db.refresh(director)
+        if generated:
+            # Printed once and never stored anywhere else. Under Docker this
+            # is what `docker compose logs app` shows on the first run.
+            print("")
+            print("=== BIRINCHI DIREKTOR YARATILDI ===")
+            print("  login : " + DEFAULT_DIRECTOR_EMAIL)
+            print("  parol : " + initial_password)
+            print("  Bu parol qayta ko'rsatilmaydi -- hozir yozib oling.")
+            print("===================================")
+            print("")
     elif director.school_id is None and default_school_id is not None:
         director.school_id = default_school_id
         director.is_superadmin = True

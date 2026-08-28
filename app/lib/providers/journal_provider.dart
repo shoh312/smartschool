@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/grade.dart';
+import '../models/lesson_absence.dart';
 import '../services/journal_service.dart';
 import '../utils/error_formatter.dart';
 
@@ -9,6 +10,7 @@ class JournalProvider extends ChangeNotifier {
   JournalService? _service;
 
   List<Grade> grades = [];
+  List<LessonAbsence> absences = [];
   bool isLoading = false;
   String? error;
 
@@ -56,9 +58,20 @@ class JournalProvider extends ChangeNotifier {
     isLoading = true;
     error = null;
     grades = [];
+    absences = [];
     notifyListeners();
     try {
       grades = await _service!.listGrades(classId: classId);
+      // Fetched alongside, not instead: an absent cell and a graded cell are
+      // different facts about the same lesson, and the journal shows both.
+      // A failure here must not empty the marks, which is why it has its own
+      // catch -- the register is useful without the marks and the marks are
+      // useful without the register.
+      try {
+        absences = await _service!.listAbsences(classId: classId);
+      } catch (_) {
+        absences = [];
+      }
     } catch (exception) {
       error = classifyError(exception);
     } finally {

@@ -13,7 +13,8 @@ from app.schemas.student_schema import (
     StudentResponse
 )
 from app.services.auth_service import get_parent_family_ids
-from app.services.student_login_service import issue_logins
+from app.services.credentials_service import send_credentials_notification
+from app.services.student_login_service import issue_login_for, issue_logins
 from app.services.sync_outbox_service import enqueue_student_event
 from app.utils.phone import normalize_phone
 from app.utils.security import hash_student_password
@@ -71,6 +72,23 @@ def get_my_students(
 # ==================================================
 # CREATE STUDENT
 # ==================================================
+
+def _claim_username(db: Session, value: str, student_id: int | None = None) -> str:
+    """The username a director typed, refused politely if it is taken.
+
+    Without this the clash surfaced as a UniqueViolation from Postgres and
+    the request became a bare 500 -- so the app could only say "something
+    went wrong", and a director who had picked a login already in use had no
+    way of learning that. They simply pressed save again, and again.
+    """
+    candidate = value.strip()
+    clash = db.query(Student).filter(Student.username == candidate)
+    if student_id is not None:
+        clash = clash.filter(Student.id != student_id)
+    if clash.first():
+        raise HTTPException(status_code=409, detail="username_taken")
+    return candidate
+
 
 @router.post("/students")
 
@@ -221,9 +239,7 @@ def director_create_student(
     )
 
     if username and username.strip():
-        new_student.username = username.strip()
-    if password:
-        new_student.password_salt, new_student.password_hash = hash_student_password(password)
+        new_student.username = _claim_username(db, username)
 
     db.add(new_student)
 
@@ -256,12 +272,34 @@ def director_create_student(
 
     new_student.face_encoding = encoding
 
+    # Sign-in details, issued once and texted once. The plaintexts live only
+    # in these two variables -- what reaches the database and the sync is a
+    # salted hash. See credentials_service for why the message is sent from
+    # here rather than from the Public Server.
+    student_username, student_password = issue_login_for(db, new_student, password)
+
     db.flush()
     # Sync the enrollment now (not only on the first grade/attendance event)
     # so the parent can log into the Public Server the same day.
     enqueue_student_event(db, new_student, operation="upsert")
 
     db.commit()
+
+    # After the commit, deliberately: a push cannot be rolled back, so it
+    # must not go out for a registration that then fails to save.
+    #
+    # The pupil's login goes to the app, never by SMS. The parent gets into
+    # the app by registering themselves -- phone, code, their own password
+    # -- and this message is waiting for them when they do. Sending school
+    # -issued passwords by SMS as well meant two credentials arriving by two
+    # routes and the app still asking for a third, which is what made the
+    # sign-in confusing enough to be unusable.
+    send_credentials_notification(
+        parent=parent,
+        student=new_student,
+        student_username=student_username,
+        student_password=student_password,
+    )
 
     db.refresh(new_student)
 
@@ -396,7 +434,10 @@ def update_student(
     student.is_active = is_active
 
     if username is not None:
-        student.username = username.strip() or None
+        student.username = (
+            _claim_username(db, username, student_id=student.id)
+            if username.strip() else None
+        )
     if password:
         student.password_salt, student.password_hash = hash_student_password(password)
 

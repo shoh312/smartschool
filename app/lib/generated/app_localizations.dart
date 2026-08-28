@@ -292,6 +292,12 @@ abstract class AppLocalizations {
   /// **'Current password is incorrect.'**
   String get invalidCurrentPasswordMessage;
 
+  /// No description provided for @usernameTakenMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This login is already taken. Please choose another one.'**
+  String get usernameTakenMessage;
+
   /// No description provided for @needSupport.
   ///
   /// In en, this message translates to:
@@ -3085,6 +3091,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not checked yet'**
   String get awaitingDetection;
+
+  /// Title of the profile screen, which replaced Settings in the bottom bar
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// Follows the streak number on the attendance page
+  ///
+  /// In en, this message translates to:
+  /// **'days in a row'**
+  String get streakDaysInARow;
+
+  /// The longest run of school days attended in the loaded history
+  ///
+  /// In en, this message translates to:
+  /// **'Best run: {days} days'**
+  String streakBest(int days);
+
+  /// Shown instead of the best run when the streak is zero
+  ///
+  /// In en, this message translates to:
+  /// **'Come to school tomorrow and the count starts again'**
+  String get streakStartToday;
+
+  /// No description provided for @identifierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone, email or login'**
+  String get identifierLabel;
+
+  /// No description provided for @identifierHint.
+  ///
+  /// In en, this message translates to:
+  /// **'98 764 40 02'**
+  String get identifierHint;
+
+  /// No description provided for @codeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your number'**
+  String get codeTitle;
+
+  /// No description provided for @codeSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a code to {phone}'**
+  String codeSentTo(String phone);
+
+  /// No description provided for @codeNotDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS is not set up yet. Ask the school for the code.'**
+  String get codeNotDelivered;
+
+  /// No description provided for @codeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Code from the SMS'**
+  String get codeLabel;
+
+  /// No description provided for @codeResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again'**
+  String get codeResend;
+
+  /// No description provided for @codeVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get codeVerify;
+
+  /// No description provided for @setupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your password'**
+  String get setupTitle;
+
+  /// No description provided for @setupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You will sign in with your phone number and this password.'**
+  String get setupSubtitle;
+
+  /// No description provided for @setupSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and sign in'**
+  String get setupSave;
+
+  /// No description provided for @parentNoAccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This number is not registered. Ask the school to add it.'**
+  String get parentNoAccountHint;
+
+  /// No description provided for @lessonTimeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use HH:MM, for example 08:30'**
+  String get lessonTimeInvalid;
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get registerTitle;
+
+  /// No description provided for @registerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the number the school has on file. We will send a code to it.'**
+  String get registerSubtitle;
+
+  /// No description provided for @registerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? Register'**
+  String get registerAction;
+
+  /// No description provided for @copyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copyAction;
+
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get copiedToClipboard;
+
+  /// No description provided for @schoolSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'School settings'**
+  String get schoolSettings;
+
+  /// No description provided for @liveVideoSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Live video'**
+  String get liveVideoSetting;
+
+  /// No description provided for @liveVideoSettingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, nobody in the school can open a camera'**
+  String get liveVideoSettingHint;
+
+  /// No description provided for @liveVideoOffByDirector.
+  ///
+  /// In en, this message translates to:
+  /// **'Live video is turned off by the director'**
+  String get liveVideoOffByDirector;
+
+  /// No description provided for @groupModeSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Group mode'**
+  String get groupModeSetting;
+
+  /// No description provided for @groupModeSettingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For academies: one room, several groups a day. A camera is tied to the room and the schedule decides whose lesson is in front of it'**
+  String get groupModeSettingHint;
+
+  /// No description provided for @cameraGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get cameraGroups;
+
+  /// No description provided for @cameraGroupsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is in front of this camera, and when'**
+  String get cameraGroupsHint;
+
+  /// No description provided for @addGroupSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Add group'**
+  String get addGroupSlot;
+
+  /// No description provided for @everyDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get everyDay;
+
+  /// No description provided for @noGroupSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get noGroupSlots;
+
+  /// No description provided for @slotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get slotSaved;
+
+  /// No description provided for @deleteSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteSlot;
 }
 
 class _AppLocalizationsDelegate

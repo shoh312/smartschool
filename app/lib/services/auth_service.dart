@@ -24,6 +24,8 @@ class AuthService {
     await _tokenStorage.saveSession(
       token: data['access_token'] as String,
       role: AppRole.director,
+      displayName: data['full_name'] as String?,
+      displayDetail: data['email'] as String?,
     );
     return data['must_change_password'] as bool? ?? false;
   }
@@ -68,6 +70,12 @@ class AuthService {
       token: data['access_token'] as String,
       role: AppRole.teacher,
       teacherId: teacher['id'] as int,
+      displayName: teacher['full_name'] as String?,
+      // Their subject, or their e-mail when no subject is recorded -- the
+      // header should never fall back to an empty second line.
+      displayDetail: (teacher['subject'] as String?)?.trim().isNotEmpty == true
+          ? teacher['subject'] as String?
+          : teacher['email'] as String?,
     );
   }
 

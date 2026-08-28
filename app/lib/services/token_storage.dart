@@ -8,6 +8,13 @@ class TokenStorage {
   static const _parentIdKey = 'parent_id';
   static const _teacherIdKey = 'teacher_id';
   static const _studentIdKey = 'student_id';
+
+  // Who is signed in, for the profile header. Every login response
+  // already carries these, so storing them here means the header needs
+  // no request of its own -- and still shows a name when the phone is
+  // out of range of the school's server.
+  static const _displayNameKey = 'display_name';
+  static const _displayDetailKey = 'display_detail';
   static const _serverUrlKey = 'server_base_url';
   // Kept apart from _serverUrlKey, which caches the auto-discovered school
   // server. This one is typed in by a person and must survive discovery
@@ -22,6 +29,8 @@ class TokenStorage {
     int? parentId,
     int? teacherId,
     int? studentId,
+    String? displayName,
+    String? displayDetail,
   }) async {
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _roleKey, value: role.name);
@@ -34,9 +43,18 @@ class TokenStorage {
     if (studentId != null) {
       await _storage.write(key: _studentIdKey, value: studentId.toString());
     }
+    if (displayName != null) {
+      await _storage.write(key: _displayNameKey, value: displayName);
+    }
+    if (displayDetail != null) {
+      await _storage.write(key: _displayDetailKey, value: displayDetail);
+    }
   }
 
   Future<String?> readToken() => _storage.read(key: _tokenKey);
+
+  Future<String?> readDisplayName() => _storage.read(key: _displayNameKey);
+  Future<String?> readDisplayDetail() => _storage.read(key: _displayDetailKey);
 
   Future<AppRole?> readRole() async {
     final value = await _storage.read(key: _roleKey);
@@ -78,5 +96,7 @@ class TokenStorage {
     await _storage.delete(key: _parentIdKey);
     await _storage.delete(key: _teacherIdKey);
     await _storage.delete(key: _studentIdKey);
+    await _storage.delete(key: _displayNameKey);
+    await _storage.delete(key: _displayDetailKey);
   }
 }
