@@ -512,8 +512,13 @@ def delete_student(
     enqueue_student_event(db, student, operation="deactivate")
 
     # 6. Delete the student
+    photo_path = student.photo
     db.delete(student)
     db.commit()
+
+    if photo_path and os.path.exists(photo_path):
+        os.remove(photo_path)
+
     return {"message": "Student deleted"}
 
 

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -111,12 +113,24 @@ def delete_class(class_id: int, db: Session = Depends(get_db), director: Directo
 
     db.query(Grade).filter((Grade.class_id == class_id) | (Grade.student_id.in_(student_ids))).delete(synchronize_session=False)
     db.query(TeacherClass).filter(TeacherClass.class_id == class_id).delete(synchronize_session=False)
-    db.execute(text("DELETE FROM homework WHERE class_id = :class_id"), {"class_id": class_id})
+    # "homework" has no ORM model (the feature was removed from the app) but
+    # the table -- and its FK to classes -- is still in the database on
+    # installations that had it. A fresh database never creates it, so guard
+    # with to_regclass the same way database.py does for room_positions.
+    if db.execute(text("SELECT to_regclass('public.homework')")).scalar():
+        db.execute(text("DELETE FROM homework WHERE class_id = :class_id"), {"class_id": class_id})
+
+    photo_paths = [s.photo for s in students if s.photo]
 
     db.query(Camera).filter(Camera.class_id == class_id).update({"class_id": None}, synchronize_session=False)
     db.query(Student).filter(Student.class_id == class_id).delete(synchronize_session=False)
     db.delete(school_class)
     db.commit()
+
+    for photo_path in photo_paths:
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+
     return {"message": "Class deleted"}
 
 
