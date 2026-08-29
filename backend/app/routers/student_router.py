@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from fastapi import Depends
@@ -29,6 +31,8 @@ import os
 from app.ai.face_engine import (
     generate_face_encoding
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["students"], dependencies=[Depends(get_current_director)])
 
@@ -343,7 +347,13 @@ def director_create_student(
                 student_password,
             )
         )
-        robita_client.send(to_local_number(parent.phone), message)
+        try:
+            robita_client.send(to_local_number(parent.phone), message)
+        except Exception:
+            # Never lets a flaky SMS panel fail a registration that has
+            # already been saved -- same reasoning as
+            # send_credentials_notification above.
+            logger.exception("Robita SMS failed for new parent %s", parent.id)
 
     db.refresh(new_student)
 
