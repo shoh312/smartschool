@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.notification_model import DeviceToken, NotificationEvent
 from app.models.parent_model import Parent
 from app.services.auth_service import get_parent_family_ids
+from app.services.robita_sms import client as robita_client, to_local_number
 from app.utils.config import settings
 
 try:
@@ -74,6 +75,22 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
     ).all()
 
     if not tokens:
+        # Nobody's phone is registered for push -- the parent never opened
+        # the app. Fall back to SMS (Robita has no API, so this drives its
+        # web panel directly, see robita_sms.py) rather than losing the
+        # notification entirely.
+        if settings.sms_provider == "robita" and parent and parent.phone:
+            ok, detail = robita_client.send(
+                to_local_number(parent.phone),
+                f"{event.title}. {event.body}",
+            )
+            event.status = "sent" if ok else "failed"
+            event.error = None if ok else f"SMS fallback failed: {detail}"
+            if ok:
+                event.sent_at = datetime.now()
+            db.commit()
+            return event
+
         event.status = "skipped"
         event.error = "No active device token"
         db.commit()
