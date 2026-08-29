@@ -14,6 +14,7 @@ from app.models.school_model import School
 from app.models.student_analytics_model import StudentAnalytics
 from app.models.student_model import Student
 from app.notifications.firebase import create_and_send_notification
+from app.services.invitation_service import send_invitation
 from app.services.material_notification_service import notify_assignment_published
 from app.schemas.sync_schema import SyncEvent
 from app.utils.phone import normalize_phone
@@ -98,7 +99,13 @@ def _upsert_parent(
     full_name: str | None,
     password_hash: str | None = None,
     password_salt: str | None = None,
-) -> Parent:
+) -> tuple[Parent, bool]:
+    """The parent, and whether this call is what created them.
+
+    The caller needs the second half to decide about the invitation SMS: a
+    number that was already here has either been texted before or belongs to
+    somebody who is already using the app.
+    """
     normalized = normalize_phone(phone)
     parent = db.query(Parent).filter(Parent.phone == normalized).first()
     if parent:
@@ -112,7 +119,7 @@ def _upsert_parent(
         if password_hash and not parent.password_hash:
             parent.password_hash = password_hash
             parent.password_salt = password_salt
-        return parent
+        return parent, False
 
     parent = Parent(
         phone=normalized,
@@ -122,13 +129,7 @@ def _upsert_parent(
     )
     db.add(parent)
     db.flush()
-
-    # No SMS from here any more. Registering is something the parent starts
-    # themselves, from the Register button on the sign-in screen, and a code
-    # they did not ask for arriving alongside one they did was half of what
-    # made the sign-in confusing. scripts/invite_parents.py still exists for
-    # the families who were registered before any of this and need a nudge.
-    return parent
+    return parent, True
 
 
 def _upsert_student(db: Session, school: School, event, parent: Parent | None) -> Student:
@@ -183,7 +184,7 @@ def apply_sync_event(db: Session, school: School, event: SyncEvent) -> None:
             notify_assignment_published(db, assignment)
         return
 
-    parent = (
+    parent, parent_is_new = (
         _upsert_parent(
             db,
             event.parent.phone,
@@ -192,7 +193,7 @@ def apply_sync_event(db: Session, school: School, event: SyncEvent) -> None:
             event.parent.password_salt,
         )
         if event.parent is not None
-        else None
+        else (None, False)
     )
     student = _upsert_student(db, school, event, parent)
 
@@ -208,6 +209,23 @@ def apply_sync_event(db: Session, school: School, event: SyncEvent) -> None:
         _apply_calendar_event(db, school, event)
     elif event.type == "announcement" and event.announcement is not None:
         _apply_announcement(db, school, student, event)
+
+    # A phone number this server has never seen before belongs to a parent
+    # who has no idea any of this exists. They are texted a sign-up code the
+    # moment their child is enrolled, so the app reaches them rather than
+    # waiting to be found.
+    #
+    # Only on the enrolment event, and only for a number that did not exist a
+    # moment ago. Every grade and every absence carries the same parent
+    # details, and firing on those would text a family at random hours for
+    # months. `send_invitation` also refuses a parent who already has a
+    # password, and shares the rate limiter with the Register button, so a
+    # director saving the same child twice costs one message.
+    #
+    # Inside the transaction on purpose: the code must not outlive a student
+    # whose enrolment then fails to save.
+    if event.type == "student" and parent_is_new and parent is not None:
+        send_invitation(db, parent)
 
     db.commit()
 
