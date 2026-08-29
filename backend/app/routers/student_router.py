@@ -7,6 +7,7 @@ from app.deps import get_current_director, get_current_parent
 from app.models.class_model import Class
 from app.models.director_model import Director
 from app.models.parent_model import Parent
+from app.models.school_model import School
 from app.models.student import Student
 from app.schemas.student_schema import (
     StudentCreate,
@@ -14,10 +15,12 @@ from app.schemas.student_schema import (
 )
 from app.services.auth_service import get_parent_family_ids
 from app.services.credentials_service import send_credentials_notification
+from app.services.robita_sms import client as robita_client, to_local_number
 from app.services.student_login_service import issue_login_for, issue_logins
 from app.services.sync_outbox_service import enqueue_student_event
+from app.utils.config import settings
 from app.utils.phone import normalize_phone
-from app.utils.security import hash_student_password
+from app.utils.security import generate_password, hash_student_password
 
 from fastapi import Form, UploadFile, File
 import shutil
@@ -225,6 +228,23 @@ def director_create_student(
 
         db.refresh(parent)
 
+    # A parent who has never signed in has no password_hash yet -- give
+    # them one now instead of leaving the account unusable until they find
+    # their own way into the app. Same salted-sha256 pair the students get
+    # (see hash_student_password), because the Public Server verifies a
+    # parent's password the same way -- see verification_service.py there.
+    parent_plaintext_password = None
+
+    if not parent.password_hash:
+
+        parent_plaintext_password = generate_password()
+
+        parent.password_salt, parent.password_hash = hash_student_password(
+            parent_plaintext_password
+        )
+
+        db.commit()
+
     os.makedirs("uploads", exist_ok=True)
 
     extension = os.path.splitext(file.filename or "")[1] or ".jpg"
@@ -300,6 +320,30 @@ def director_create_student(
         student_username=student_username,
         student_password=student_password,
     )
+
+    # A parent who just got a fresh password (see above) has no app and no
+    # device token yet -- the in-app notification above cannot reach them.
+    # SMS is the only channel available at this point, so it always fires
+    # here (not conditioned on push having failed, unlike the attendance
+    # fallback in notifications/firebase.py).
+    if parent_plaintext_password and settings.sms_provider == "robita":
+        school = db.query(School).filter(School.id == director.school_id).first()
+        school_name = school.name if school else "SmartFlow"
+        message = (
+            "SmartFlow: фарзандатон %s %s ба мактаби «%s» сабти ном шуд.\n"
+            "Шумо: логин %s, парол: %s\n"
+            "Фарзанд: логин %s, парол: %s"
+            % (
+                new_student.first_name,
+                new_student.last_name,
+                school_name,
+                parent.phone,
+                parent_plaintext_password,
+                student_username,
+                student_password,
+            )
+        )
+        robita_client.send(to_local_number(parent.phone), message)
 
     db.refresh(new_student)
 
