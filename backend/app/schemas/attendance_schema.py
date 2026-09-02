@@ -37,6 +37,7 @@ class LiveAttendanceStatus(BaseModel):
     last_name: str
     class_id: Optional[int] = None
     class_name: Optional[str] = None
+    class_in_session: bool = False
     status: str
     attendance_date: date
     time_in: Optional[datetime] = None

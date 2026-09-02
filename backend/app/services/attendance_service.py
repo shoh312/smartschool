@@ -640,3 +640,35 @@ def attendance_history(
         Attendance.attendance_date.desc(),
         Attendance.id.desc(),
     ).limit(limit).all()
+
+
+def classes_in_session_now(db: Session, now: datetime | None = None) -> set[int]:
+    """Classes whose lesson is running at this moment.
+
+    Different from `classes_in_session_on`, which answers "was this class
+    expected in by now" and keeps saying yes for the rest of the day. This
+    one is a window: it opens when the lesson starts and closes when it
+    ends, because the desktop dashboard uses it to show an academy only the
+    groups that are in the building right now -- a group whose two hours
+    finished at four should not still be sitting in the panel at six.
+
+    Half-open, like `covers`: a lesson ending at 11:00 and one starting at
+    11:00 are back to back, and the group that has just arrived is the one
+    that counts.
+    """
+    now = now or datetime.now()
+    weekday = now.weekday()
+    minutes_now = now.hour * 60 + now.minute
+
+    running: set[int] = set()
+    for lesson in db.query(Lesson).filter(Lesson.day_of_week == weekday).all():
+        try:
+            hours, minutes = lesson.start_time.split(":")
+            start = int(hours) * 60 + int(minutes)
+        except (ValueError, AttributeError):
+            continue
+        end = start + (lesson.duration_minutes or 45)
+        if start <= minutes_now < end:
+            running.add(lesson.class_id)
+
+    return running

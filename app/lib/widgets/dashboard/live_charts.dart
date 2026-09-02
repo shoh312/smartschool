@@ -69,7 +69,10 @@ class AttendanceSplitBar extends StatelessWidget {
                           // around each segment would thicken the bar and
                           // read as chrome.
                           if (i != slices.length - 1)
-                            SizedBox(width: 2, child: ColoredBox(color: colors.surface)),
+                            SizedBox(
+                              width: 2,
+                              child: ColoredBox(color: colors.surface),
+                            ),
                         ],
                     ],
                   ),
@@ -178,7 +181,10 @@ class _ArrivalTimelineChartState extends State<ArrivalTimelineChart> {
       builder: (context, constraints) {
         return MouseRegion(
           onHover: (event) {
-            final index = _indexAt(event.localPosition.dx, constraints.maxWidth);
+            final index = _indexAt(
+              event.localPosition.dx,
+              constraints.maxWidth,
+            );
             if (index != _hoveredIndex) setState(() => _hoveredIndex = index);
           },
           onExit: (_) => setState(() => _hoveredIndex = null),
@@ -259,7 +265,11 @@ class _ArrivalPainter extends CustomPainter {
     for (var step = 0; step <= 2; step++) {
       final value = (maxValue * step / 2).round();
       final y = yFor(value);
-      canvas.drawLine(Offset(_left, y), Offset(size.width - _right, y), gridPaint);
+      canvas.drawLine(
+        Offset(_left, y),
+        Offset(size.width - _right, y),
+        gridPaint,
+      );
       _label(canvas, '$value', Offset(0, y - 6), text, 10.5);
     }
 
@@ -299,7 +309,13 @@ class _ArrivalPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    _label(canvas, _clock(points.first.at), Offset(_left - 12, size.height - 16), text, 10.5);
+    _label(
+      canvas,
+      _clock(points.first.at),
+      Offset(_left - 12, size.height - 16),
+      text,
+      10.5,
+    );
     _label(
       canvas,
       _clock(points.last.at),
@@ -328,7 +344,11 @@ class _ArrivalPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: label,
-        style: TextStyle(fontSize: 11.5, color: surface, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 11.5,
+          color: surface,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -344,11 +364,20 @@ class _ArrivalPainter extends CustomPainter {
     painter.paint(canvas, Offset(left + 8, top + 5));
   }
 
-  void _label(Canvas canvas, String value, Offset at, Color color, double size) {
+  void _label(
+    Canvas canvas,
+    String value,
+    Offset at,
+    Color color,
+    double size,
+  ) {
     TextPainter(
-      text: TextSpan(text: value, style: TextStyle(fontSize: size, color: color)),
-      textDirection: TextDirection.ltr,
-    )
+        text: TextSpan(
+          text: value,
+          style: TextStyle(fontSize: size, color: color),
+        ),
+        textDirection: TextDirection.ltr,
+      )
       ..layout()
       ..paint(canvas, at);
   }
@@ -384,31 +413,69 @@ class ClassAttendance {
 /// Sorted worst-first: the reason a director opens this panel is to find
 /// the class that is missing people, and putting it at the top means never
 /// having to scan for it.
-class ClassAttendanceBars extends StatelessWidget {
-  const ClassAttendanceBars({super.key, required this.rows, this.maxRows = 8});
+class ClassAttendanceBars extends StatefulWidget {
+  const ClassAttendanceBars({
+    super.key,
+    required this.rows,
+    this.maxRows = 8,
+    this.emptyMessage = 'Sinf ma\'lumoti kelmadi',
+  });
 
   final List<ClassAttendance> rows;
+
+  /// How many fit before the list needs a "show the rest" control. A school
+  /// with thirty classes would otherwise push every panel below it off the
+  /// screen, and this one exists to be glanced at.
   final int maxRows;
+
+  final String emptyMessage;
+
+  @override
+  State<ClassAttendanceBars> createState() => _ClassAttendanceBarsState();
+}
+
+class _ClassAttendanceBarsState extends State<ClassAttendanceBars> {
+  bool _showAll = false;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    if (rows.isEmpty) {
+    if (widget.rows.isEmpty) {
       return _ChartEmptyState(
         icon: Icons.bar_chart_rounded,
-        message: 'Sinflar hali qo\'shilmagan',
+        message: widget.emptyMessage,
       );
     }
 
-    final sorted = List.of(rows)..sort((a, b) => a.rate.compareTo(b.rate));
-    final shown = sorted.take(maxRows).toList();
+    final sorted = List.of(widget.rows)
+      ..sort((a, b) => a.rate.compareTo(b.rate));
+    final hidden = sorted.length - widget.maxRows;
+    final shown = _showAll ? sorted : sorted.take(widget.maxRows).toList();
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final row in shown)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _ClassBar(row: row, colors: colors),
+          ),
+        if (hidden > 0)
+          TextButton(
+            onPressed: () => setState(() => _showAll = !_showAll),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              _showAll ? 'Kamroq' : 'Yana $hidden ta sinf',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: colors.primary,
+              ),
+            ),
           ),
       ],
     );
@@ -428,8 +495,8 @@ class _ClassBar extends StatelessWidget {
     final color = row.rate >= 0.9
         ? colors.success
         : row.rate >= 0.7
-            ? colors.warning
-            : colors.danger;
+        ? colors.warning
+        : colors.danger;
 
     return Tooltip(
       message: '${row.name}: ${row.present}/${row.total}',

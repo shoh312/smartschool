@@ -75,6 +75,7 @@ class LiveAttendance {
     required this.attendanceDate,
     this.classId,
     this.className,
+    this.classInSession = false,
     this.cameraId,
     this.timeIn,
     this.timeOut,
@@ -93,6 +94,11 @@ class LiveAttendance {
   // two made classes show nobody present while the header counted dozens.
   final int? classId;
   final String? className;
+
+  /// Whether this pupil's class is in a lesson at this moment. An academy's
+  /// dashboard shows only the groups that are actually in the building, and
+  /// a group whose lesson has finished drops out of the panel.
+  final bool classInSession;
 
   final int? cameraId;
   final DateTime? timeIn;
@@ -118,6 +124,7 @@ class LiveAttendance {
       attendanceDate: DateTime.parse(json['attendance_date'] as String),
       classId: json['class_id'] as int?,
       className: json['class_name'] as String?,
+      classInSession: json['class_in_session'] as bool? ?? false,
       cameraId: json['camera_id'] as int?,
       timeIn: _parseDateTime(json['time_in']),
       timeOut: _parseDateTime(json['time_out']),

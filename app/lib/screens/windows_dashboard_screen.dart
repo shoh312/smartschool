@@ -5,6 +5,7 @@ import '../core/design_tokens.dart';
 import '../models/attendance.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/student_provider.dart';
+import '../services/school_service.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/bottom_nav_inset.dart';
 import '../widgets/dashboard/live_charts.dart';
@@ -35,6 +36,11 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
   // they have already started scrolling and discovered there is more.
   final _scrollController = ScrollController();
 
+  /// Null until the school's own setting has been read. The panel below
+  /// behaves differently in the two modes, and guessing before the answer
+  /// arrives would make it flip once it does.
+  bool? _groupMode;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +50,15 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
       context.read<StudentProvider>().loadStudents();
       await attendance.loadLive();
       if (mounted) attendance.startRealtime();
+      try {
+        final settings = await context.read<SchoolService>().fetchSettings();
+        if (mounted) setState(() => _groupMode = settings.groupMode);
+      } catch (_) {
+        // Unreadable setting falls back to the school layout, which shows
+        // every class -- the worse failure would be hiding classes from a
+        // school that has no lesson windows at all.
+        if (mounted) setState(() => _groupMode = false);
+      }
     });
   }
 
@@ -134,10 +149,21 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
                   total: total,
                 ),
               );
+              // Two different panels, because the two schools ask different
+              // questions of it. A school wants the whole roll, all day. An
+              // academy wants the room in front of it right now.
+              final groupMode = _groupMode ?? false;
               final classes = _Card(
-                title: 'Sinflar bo\'yicha',
-                subtitle: 'eng ko\'p yetishmayotgani yuqorida',
-                child: ClassAttendanceBars(rows: _byClass(live)),
+                title: groupMode ? 'Hozirgi guruhlar' : 'Sinflar bo\'yicha',
+                subtitle: groupMode
+                    ? 'darsi ketayotganlar'
+                    : 'eng ko\'p yetishmayotgani yuqorida',
+                child: ClassAttendanceBars(
+                  rows: _byClass(live, groupMode: groupMode),
+                  emptyMessage: groupMode
+                      ? 'Hozir darsi ketayotgan guruh yo\'q'
+                      : 'Sinf ma\'lumoti kelmadi',
+                ),
               );
 
               if (constraints.maxWidth < 900) {
@@ -207,11 +233,23 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
   /// from that list, so every class read 0 present while the header counted
   /// thirty-one. A number that contradicts the number above it is worse than
   /// no number at all.
-  List<ClassAttendance> _byClass(List<LiveAttendance> live) {
+  List<ClassAttendance> _byClass(
+    List<LiveAttendance> live, {
+    required bool groupMode,
+  }) {
     const noClass = 'Sinfsiz';
     final totals = <String, int>{};
     final here = <String, int>{};
     for (final row in live) {
+      // In group mode only the groups whose lesson is running right now.
+      // An academy runs several groups through a room in a day, and one
+      // that finished at four has nothing to say about six o'clock -- it
+      // would just sit there at 0 present, looking like an absence.
+      //
+      // A school keeps every class listed all day: its classes are in the
+      // building whether or not a particular period is running.
+      if (groupMode && !row.classInSession) continue;
+
       // Pupils with no class are counted under their own heading rather
       // than dropped. Dropping them made this panel add up to a hundred and
       // eighteen under a header counting two hundred and thirty-one, and

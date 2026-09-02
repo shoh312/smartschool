@@ -8,6 +8,7 @@ from app.models.student import Student
 from app.notifications.firebase import send_pending_notifications
 from app.services import analytics_service, diary_service
 from app.services.attendance_service import (
+    classes_in_session_now,
     mark_absent_for_finished_lessons,
     mark_absent_students,
     mark_left_school_students,
@@ -44,6 +45,10 @@ def _live_status_payload(db):
     # does not always hold every pupil -- so classes showed 0 present while
     # the header counted 31. One source, one answer.
     class_names = {row.id: row.name for row in db.query(Class).all()}
+    # Which classes are actually in a lesson right now. The desktop dashboard
+    # uses it to show an academy only the groups that are in the building --
+    # a group whose lesson finished at four should not still be listed at six.
+    in_session = classes_in_session_now(db)
 
     return {
         "type": "attendance_status",
@@ -54,6 +59,7 @@ def _live_status_payload(db):
                 "last_name": student.last_name,
                 "class_id": student.class_id,
                 "class_name": class_names.get(student.class_id),
+                "class_in_session": student.class_id in in_session,
                 "status": attendance.status if attendance else "not_detected",
                 "attendance_date": today.isoformat(),
                 "time_in": attendance.time_in.isoformat() if attendance and attendance.time_in else None,
