@@ -6,6 +6,7 @@ import '../models/attendance.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/student_provider.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/bottom_nav_inset.dart';
 import '../widgets/dashboard/live_charts.dart';
 
 /// The director's dashboard on a desktop, where the screen is wide enough to
@@ -30,6 +31,10 @@ class WindowsDashboardScreen extends StatefulWidget {
 }
 
 class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
+  // A desktop reader expects a scrollbar to be there, not to appear once
+  // they have already started scrolling and discovered there is more.
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +52,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     // The socket is shared, so it is stopped rather than left listening to a
     // screen that no longer exists.
     context.read<AttendanceProvider>().stopRealtime();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -66,84 +72,100 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     final arrived = present + late + left;
     final total = live.isEmpty ? students.students.length : live.length;
 
-    final body = ListView(
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
-      children: [
-        _Header(arrived: arrived, total: total, isLive: attendance.live.isNotEmpty),
-        const SizedBox(height: 22),
-        _Card(
-          title: 'Bugungi holat',
-          child: AttendanceSplitBar(
-            slices: [
-              StatusSlice(
-                label: 'keldi',
-                count: present,
-                color: colors.success,
-                icon: Icons.check_circle_rounded,
-              ),
-              StatusSlice(
-                label: 'kech qoldi',
-                count: late,
-                color: colors.warning,
-                icon: Icons.schedule_rounded,
-              ),
-              StatusSlice(
-                label: 'kelmadi',
-                count: absent,
-                color: colors.danger,
-                icon: Icons.cancel_rounded,
-              ),
-              StatusSlice(
-                label: 'kutilmoqda',
-                count: pending,
-                color: colors.textMuted,
-                icon: Icons.hourglass_empty_rounded,
-              ),
-            ],
+    final body = Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: true,
+      child: ListView(
+        controller: _scrollController,
+        // The bottom nav is a floating pill the body runs underneath, so the
+        // last row needs clearance to scroll out from behind it. Without this
+        // the list ended under the pill and looked like it would not scroll at
+        // all.
+        padding: const EdgeInsets.fromLTRB(
+          28,
+          24,
+          28,
+          32,
+        ).add(bottomNavPadding(context)),
+        children: [
+          _Header(
+            arrived: arrived,
+            total: total,
+            isLive: attendance.live.isNotEmpty,
           ),
-        ),
-        const SizedBox(height: 18),
-        // Two panels side by side on a wide window, stacked when it is
-        // narrow. Only the layout responds to width -- never the chrome.
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final timeline = _Card(
-              title: 'Kelish vaqti',
-              subtitle: 'kun boshidan hozirgacha to\'plangan',
-              child: ArrivalTimelineChart(
-                points: _arrivalCurve(live),
-                total: total,
-              ),
-            );
-            final classes = _Card(
-              title: 'Sinflar bo\'yicha',
-              subtitle: 'eng ko\'p yetishmayotgani yuqorida',
-              child: ClassAttendanceBars(
-                rows: _byClass(live),
-              ),
-            );
-
-            if (constraints.maxWidth < 900) {
-              return Column(
-                children: [timeline, const SizedBox(height: 18), classes],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 3, child: timeline),
-                const SizedBox(width: 18),
-                Expanded(flex: 2, child: classes),
+          const SizedBox(height: 22),
+          _Card(
+            title: 'Bugungi holat',
+            child: AttendanceSplitBar(
+              slices: [
+                StatusSlice(
+                  label: 'keldi',
+                  count: present,
+                  color: colors.success,
+                  icon: Icons.check_circle_rounded,
+                ),
+                StatusSlice(
+                  label: 'kech qoldi',
+                  count: late,
+                  color: colors.warning,
+                  icon: Icons.schedule_rounded,
+                ),
+                StatusSlice(
+                  label: 'kelmadi',
+                  count: absent,
+                  color: colors.danger,
+                  icon: Icons.cancel_rounded,
+                ),
+                StatusSlice(
+                  label: 'kutilmoqda',
+                  count: pending,
+                  color: colors.textMuted,
+                  icon: Icons.hourglass_empty_rounded,
+                ),
               ],
-            );
-          },
-        ),
-        const SizedBox(height: 18),
-        _Card(
-          title: 'So\'nggi kelganlar',
-          child: _RecentArrivals(live: live),
-        ),
-      ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          // Two panels side by side on a wide window, stacked when it is
+          // narrow. Only the layout responds to width -- never the chrome.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final timeline = _Card(
+                title: 'Kelish vaqti',
+                subtitle: 'kun boshidan hozirgacha to\'plangan',
+                child: ArrivalTimelineChart(
+                  points: _arrivalCurve(live),
+                  total: total,
+                ),
+              );
+              final classes = _Card(
+                title: 'Sinflar bo\'yicha',
+                subtitle: 'eng ko\'p yetishmayotgani yuqorida',
+                child: ClassAttendanceBars(rows: _byClass(live)),
+              );
+
+              if (constraints.maxWidth < 900) {
+                return Column(
+                  children: [timeline, const SizedBox(height: 18), classes],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: timeline),
+                  const SizedBox(width: 18),
+                  Expanded(flex: 2, child: classes),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          _Card(
+            title: 'So\'nggi kelganlar',
+            child: _RecentArrivals(live: live),
+          ),
+        ],
+      ),
     );
 
     if (widget.isIntegrated) return body;
@@ -166,12 +188,13 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     // rather than by the camera carries no arrival time, and dropping them
     // left this panel saying nobody had come while the header said thirty
     // -one had.
-    final times = live
-        .where(_hasArrived)
-        .map((row) => row.timeIn ?? row.lastSeen)
-        .whereType<DateTime>()
-        .toList()
-      ..sort();
+    final times =
+        live
+            .where(_hasArrived)
+            .map((row) => row.arrivedAt)
+            .whereType<DateTime>()
+            .toList()
+          ..sort();
     if (times.isEmpty) return const [];
 
     final points = <ArrivalPoint>[ArrivalPoint(times.first, 0)];
@@ -398,24 +421,25 @@ class _RecentArrivals extends StatelessWidget {
     // Whoever arrived, with whatever time is known about them. Filtering on
     // the arrival time instead left this list empty for a school whose
     // pupils were marked present from the journal rather than by a camera.
-    DateTime? when(LiveAttendance row) => row.timeIn ?? row.lastSeen;
+    DateTime? when(LiveAttendance row) => row.arrivedAt;
 
-    final arrivals = live
-        .where(
-          (row) =>
-              row.status == AttendanceStatus.present ||
-              row.status == AttendanceStatus.late ||
-              row.status == AttendanceStatus.leftSchool,
-        )
-        .toList()
-      ..sort((a, b) {
-        final at = when(a);
-        final bt = when(b);
-        if (at == null && bt == null) return 0;
-        if (at == null) return 1;
-        if (bt == null) return -1;
-        return bt.compareTo(at);
-      });
+    final arrivals =
+        live
+            .where(
+              (row) =>
+                  row.status == AttendanceStatus.present ||
+                  row.status == AttendanceStatus.late ||
+                  row.status == AttendanceStatus.leftSchool,
+            )
+            .toList()
+          ..sort((a, b) {
+            final at = when(a);
+            final bt = when(b);
+            if (at == null && bt == null) return 0;
+            if (at == null) return 1;
+            if (bt == null) return -1;
+            return bt.compareTo(at);
+          });
 
     if (arrivals.isEmpty) {
       return SizedBox(

@@ -79,6 +79,7 @@ class LiveAttendance {
     this.timeIn,
     this.timeOut,
     this.lastSeen,
+    this.detectedAt,
   });
 
   final int studentId;
@@ -98,6 +99,14 @@ class LiveAttendance {
   final DateTime? timeOut;
   final DateTime? lastSeen;
 
+  /// Last resort for "when": a pupil marked present from outside the camera
+  /// can carry no arrival time and no last-seen at all.
+  final DateTime? detectedAt;
+
+  /// Whatever is known about when this pupil turned up, or null when the
+  /// record carries no time at all.
+  DateTime? get arrivedAt => timeIn ?? lastSeen ?? detectedAt;
+
   String get fullName => '$firstName $lastName';
 
   factory LiveAttendance.fromJson(Map<String, dynamic> json) {
@@ -113,6 +122,7 @@ class LiveAttendance {
       timeIn: _parseDateTime(json['time_in']),
       timeOut: _parseDateTime(json['time_out']),
       lastSeen: _parseDateTime(json['last_seen']),
+      detectedAt: _parseDateTime(json['detected_at']),
     );
   }
 }

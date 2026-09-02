@@ -59,6 +59,12 @@ def _live_status_payload(db):
                 "time_in": attendance.time_in.isoformat() if attendance and attendance.time_in else None,
                 "time_out": attendance.time_out.isoformat() if attendance and attendance.time_out else None,
                 "last_seen": attendance.last_seen.isoformat() if attendance and attendance.last_seen else None,
+                # The last resort for "when". A pupil marked present from
+                # somewhere other than the camera can carry no time_in and no
+                # last_seen at all, and the desktop dashboard then had no way
+                # to place them on the morning's curve -- it showed an empty
+                # panel under a header counting thirty-one arrivals.
+                "detected_at": attendance.detected_at.isoformat() if attendance and attendance.detected_at else None,
                 "camera_id": attendance.camera_id if attendance else None,
             }
             for student, attendance in rows

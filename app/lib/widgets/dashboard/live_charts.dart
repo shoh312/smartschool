@@ -141,9 +141,14 @@ class ArrivalTimelineChart extends StatefulWidget {
     super.key,
     required this.points,
     required this.total,
+    this.arrivedWithoutTime = false,
   });
 
   final List<ArrivalPoint> points;
+
+  /// Somebody is marked as having arrived, but no record carries a time.
+  /// Saying "nobody has come" then would contradict the header.
+  final bool arrivedWithoutTime;
 
   /// The roster, so the curve is drawn against what it is climbing towards
   /// rather than against its own maximum.
@@ -163,7 +168,9 @@ class _ArrivalTimelineChartState extends State<ArrivalTimelineChart> {
     if (widget.points.length < 2) {
       return _ChartEmptyState(
         icon: Icons.timeline_rounded,
-        message: 'Hali hech kim kelmadi',
+        message: widget.arrivedWithoutTime
+            ? 'Kelganlar bor, lekin vaqti qayd etilmagan'
+            : 'Hali hech kim kelmadi',
       );
     }
 
