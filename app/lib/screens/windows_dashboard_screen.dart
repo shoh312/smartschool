@@ -208,11 +208,18 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
   /// thirty-one. A number that contradicts the number above it is worse than
   /// no number at all.
   List<ClassAttendance> _byClass(List<LiveAttendance> live) {
+    const noClass = 'Sinfsiz';
     final totals = <String, int>{};
     final here = <String, int>{};
     for (final row in live) {
-      final name = row.className;
-      if (name == null || name.isEmpty) continue;
+      // Pupils with no class are counted under their own heading rather
+      // than dropped. Dropping them made this panel add up to a hundred and
+      // eighteen under a header counting two hundred and thirty-one, and
+      // every class read 0 present while thirty-one pupils had arrived --
+      // because those thirty-one were the ones being dropped.
+      final name = (row.className == null || row.className!.isEmpty)
+          ? noClass
+          : row.className!;
       totals[name] = (totals[name] ?? 0) + 1;
       if (_hasArrived(row)) here[name] = (here[name] ?? 0) + 1;
     }
