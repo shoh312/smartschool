@@ -26,14 +26,23 @@ class AttendanceResponse(BaseModel):
 
 
 class LiveAttendanceStatus(BaseModel):
+    # Deliberately the same shape as the websocket broadcast in
+    # background/tasks.py. The two feed the same screen, one on first load
+    # and one every few seconds after, and when they disagreed the screen
+    # flickered: the socket filled the charts, the poll five seconds later
+    # overwrote them with rows that carried no class and no time, and they
+    # emptied until the next broadcast.
     student_id: int
     first_name: str
     last_name: str
+    class_id: Optional[int] = None
+    class_name: Optional[str] = None
     status: str
     attendance_date: date
     time_in: Optional[datetime] = None
     time_out: Optional[datetime] = None
     last_seen: Optional[datetime] = None
+    detected_at: Optional[datetime] = None
     camera_id: Optional[int] = None
 
 

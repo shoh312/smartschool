@@ -77,6 +77,8 @@ def live_attendance_status(
     if class_id is not None:
         query = query.filter(Student.class_id == class_id)
 
+    class_names = {row.id: row.name for row in db.query(Class).all()}
+
     response = []
     for student, attendance in query.all():
         response.append(
@@ -84,11 +86,14 @@ def live_attendance_status(
                 student_id=student.id,
                 first_name=student.first_name,
                 last_name=student.last_name,
+                class_id=student.class_id,
+                class_name=class_names.get(student.class_id),
                 status=attendance.status if attendance else "not_detected",
                 attendance_date=today,
                 time_in=attendance.time_in if attendance else None,
                 time_out=attendance.time_out if attendance else None,
                 last_seen=attendance.last_seen if attendance else None,
+                detected_at=attendance.detected_at if attendance else None,
                 camera_id=attendance.camera_id if attendance else None,
             )
         )

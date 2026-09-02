@@ -88,11 +88,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
           32,
         ).add(bottomNavPadding(context)),
         children: [
-          _Header(
-            arrived: arrived,
-            total: total,
-            isLive: attendance.live.isNotEmpty,
-          ),
+          _Header(arrived: arrived, total: total),
           const SizedBox(height: 22),
           _Card(
             title: 'Bugungi holat',
@@ -238,15 +234,10 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({
-    required this.arrived,
-    required this.total,
-    required this.isLive,
-  });
+  const _Header({required this.arrived, required this.total});
 
   final int arrived;
   final int total;
-  final bool isLive;
 
   @override
   Widget build(BuildContext context) {
@@ -300,69 +291,7 @@ class _Header extends StatelessWidget {
             ),
           ],
         ),
-        const Spacer(),
-        if (isLive) const _LivePill(),
       ],
-    );
-  }
-}
-
-/// Says the numbers are arriving on their own, so nobody goes looking for a
-/// refresh button that does not exist.
-class _LivePill extends StatefulWidget {
-  const _LivePill();
-
-  @override
-  State<_LivePill> createState() => _LivePillState();
-}
-
-class _LivePillState extends State<_LivePill>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1400),
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: colors.success.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FadeTransition(
-            opacity: _controller,
-            child: Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: colors.success,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Jonli',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: colors.success,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
