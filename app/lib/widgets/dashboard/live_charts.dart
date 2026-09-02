@@ -542,8 +542,14 @@ class _ClassBar extends StatelessWidget {
                       color: colors.surfaceSunken,
                       child: const SizedBox.expand(),
                     ),
+                    // heightFactor as well as widthFactor. Without it the
+                    // fill is given a width and left to find its own height,
+                    // and a ColoredBox with no child is zero tall -- so the
+                    // bar never appeared to move no matter what the numbers
+                    // beside it said.
                     FractionallySizedBox(
-                      widthFactor: row.rate.clamp(0.02, 1.0),
+                      widthFactor: row.rate.clamp(0.0, 1.0),
+                      heightFactor: 1,
                       child: ColoredBox(color: color),
                     ),
                   ],

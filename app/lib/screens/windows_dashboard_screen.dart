@@ -209,7 +209,14 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
   Map<AttendanceStatus, int> _countByStatus(List<LiveAttendance> live) {
     final counts = <AttendanceStatus, int>{};
     for (final row in live) {
-      counts[row.status] = (counts[row.status] ?? 0) + 1;
+      // A pupil whose lesson has not begun is waiting, not missing --
+      // whatever an older record says about them. Nobody has looked for
+      // them yet, and painting them red before their group is due turns
+      // the panel into an alarm about people who are not late.
+      final status = row.classLessonState == LessonState.upcoming
+          ? AttendanceStatus.notDetected
+          : row.status;
+      counts[status] = (counts[status] ?? 0) + 1;
     }
     return counts;
   }
