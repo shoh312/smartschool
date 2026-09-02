@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../../core/design_tokens.dart';
 import '../../models/attendance.dart';
@@ -174,13 +175,14 @@ class _ArrivalTimelineChartState extends State<ArrivalTimelineChart> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final l10n = AppLocalizations.of(context)!;
 
     if (widget.points.length < 2) {
       return _ChartEmptyState(
         icon: Icons.timeline_rounded,
         message: widget.arrivedWithoutTime
-            ? 'Kelganlar bor, lekin vaqti qayd etilmagan'
-            : 'Hali hech kim kelmadi',
+            ? l10n.dashArrivedNoTime
+            : l10n.dashNobodyYet,
       );
     }
 
@@ -505,7 +507,7 @@ class ClassAttendanceBars extends StatefulWidget {
     super.key,
     required this.rows,
     this.maxRows = 8,
-    this.emptyMessage = 'Sinf ma\'lumoti kelmadi',
+    required this.emptyMessage,
   });
 
   final List<ClassAttendance> rows;
@@ -556,7 +558,9 @@ class _ClassAttendanceBarsState extends State<ClassAttendanceBars> {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
-              _showAll ? 'Kamroq' : 'Yana $hidden ta sinf',
+              _showAll
+                  ? AppLocalizations.of(context)!.dashShowLess
+                  : AppLocalizations.of(context)!.dashMoreClasses(hidden),
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -694,19 +698,20 @@ class _LessonStateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final (label, icon, color) = switch (state) {
       LessonState.running => (
-        'dars ketyapti',
+        l10n.dashLessonRunning,
         Icons.play_circle_rounded,
         colors.success,
       ),
       LessonState.upcoming => (
-        'boshlanmadi',
+        l10n.dashLessonUpcoming,
         Icons.schedule_rounded,
         colors.textMuted,
       ),
       LessonState.finished => (
-        'tugadi',
+        l10n.dashLessonFinished,
         Icons.check_circle_outline_rounded,
         colors.textSecondary,
       ),

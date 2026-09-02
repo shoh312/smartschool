@@ -1743,7 +1743,7 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get schoolActiveSettingHint =>
-      'Ҳангоми хомӯш будан дар тамоми мактаб на "омад" ва на "наомад" сабт намешавад -- инро истифода баред, то камераҳо воқеан насб шаванд';
+      'Ҳангоми хомӯш будан дар тамоми мактаб на \"омад\" ва на \"наомад\" сабт намешавад -- инро истифода баред, то камераҳо воқеан насб шаванд';
 
   @override
   String get cameraGroups => 'Гурӯҳҳо';
@@ -1765,4 +1765,75 @@ class AppLocalizationsTg extends AppLocalizations {
 
   @override
   String get deleteSlot => 'Нест кардан';
+
+  @override
+  String get dashTodayStatus => 'Имрӯз дар мактаб';
+
+  @override
+  String get dashArrived => 'омаданд';
+
+  @override
+  String get dashLate => 'дер монданд';
+
+  @override
+  String get dashMissing => 'нестанд';
+
+  @override
+  String get dashWaiting => 'интизор';
+
+  @override
+  String get dashArrivalTime => 'Вақти омадан';
+
+  @override
+  String get dashArrivalSubtitle => 'аз аввали рӯз ҷамъбаст';
+
+  @override
+  String get dashTodayGroups => 'Гурӯҳҳои имрӯза';
+
+  @override
+  String get dashByClass => 'Аз рӯи синфҳо';
+
+  @override
+  String get dashGroupsSubtitle => 'гурӯҳҳои дарсдор ва ҳолати онҳо';
+
+  @override
+  String get dashClassSubtitle => 'холитаринҳо дар боло';
+
+  @override
+  String get dashNoGroupsToday => 'Имрӯз ҳеҷ гурӯҳ дарс надорад';
+
+  @override
+  String get dashNoClassData => 'Маълумоти синф нест';
+
+  @override
+  String get dashRecentArrivals => 'Охирин омадагон';
+
+  @override
+  String get dashNobodyYet => 'Ҳанӯз касе наомадааст';
+
+  @override
+  String get dashArrivedNoTime => 'Омадагон ҳастанд, вале вақт сабт нашудааст';
+
+  @override
+  String get dashNoClass => 'Бе синф';
+
+  @override
+  String get dashLessonRunning => 'дарс идома дорад';
+
+  @override
+  String get dashLessonUpcoming => 'оғоз нашуд';
+
+  @override
+  String get dashLessonFinished => 'тамом шуд';
+
+  @override
+  String get dashShowLess => 'Кӯтоҳ';
+
+  @override
+  String get dashControlPanel => 'Лавҳаи идора';
+
+  @override
+  String dashMoreClasses(int count) {
+    return '$count боз';
+  }
 }

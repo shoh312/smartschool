@@ -3325,6 +3325,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get deleteSlot;
+
+  /// No description provided for @dashTodayStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Today at school'**
+  String get dashTodayStatus;
+
+  /// No description provided for @dashArrived.
+  ///
+  /// In en, this message translates to:
+  /// **'arrived'**
+  String get dashArrived;
+
+  /// No description provided for @dashLate.
+  ///
+  /// In en, this message translates to:
+  /// **'late'**
+  String get dashLate;
+
+  /// No description provided for @dashMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'missing'**
+  String get dashMissing;
+
+  /// No description provided for @dashWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'expected'**
+  String get dashWaiting;
+
+  /// No description provided for @dashArrivalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrivals'**
+  String get dashArrivalTime;
+
+  /// No description provided for @dashArrivalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'cumulative since the first arrival'**
+  String get dashArrivalSubtitle;
+
+  /// No description provided for @dashTodayGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s groups'**
+  String get dashTodayGroups;
+
+  /// No description provided for @dashByClass.
+  ///
+  /// In en, this message translates to:
+  /// **'By class'**
+  String get dashByClass;
+
+  /// No description provided for @dashGroupsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'groups with a lesson today, and where it stands'**
+  String get dashGroupsSubtitle;
+
+  /// No description provided for @dashClassSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'the emptiest first'**
+  String get dashClassSubtitle;
+
+  /// No description provided for @dashNoGroupsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No group has a lesson today'**
+  String get dashNoGroupsToday;
+
+  /// No description provided for @dashNoClassData.
+  ///
+  /// In en, this message translates to:
+  /// **'No class information'**
+  String get dashNoClassData;
+
+  /// No description provided for @dashRecentArrivals.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest arrivals'**
+  String get dashRecentArrivals;
+
+  /// No description provided for @dashNobodyYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has arrived yet'**
+  String get dashNobodyYet;
+
+  /// No description provided for @dashArrivedNoTime.
+  ///
+  /// In en, this message translates to:
+  /// **'People have arrived, but no time was recorded'**
+  String get dashArrivedNoTime;
+
+  /// No description provided for @dashNoClass.
+  ///
+  /// In en, this message translates to:
+  /// **'No class'**
+  String get dashNoClass;
+
+  /// No description provided for @dashLessonRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'in progress'**
+  String get dashLessonRunning;
+
+  /// No description provided for @dashLessonUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'not started'**
+  String get dashLessonUpcoming;
+
+  /// No description provided for @dashLessonFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'finished'**
+  String get dashLessonFinished;
+
+  /// No description provided for @dashShowLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get dashShowLess;
+
+  /// No description provided for @dashControlPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashControlPanel;
+
+  /// No description provided for @dashMoreClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more'**
+  String dashMoreClasses(int count);
 }
 
 class _AppLocalizationsDelegate

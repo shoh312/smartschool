@@ -854,5 +854,35 @@
   "everyDay": "Every day",
   "noGroupSlots": "No groups yet",
   "slotSaved": "Added",
-  "deleteSlot": "Delete"
+  "deleteSlot": "Delete",
+  "dashTodayStatus": "Today at school",
+  "dashArrived": "arrived",
+  "dashLate": "late",
+  "dashMissing": "missing",
+  "dashWaiting": "expected",
+  "dashArrivalTime": "Arrivals",
+  "dashArrivalSubtitle": "cumulative since the first arrival",
+  "dashTodayGroups": "Today's groups",
+  "dashByClass": "By class",
+  "dashGroupsSubtitle": "groups with a lesson today, and where it stands",
+  "dashClassSubtitle": "the emptiest first",
+  "dashNoGroupsToday": "No group has a lesson today",
+  "dashNoClassData": "No class information",
+  "dashRecentArrivals": "Latest arrivals",
+  "dashNobodyYet": "Nobody has arrived yet",
+  "dashArrivedNoTime": "People have arrived, but no time was recorded",
+  "dashNoClass": "No class",
+  "dashLessonRunning": "in progress",
+  "dashLessonUpcoming": "not started",
+  "dashLessonFinished": "finished",
+  "dashShowLess": "Show less",
+  "dashControlPanel": "Dashboard",
+  "dashMoreClasses": "{count} more",
+  "@dashMoreClasses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -1758,4 +1758,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteSlot => 'Delete';
+
+  @override
+  String get dashTodayStatus => 'Today at school';
+
+  @override
+  String get dashArrived => 'arrived';
+
+  @override
+  String get dashLate => 'late';
+
+  @override
+  String get dashMissing => 'missing';
+
+  @override
+  String get dashWaiting => 'expected';
+
+  @override
+  String get dashArrivalTime => 'Arrivals';
+
+  @override
+  String get dashArrivalSubtitle => 'cumulative since the first arrival';
+
+  @override
+  String get dashTodayGroups => 'Today\'s groups';
+
+  @override
+  String get dashByClass => 'By class';
+
+  @override
+  String get dashGroupsSubtitle =>
+      'groups with a lesson today, and where it stands';
+
+  @override
+  String get dashClassSubtitle => 'the emptiest first';
+
+  @override
+  String get dashNoGroupsToday => 'No group has a lesson today';
+
+  @override
+  String get dashNoClassData => 'No class information';
+
+  @override
+  String get dashRecentArrivals => 'Latest arrivals';
+
+  @override
+  String get dashNobodyYet => 'Nobody has arrived yet';
+
+  @override
+  String get dashArrivedNoTime =>
+      'People have arrived, but no time was recorded';
+
+  @override
+  String get dashNoClass => 'No class';
+
+  @override
+  String get dashLessonRunning => 'in progress';
+
+  @override
+  String get dashLessonUpcoming => 'not started';
+
+  @override
+  String get dashLessonFinished => 'finished';
+
+  @override
+  String get dashShowLess => 'Show less';
+
+  @override
+  String get dashControlPanel => 'Dashboard';
+
+  @override
+  String dashMoreClasses(int count) {
+    return '$count more';
+  }
 }

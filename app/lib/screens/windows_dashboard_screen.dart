@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smartschool_app/generated/app_localizations.dart';
 
 import '../core/design_tokens.dart';
 import '../models/attendance.dart';
@@ -76,6 +77,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     final attendance = context.watch<AttendanceProvider>();
     final students = context.watch<StudentProvider>();
     final colors = context.colors;
+    final l10n = AppLocalizations.of(context)!;
 
     final groupMode = _groupMode ?? false;
 
@@ -118,30 +120,30 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
           // card. They were two blocks with a gap between them, which spent
           // the top third of the screen saying one thing twice.
           _Card(
-            title: 'Bugungi holat',
+            title: l10n.dashTodayStatus,
             leading: _Headline(arrived: arrived, total: total),
             child: AttendanceSplitBar(
               slices: [
                 StatusSlice(
-                  label: 'keldi',
+                  label: l10n.dashArrived,
                   count: present,
                   color: colors.success,
                   icon: Icons.check_circle_rounded,
                 ),
                 StatusSlice(
-                  label: 'kech qoldi',
+                  label: l10n.dashLate,
                   count: late,
                   color: colors.warning,
                   icon: Icons.schedule_rounded,
                 ),
                 StatusSlice(
-                  label: 'kelmadi',
+                  label: l10n.dashMissing,
                   count: absent,
                   color: colors.danger,
                   icon: Icons.cancel_rounded,
                 ),
                 StatusSlice(
-                  label: 'kutilmoqda',
+                  label: l10n.dashWaiting,
                   count: pending,
                   color: colors.textMuted,
                   icon: Icons.hourglass_empty_rounded,
@@ -155,8 +157,8 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
           LayoutBuilder(
             builder: (context, constraints) {
               final timeline = _Card(
-                title: 'Kelish vaqti',
-                subtitle: 'kun boshidan hozirgacha to\'plangan',
+                title: l10n.dashArrivalTime,
+                subtitle: l10n.dashArrivalSubtitle,
                 child: ArrivalTimelineChart(
                   points: _arrivalCurve(live),
                   total: total,
@@ -166,15 +168,19 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
               // questions of it. A school wants the whole roll, all day. An
               // academy wants the room in front of it right now.
               final classes = _Card(
-                title: groupMode ? 'Bugungi guruhlar' : 'Sinflar bo\'yicha',
+                title: groupMode ? l10n.dashTodayGroups : l10n.dashByClass,
                 subtitle: groupMode
-                    ? 'darsi bor guruhlar va ularning holati'
-                    : 'eng ko\'p yetishmayotgani yuqorida',
+                    ? l10n.dashGroupsSubtitle
+                    : l10n.dashClassSubtitle,
                 child: ClassAttendanceBars(
-                  rows: _byClass(live, groupMode: groupMode),
+                  rows: _byClass(
+                    live,
+                    groupMode: groupMode,
+                    noClass: l10n.dashNoClass,
+                  ),
                   emptyMessage: groupMode
-                      ? 'Bugun darsi bor guruh yo\'q'
-                      : 'Sinf ma\'lumoti kelmadi',
+                      ? l10n.dashNoGroupsToday
+                      : l10n.dashNoClassData,
                 ),
               );
 
@@ -203,7 +209,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     );
 
     if (widget.isIntegrated) return body;
-    return AppShell(title: 'Boshqaruv paneli', child: body);
+    return AppShell(title: l10n.dashControlPanel, child: body);
   }
 
   Map<AttendanceStatus, int> _countByStatus(List<LiveAttendance> live) {
@@ -255,8 +261,8 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
   List<ClassAttendance> _byClass(
     List<LiveAttendance> live, {
     required bool groupMode,
+    required String noClass,
   }) {
-    const noClass = 'Sinfsiz';
     final totals = <String, int>{};
     final here = <String, int>{};
     final states = <String, LessonState>{};
@@ -432,6 +438,7 @@ class _RecentArrivals extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final l10n = AppLocalizations.of(context)!;
     // Whoever arrived, with whatever time is known about them. Filtering on
     // the arrival time instead left this list empty for a school whose
     // pupils were marked present from the journal rather than by a camera.
@@ -460,7 +467,7 @@ class _RecentArrivals extends StatelessWidget {
         height: 80,
         child: Center(
           child: Text(
-            'Hali hech kim kelmadi',
+            l10n.dashNobodyYet,
             style: TextStyle(fontSize: 12.5, color: colors.textMuted),
           ),
         ),
@@ -492,7 +499,9 @@ class _RecentArrivals extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  row.status == AttendanceStatus.late ? 'kech qoldi' : 'keldi',
+                  row.status == AttendanceStatus.late
+                      ? l10n.dashLate
+                      : l10n.dashArrived,
                   style: TextStyle(fontSize: 11.5, color: colors.textMuted),
                 ),
                 const SizedBox(width: 14),

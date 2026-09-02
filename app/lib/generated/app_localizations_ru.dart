@@ -1733,7 +1733,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get schoolActiveSettingHint =>
-      'Когда выключено, по всей школе не записывается ни "пришёл", ни "не пришёл" -- используйте, чтобы приостановить учёт, пока камеры ещё не установлены';
+      'Когда выключено, по всей школе не записывается ни \"пришёл\", ни \"не пришёл\" -- используйте, чтобы приостановить учёт, пока камеры ещё не установлены';
 
   @override
   String get cameraGroups => 'Группы';
@@ -1755,4 +1755,75 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get deleteSlot => 'Удалить';
+
+  @override
+  String get dashTodayStatus => 'Сегодня в школе';
+
+  @override
+  String get dashArrived => 'пришли';
+
+  @override
+  String get dashLate => 'опоздали';
+
+  @override
+  String get dashMissing => 'отсутствуют';
+
+  @override
+  String get dashWaiting => 'ожидаются';
+
+  @override
+  String get dashArrivalTime => 'Время прихода';
+
+  @override
+  String get dashArrivalSubtitle => 'накопительно с начала дня';
+
+  @override
+  String get dashTodayGroups => 'Сегодняшние группы';
+
+  @override
+  String get dashByClass => 'По классам';
+
+  @override
+  String get dashGroupsSubtitle => 'группы с занятием сегодня и их состояние';
+
+  @override
+  String get dashClassSubtitle => 'самые пустые сверху';
+
+  @override
+  String get dashNoGroupsToday => 'Сегодня ни у одной группы нет занятий';
+
+  @override
+  String get dashNoClassData => 'Нет данных о классах';
+
+  @override
+  String get dashRecentArrivals => 'Последние пришедшие';
+
+  @override
+  String get dashNobodyYet => 'Пока никто не пришёл';
+
+  @override
+  String get dashArrivedNoTime => 'Пришедшие есть, но время не записано';
+
+  @override
+  String get dashNoClass => 'Без класса';
+
+  @override
+  String get dashLessonRunning => 'идёт урок';
+
+  @override
+  String get dashLessonUpcoming => 'не началось';
+
+  @override
+  String get dashLessonFinished => 'завершено';
+
+  @override
+  String get dashShowLess => 'Свернуть';
+
+  @override
+  String get dashControlPanel => 'Панель управления';
+
+  @override
+  String dashMoreClasses(int count) {
+    return 'Ещё $count';
+  }
 }
