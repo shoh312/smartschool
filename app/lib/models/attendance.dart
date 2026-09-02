@@ -1,5 +1,21 @@
 enum AttendanceStatus { present, late, absent, leftSchool, notDetected }
 
+/// Today's timetable, from one class's point of view.
+///
+/// `none` is not a stage of a lesson but the absence of one -- the class has
+/// nothing scheduled today. An academy's dashboard leaves those groups out
+/// entirely, which is a different thing from showing them as finished.
+enum LessonState { none, upcoming, running, finished }
+
+LessonState lessonStateFromApi(String? value) {
+  return switch (value) {
+    'upcoming' => LessonState.upcoming,
+    'running' => LessonState.running,
+    'finished' => LessonState.finished,
+    _ => LessonState.none,
+  };
+}
+
 AttendanceStatus attendanceStatusFromApi(String? value) {
   return switch (value) {
     'present' => AttendanceStatus.present,
@@ -75,7 +91,7 @@ class LiveAttendance {
     required this.attendanceDate,
     this.classId,
     this.className,
-    this.classInSession = false,
+    this.classLessonState = LessonState.none,
     this.cameraId,
     this.timeIn,
     this.timeOut,
@@ -95,10 +111,12 @@ class LiveAttendance {
   final int? classId;
   final String? className;
 
-  /// Whether this pupil's class is in a lesson at this moment. An academy's
-  /// dashboard shows only the groups that are actually in the building, and
-  /// a group whose lesson has finished drops out of the panel.
-  final bool classInSession;
+  /// What today's timetable says about this pupil's class right now.
+  final LessonState classLessonState;
+
+  /// Whether the class has anything scheduled today at all. Not the same as
+  /// "finished": a group with no lesson today is not part of today.
+  bool get hasLessonToday => classLessonState != LessonState.none;
 
   final int? cameraId;
   final DateTime? timeIn;
@@ -124,7 +142,9 @@ class LiveAttendance {
       attendanceDate: DateTime.parse(json['attendance_date'] as String),
       classId: json['class_id'] as int?,
       className: json['class_name'] as String?,
-      classInSession: json['class_in_session'] as bool? ?? false,
+      classLessonState: lessonStateFromApi(
+        json['class_lesson_state'] as String?,
+      ),
       cameraId: json['camera_id'] as int?,
       timeIn: _parseDateTime(json['time_in']),
       timeOut: _parseDateTime(json['time_out']),

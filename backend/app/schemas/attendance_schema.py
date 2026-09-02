@@ -37,7 +37,9 @@ class LiveAttendanceStatus(BaseModel):
     last_name: str
     class_id: Optional[int] = None
     class_name: Optional[str] = None
-    class_in_session: bool = False
+    # "none" | "upcoming" | "running" | "finished" -- what today's timetable
+    # says about this pupil's class at this moment.
+    class_lesson_state: str = "none"
     status: str
     attendance_date: date
     time_in: Optional[datetime] = None

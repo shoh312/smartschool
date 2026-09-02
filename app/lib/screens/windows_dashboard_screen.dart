@@ -77,7 +77,16 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     final students = context.watch<StudentProvider>();
     final colors = context.colors;
 
-    final live = attendance.live;
+    final groupMode = _groupMode ?? false;
+
+    // In group mode the day is only the groups that have a lesson today.
+    // Counting the whole roster there would put an academy's headline
+    // against two hundred pupils when forty are expected in the building --
+    // a percentage that is never anywhere near a hundred and never means
+    // anything.
+    final live = groupMode
+        ? attendance.live.where((row) => row.hasLessonToday).toList()
+        : attendance.live;
     final counts = _countByStatus(live);
     final present = counts[AttendanceStatus.present] ?? 0;
     final late = counts[AttendanceStatus.late] ?? 0;
@@ -85,7 +94,9 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     final pending = counts[AttendanceStatus.notDetected] ?? 0;
     final left = counts[AttendanceStatus.leftSchool] ?? 0;
     final arrived = present + late + left;
-    final total = live.isEmpty ? students.students.length : live.length;
+    final total = live.isEmpty && !groupMode
+        ? students.students.length
+        : live.length;
 
     final body = Scrollbar(
       controller: _scrollController,
@@ -154,16 +165,15 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
               // Two different panels, because the two schools ask different
               // questions of it. A school wants the whole roll, all day. An
               // academy wants the room in front of it right now.
-              final groupMode = _groupMode ?? false;
               final classes = _Card(
-                title: groupMode ? 'Hozirgi guruhlar' : 'Sinflar bo\'yicha',
+                title: groupMode ? 'Bugungi guruhlar' : 'Sinflar bo\'yicha',
                 subtitle: groupMode
-                    ? 'darsi ketayotganlar'
+                    ? 'darsi bor guruhlar va ularning holati'
                     : 'eng ko\'p yetishmayotgani yuqorida',
                 child: ClassAttendanceBars(
                   rows: _byClass(live, groupMode: groupMode),
                   emptyMessage: groupMode
-                      ? 'Hozir darsi ketayotgan guruh yo\'q'
+                      ? 'Bugun darsi bor guruh yo\'q'
                       : 'Sinf ma\'lumoti kelmadi',
                 ),
               );
@@ -242,6 +252,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
     const noClass = 'Sinfsiz';
     final totals = <String, int>{};
     final here = <String, int>{};
+    final states = <String, LessonState>{};
     for (final row in live) {
       // In group mode only the groups whose lesson is running right now.
       // An academy runs several groups through a room in a day, and one
@@ -250,7 +261,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
       //
       // A school keeps every class listed all day: its classes are in the
       // building whether or not a particular period is running.
-      if (groupMode && !row.classInSession) continue;
+      if (groupMode && !row.hasLessonToday) continue;
 
       // Pupils with no class are counted under their own heading rather
       // than dropped. Dropping them made this panel add up to a hundred and
@@ -261,6 +272,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
           ? noClass
           : row.className!;
       totals[name] = (totals[name] ?? 0) + 1;
+      states[name] = row.classLessonState;
       if (_hasArrived(row)) here[name] = (here[name] ?? 0) + 1;
     }
 
@@ -270,6 +282,7 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
           name: entry.key,
           present: here[entry.key] ?? 0,
           total: entry.value,
+          state: states[entry.key] ?? LessonState.none,
         ),
     ];
   }

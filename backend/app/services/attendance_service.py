@@ -642,6 +642,56 @@ def attendance_history(
     ).limit(limit).all()
 
 
+# What today's timetable says about one class, right now.
+#
+# "none" is not a state of a lesson, it is the absence of one: the class has
+# nothing scheduled today at all. An academy's dashboard uses it to leave
+# such a group out entirely, which is different from showing it as finished.
+LESSON_NONE = "none"
+LESSON_UPCOMING = "upcoming"
+LESSON_RUNNING = "running"
+LESSON_FINISHED = "finished"
+
+
+def class_lesson_states(db: Session, now: datetime | None = None) -> dict[int, str]:
+    """Today's lesson state per class: not scheduled, not started yet,
+    running, or over.
+
+    One pass over today's timetable rather than three questions asked
+    separately, because the three answers have to agree: a group cannot be
+    both finished and upcoming, and computing them apart is how that
+    happens.
+
+    Half-open windows, like `covers`: a lesson ending at 11:00 and one
+    starting at 11:00 are back to back, and the group that has just arrived
+    is the one that counts as running.
+    """
+    now = now or datetime.now()
+    weekday = now.weekday()
+    minutes_now = now.hour * 60 + now.minute
+
+    spans: dict[int, list[tuple[int, int]]] = {}
+    for lesson in db.query(Lesson).filter(Lesson.day_of_week == weekday).all():
+        try:
+            hours, minutes = lesson.start_time.split(":")
+            start = int(hours) * 60 + int(minutes)
+        except (ValueError, AttributeError):
+            continue
+        spans.setdefault(lesson.class_id, []).append(
+            (start, start + (lesson.duration_minutes or 45))
+        )
+
+    states: dict[int, str] = {}
+    for class_id, windows in spans.items():
+        if any(start <= minutes_now < end for start, end in windows):
+            states[class_id] = LESSON_RUNNING
+        elif any(minutes_now < start for start, _ in windows):
+            states[class_id] = LESSON_UPCOMING
+        else:
+            states[class_id] = LESSON_FINISHED
+    return states
+
+
 def classes_in_session_now(db: Session, now: datetime | None = None) -> set[int]:
     """Classes whose lesson is running at this moment.
 

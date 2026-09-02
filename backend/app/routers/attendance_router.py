@@ -19,7 +19,7 @@ from app.schemas.attendance_schema import (
 )
 from app.services.attendance_service import (
     attendance_history,
-    classes_in_session_now,
+    class_lesson_states,
     mark_absent_students,
     mark_left_school_students,
 )
@@ -79,7 +79,7 @@ def live_attendance_status(
         query = query.filter(Student.class_id == class_id)
 
     class_names = {row.id: row.name for row in db.query(Class).all()}
-    in_session = classes_in_session_now(db)
+    lesson_states = class_lesson_states(db)
 
     response = []
     for student, attendance in query.all():
@@ -90,7 +90,7 @@ def live_attendance_status(
                 last_name=student.last_name,
                 class_id=student.class_id,
                 class_name=class_names.get(student.class_id),
-                class_in_session=student.class_id in in_session,
+                class_lesson_state=lesson_states.get(student.class_id, "none"),
                 status=attendance.status if attendance else "not_detected",
                 attendance_date=today,
                 time_in=attendance.time_in if attendance else None,

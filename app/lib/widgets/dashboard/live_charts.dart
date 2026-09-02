@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/design_tokens.dart';
+import '../../models/attendance.dart';
 
 /// Charts for the desktop dashboard, drawn from the live attendance feed.
 ///
@@ -405,11 +406,17 @@ class ClassAttendance {
     required this.name,
     required this.present,
     required this.total,
+    this.state = LessonState.none,
   });
 
   final String name;
   final int present;
   final int total;
+
+  /// Where today's lesson for this group stands. Shown as words beside the
+  /// bar in group mode, because "0 present" means something entirely
+  /// different for a group that has not started than for one that is over.
+  final LessonState state;
 
   double get rate => total == 0 ? 0 : present / total;
 }
@@ -516,6 +523,14 @@ class _ClassBar extends StatelessWidget {
               style: TextStyle(fontSize: 12.5, color: colors.textSecondary),
             ),
           ),
+          // Where today's lesson stands, in words. "0 present" for a group
+          // that has not started yet and one whose lesson is over are the
+          // same number and completely different news, and the bar alone
+          // cannot tell them apart.
+          if (row.state != LessonState.none) ...[
+            _LessonStateChip(state: row.state, colors: colors),
+            const SizedBox(width: 10),
+          ],
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -581,6 +596,63 @@ class _ChartEmptyState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Today's lesson, in a word and an icon.
+///
+/// Deliberately not colour alone: "running" green and "finished" grey are
+/// the sort of pair a reader guesses wrong at a glance, and on the light
+/// theme the greens sit below 3:1 against the card anyway.
+class _LessonStateChip extends StatelessWidget {
+  const _LessonStateChip({required this.state, required this.colors});
+
+  final LessonState state;
+  final AppColorScheme colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, icon, color) = switch (state) {
+      LessonState.running => (
+        'dars ketyapti',
+        Icons.play_circle_rounded,
+        colors.success,
+      ),
+      LessonState.upcoming => (
+        'boshlanmadi',
+        Icons.schedule_rounded,
+        colors.textMuted,
+      ),
+      LessonState.finished => (
+        'tugadi',
+        Icons.check_circle_outline_rounded,
+        colors.textSecondary,
+      ),
+      LessonState.none => ('', Icons.remove, colors.textMuted),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
