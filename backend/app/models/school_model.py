@@ -44,4 +44,14 @@ class School(Base):
         Boolean, default=False, server_default=text("false"), nullable=False
     )
 
+    # A school's own kill switch for Robita SMS -- separate from
+    # SMS_PROVIDER in .env, which is a deployment-wide setting nobody at
+    # the school can reach. A director who has just loaded a schedule but
+    # has no camera watching it yet needs to be able to stop "your child is
+    # absent" texts from going out before they turn attendance tracking
+    # back on, without an engineer touching the server.
+    sms_enabled = Column(
+        Boolean, default=True, server_default=text("true"), nullable=False
+    )
+
     created_at = Column(TIMESTAMP, server_default=func.now())

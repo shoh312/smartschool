@@ -1732,6 +1732,20 @@ class AppLocalizationsTg extends AppLocalizations {
       'Барои академияҳо: як синфхона, дар як рӯз якчанд гурӯҳ. Камера ба синфхона вобаста мешавад ва ҷадвал муайян мекунад, ки кадом гурӯҳ дар пеши он аст';
 
   @override
+  String get smsEnabledSetting => 'Огоҳиномаҳои SMS';
+
+  @override
+  String get smsEnabledSettingHint =>
+      'Ҳангоми хомӯш будан ба волидон дар бораи ҳозиру ғоиб будан ва рамзи воридшавӣ SMS фиристода намешавад -- ин вақте лозим аст, ки ҷадвал воридшуда, аммо камера ҳанӯз пайваст нашудааст';
+
+  @override
+  String get schoolActiveSetting => 'Бақайдгирии ҳозиру ғоиб';
+
+  @override
+  String get schoolActiveSettingHint =>
+      'Ҳангоми хомӯш будан дар тамоми мактаб на "омад" ва на "наомад" сабт намешавад -- инро истифода баред, то камераҳо воқеан насб шаванд';
+
+  @override
   String get cameraGroups => 'Гурӯҳҳо';
 
   @override

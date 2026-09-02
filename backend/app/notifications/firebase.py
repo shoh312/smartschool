@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.notification_model import DeviceToken, NotificationEvent
 from app.models.parent_model import Parent
+from app.models.school_model import School
 from app.services.auth_service import get_parent_family_ids
 from app.services.robita_sms import client as robita_client, to_local_number
 from app.utils.config import settings
@@ -78,8 +79,11 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
         # Nobody's phone is registered for push -- the parent never opened
         # the app. Fall back to SMS (Robita has no API, so this drives its
         # web panel directly, see robita_sms.py) rather than losing the
-        # notification entirely.
-        if settings.sms_provider == "robita" and parent and parent.phone:
+        # notification entirely -- unless the school has switched SMS off
+        # (see School.sms_enabled), which a director does when a schedule
+        # is entered but no camera is watching it yet.
+        school = db.query(School).filter(School.id == parent.school_id).first() if parent else None
+        if settings.sms_provider == "robita" and parent and parent.phone and (school is None or school.sms_enabled):
             ok, detail = robita_client.send(
                 to_local_number(parent.phone),
                 f"{event.title}. {event.body}",

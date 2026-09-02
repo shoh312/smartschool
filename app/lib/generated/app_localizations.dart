@@ -3260,6 +3260,30 @@ abstract class AppLocalizations {
   /// **'For academies: one room, several groups a day. A camera is tied to the room and the schedule decides whose lesson is in front of it'**
   String get groupModeSettingHint;
 
+  /// No description provided for @smsEnabledSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS notifications'**
+  String get smsEnabledSetting;
+
+  /// No description provided for @smsEnabledSettingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, no attendance or credential SMS is sent to parents -- turn off while a schedule is entered but no camera is watching it yet'**
+  String get smsEnabledSettingHint;
+
+  /// No description provided for @schoolActiveSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance tracking'**
+  String get schoolActiveSetting;
+
+  /// No description provided for @schoolActiveSettingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, nothing is recorded as present or absent for the whole school -- use this to pause tracking until cameras are actually in place'**
+  String get schoolActiveSettingHint;
+
   /// No description provided for @cameraGroups.
   ///
   /// In en, this message translates to:

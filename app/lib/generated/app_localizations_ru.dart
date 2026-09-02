@@ -1722,6 +1722,20 @@ class AppLocalizationsRu extends AppLocalizations {
       'Для академий: один кабинет, несколько групп в день. Камера привязана к кабинету, а расписание решает, чья группа перед ней';
 
   @override
+  String get smsEnabledSetting => 'SMS-уведомления';
+
+  @override
+  String get smsEnabledSettingHint =>
+      'Когда выключено, родителям не отправляются SMS о посещаемости и данные для входа -- выключите, пока расписание внесено, а камеры ещё нет';
+
+  @override
+  String get schoolActiveSetting => 'Учёт посещаемости';
+
+  @override
+  String get schoolActiveSettingHint =>
+      'Когда выключено, по всей школе не записывается ни "пришёл", ни "не пришёл" -- используйте, чтобы приостановить учёт, пока камеры ещё не установлены';
+
+  @override
   String get cameraGroups => 'Группы';
 
   @override

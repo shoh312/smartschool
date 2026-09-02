@@ -97,6 +97,12 @@ def delete_class(class_id: int, db: Session = Depends(get_db), director: Directo
     from app.models.attendance_model import Attendance
     from app.models.notification_model import NotificationEvent
     from app.models.journal_model import Grade
+    from app.models.lesson_attendance_model import LessonAttendance
+    from app.models.material_model import MaterialAttempt, MaterialAssignment
+    from app.models.lesson_model import Lesson
+    from app.models.lesson_log_model import LessonLog
+    from app.models.announcement_model import Announcement
+    from app.models.school_event_model import SchoolEvent
     from app.models.teacher_model import TeacherClass
 
     students = db.query(Student).filter(Student.class_id == class_id).all()
@@ -112,7 +118,32 @@ def delete_class(class_id: int, db: Session = Depends(get_db), director: Directo
         db.query(Attendance).filter(Attendance.id.in_(attendance_ids)).delete(synchronize_session=False)
 
     db.query(Grade).filter((Grade.class_id == class_id) | (Grade.student_id.in_(student_ids))).delete(synchronize_session=False)
+    # Same FK-violation issue grades/attendance used to have -- neither
+    # table has an ORM cascade from Student, so a class with any recorded
+    # lesson attendance or material attempt would 500 on delete otherwise.
+    if student_ids:
+        db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(student_ids)).delete(synchronize_session=False)
+        db.query(MaterialAttempt).filter(MaterialAttempt.student_id.in_(student_ids)).delete(synchronize_session=False)
     db.query(TeacherClass).filter(TeacherClass.class_id == class_id).delete(synchronize_session=False)
+
+    # The timetable (lessons) and homework assignments (materials) also key
+    # off class_id with no ORM cascade, and lessons themselves have their
+    # own dependents (attendance taken against them, teacher's day-by-day
+    # logs) that block the delete one level further down.
+    lesson_ids = [l.id for l in db.query(Lesson.id).filter(Lesson.class_id == class_id).all()]
+    if lesson_ids:
+        db.query(LessonAttendance).filter(LessonAttendance.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
+        db.query(LessonLog).filter(LessonLog.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
+    db.query(Lesson).filter(Lesson.class_id == class_id).delete(synchronize_session=False)
+    # material_attempts cascades automatically (ON DELETE CASCADE on
+    # assignment_id), so deleting the assignment is enough here.
+    db.query(MaterialAssignment).filter(MaterialAssignment.class_id == class_id).delete(synchronize_session=False)
+
+    # Announcements/events about this class stay as school-wide history --
+    # class_id is nullable on both, matching how Camera is detached above
+    # rather than deleted.
+    db.query(Announcement).filter(Announcement.class_id == class_id).update({"class_id": None}, synchronize_session=False)
+    db.query(SchoolEvent).filter(SchoolEvent.class_id == class_id).update({"class_id": None}, synchronize_session=False)
     # "homework" has no ORM model (the feature was removed from the app) but
     # the table -- and its FK to classes -- is still in the database on
     # installations that had it. A fresh database never creates it, so guard
@@ -252,6 +283,10 @@ def update_school_settings(
         school.live_video_enabled = payload.live_video_enabled
     if payload.group_mode is not None:
         school.group_mode = payload.group_mode
+    if payload.sms_enabled is not None:
+        school.sms_enabled = payload.sms_enabled
+    if payload.is_active is not None:
+        school.is_active = payload.is_active
 
     db.commit()
     db.refresh(school)

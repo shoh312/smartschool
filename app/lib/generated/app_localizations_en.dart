@@ -1725,6 +1725,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'For academies: one room, several groups a day. A camera is tied to the room and the schedule decides whose lesson is in front of it';
 
   @override
+  String get smsEnabledSetting => 'SMS notifications';
+
+  @override
+  String get smsEnabledSettingHint =>
+      'When off, no attendance or credential SMS is sent to parents -- turn off while a schedule is entered but no camera is watching it yet';
+
+  @override
+  String get schoolActiveSetting => 'Attendance tracking';
+
+  @override
+  String get schoolActiveSettingHint =>
+      'When off, nothing is recorded as present or absent for the whole school -- use this to pause tracking until cameras are actually in place';
+
+  @override
   String get cameraGroups => 'Groups';
 
   @override

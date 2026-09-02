@@ -162,6 +162,8 @@ def ensure_database_schema():
         "ALTER TABLE camera_positions ADD COLUMN IF NOT EXISTS subject VARCHAR",
         "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS position_id INTEGER REFERENCES camera_positions(id) ON DELETE CASCADE",
         "CREATE INDEX IF NOT EXISTS ix_lessons_position_id ON lessons (position_id)",
+        "ALTER TABLE schools ADD COLUMN IF NOT EXISTS sms_enabled BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE schools ALTER COLUMN sms_enabled SET DEFAULT TRUE",
     ]
 
     with engine.begin() as connection:

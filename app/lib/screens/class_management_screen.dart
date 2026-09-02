@@ -238,14 +238,23 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
                       hintText: l10n.gradeHint,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _startTimeController,
-                    decoration: InputDecoration(
-                      labelText: l10n.startTime,
-                      hintText: 'HH:MM',
+                  // Hidden in group mode: the backend never reads a
+                  // group's start_time/timetable off the Class (see
+                  // live_detection.py's "the slot is the window here").
+                  // An academy group's actual hours come from the camera
+                  // position slot it's assigned when the camera is set
+                  // up, same reasoning as hiding the lesson-schedule icon
+                  // below.
+                  if (!_groupMode) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _startTimeController,
+                      decoration: InputDecoration(
+                        labelText: l10n.startTime,
+                        hintText: 'HH:MM',
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -270,77 +279,84 @@ class _ClassManagementScreenState extends State<ClassManagementScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    l10n.timetableLabel,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.totalHoursPerWeek(_totalHours().toStringAsFixed(1)),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: context.colors.textSecondary,
+                  // Same reasoning as the start-time field above: an
+                  // academy's per-day subject list is never read by the
+                  // backend for a group-mode class (only the camera
+                  // position slot is), so building one here would just be
+                  // a second, unused place to enter a schedule.
+                  if (!_groupMode) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      l10n.timetableLabel,
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        l10n.weekday1,
-                        l10n.weekday2,
-                        l10n.weekday3,
-                        l10n.weekday4,
-                        l10n.weekday5,
-                        l10n.weekday6,
-                      ].asMap().entries.map((dayLabelEntry) {
-                        final i = dayLabelEntry.key;
-                        final dayLabel = dayLabelEntry.value;
-                        final d = _dayKeys[i];
-                        final hours = _dayHours(d);
-                        final selected = _selectedDay == d;
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            right: i < _dayKeys.length - 1 ? 6 : 0,
-                          ),
-                          child: FilterChip(
-                            label: Text(
-                              '$dayLabel${hours > 0 ? " ${hours.toStringAsFixed(1)}h" : ""}',
-                            ),
-                            selected: selected,
-                            onSelected: (_) => setState(() => _selectedDay = d),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (currentLessons.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: Text(
-                          l10n.noLessonsForDay,
-                          style: TextStyle(color: context.colors.textMuted),
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.totalHoursPerWeek(_totalHours().toStringAsFixed(1)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.colors.textSecondary,
                       ),
-                    )
-                  else
-                    ...currentLessons.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final lesson = entry.value;
-                      return _LessonRow(
-                        key: ValueKey('${_selectedDay}_$i'),
-                        lesson: lesson,
-                        onRemove: () => _removeLesson(i),
-                      );
-                    }),
-                  const SizedBox(height: 4),
-                  OutlinedButton.icon(
-                    onPressed: _addLesson,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(l10n.addLesson),
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          l10n.weekday1,
+                          l10n.weekday2,
+                          l10n.weekday3,
+                          l10n.weekday4,
+                          l10n.weekday5,
+                          l10n.weekday6,
+                        ].asMap().entries.map((dayLabelEntry) {
+                          final i = dayLabelEntry.key;
+                          final dayLabel = dayLabelEntry.value;
+                          final d = _dayKeys[i];
+                          final hours = _dayHours(d);
+                          final selected = _selectedDay == d;
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              right: i < _dayKeys.length - 1 ? 6 : 0,
+                            ),
+                            child: FilterChip(
+                              label: Text(
+                                '$dayLabel${hours > 0 ? " ${hours.toStringAsFixed(1)}h" : ""}',
+                              ),
+                              selected: selected,
+                              onSelected: (_) => setState(() => _selectedDay = d),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (currentLessons.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Text(
+                            l10n.noLessonsForDay,
+                            style: TextStyle(color: context.colors.textMuted),
+                          ),
+                        ),
+                      )
+                    else
+                      ...currentLessons.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final lesson = entry.value;
+                        return _LessonRow(
+                          key: ValueKey('${_selectedDay}_$i'),
+                          lesson: lesson,
+                          onRemove: () => _removeLesson(i),
+                        );
+                      }),
+                    const SizedBox(height: 4),
+                    OutlinedButton.icon(
+                      onPressed: _addLesson,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(l10n.addLesson),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Row(
                     children: [

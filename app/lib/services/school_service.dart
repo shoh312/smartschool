@@ -124,12 +124,16 @@ class SchoolService {
   Future<SchoolSettings> updateSettings({
     bool? liveVideoEnabled,
     bool? groupMode,
+    bool? smsEnabled,
+    bool? isActive,
   }) async {
     final data = await _apiClient.put(
       '/school/settings',
       body: {
         if (liveVideoEnabled != null) 'live_video_enabled': liveVideoEnabled,
         if (groupMode != null) 'group_mode': groupMode,
+        if (smsEnabled != null) 'sms_enabled': smsEnabled,
+        if (isActive != null) 'is_active': isActive,
       },
     ) as Map<String, dynamic>;
     return SchoolSettings.fromJson(data);

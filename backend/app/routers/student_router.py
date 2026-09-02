@@ -327,11 +327,12 @@ def director_create_student(
 
     # A parent who just got a fresh password (see above) has no app and no
     # device token yet -- the in-app notification above cannot reach them.
-    # SMS is the only channel available at this point, so it always fires
-    # here (not conditioned on push having failed, unlike the attendance
-    # fallback in notifications/firebase.py).
-    if parent_plaintext_password and settings.sms_provider == "robita":
-        school = db.query(School).filter(School.id == director.school_id).first()
+    # SMS is the only channel available at this point, so it fires
+    # unconditionally here (not gated on push having failed, unlike the
+    # attendance fallback in notifications/firebase.py) except for the
+    # school's own SMS kill switch (School.sms_enabled).
+    school = db.query(School).filter(School.id == director.school_id).first()
+    if parent_plaintext_password and settings.sms_provider == "robita" and (school is None or school.sms_enabled):
         school_name = school.name if school else "SmartFlow"
         message = (
             "SmartFlow: фарзандатон %s %s ба мактаби «%s» сабти ном шуд.\n"
@@ -545,6 +546,8 @@ def delete_student(
     from app.models.attendance_model import Attendance
     from app.models.notification_model import NotificationEvent
     from app.models.journal_model import Grade
+    from app.models.lesson_attendance_model import LessonAttendance
+    from app.models.material_model import MaterialAttempt
 
     # 1. Delete notifications related to the student's attendances
     attendance_ids = [a.id for a in db.query(Attendance).filter(Attendance.student_id == student_id).all()]
@@ -559,6 +562,13 @@ def delete_student(
 
     # 4. Delete grades entered for this student
     db.query(Grade).filter(Grade.student_id == student_id).delete(synchronize_session=False)
+
+    # 4b. Delete per-lesson attendance and material-assignment attempts --
+    # both carry a student_id FK with no ORM cascade, so left alone they
+    # block the delete below with the same FK violation grades/attendance
+    # used to.
+    db.query(LessonAttendance).filter(LessonAttendance.student_id == student_id).delete(synchronize_session=False)
+    db.query(MaterialAttempt).filter(MaterialAttempt.student_id == student_id).delete(synchronize_session=False)
 
     # 5. Tell the Public Server this student is gone -- deactivate, not a
     # hard delete, so history already synced (old grades/attendance) doesn't

@@ -105,6 +105,25 @@ def record_detection(
 ) -> Attendance:
     detected_at = detected_at or datetime.now()
     today = detected_at.date()
+
+    # A paused school (School.is_active) records nothing at all -- not
+    # even a "present", so a camera left plugged in during setup can't
+    # write attendance the director hasn't agreed is real yet. Returned
+    # rather than raised: the caller (live_detection.py) only reads
+    # `.status` off the result.
+    from app.models.school_model import School
+
+    student_school_id = db.query(Student.school_id).filter(Student.id == student_id).scalar()
+    if student_school_id is not None:
+        school = db.query(School).filter(School.id == student_school_id).first()
+        if school and not school.is_active:
+            return Attendance(
+                student_id=student_id,
+                camera_id=camera_id,
+                status="school_paused",
+                attendance_date=today,
+            )
+
     attendance = get_daily_attendance(db, student_id, today)
     class_start = _class_start_from_camera(db, camera_id) if camera_id is not None else None
 
@@ -230,6 +249,25 @@ def mark_absent_students(
 
     if not in_session:
         return []
+
+    # A school pauses itself (School.is_active) between "the schedule is
+    # entered" and "a camera is actually watching it" -- without this, a
+    # class with a real Lesson/CameraPosition row but nobody to detect
+    # presence would get every pupil marked absent, and their parent
+    # texted about it, the first time this job ran.
+    from app.models.class_model import Class
+    from app.models.school_model import School
+
+    inactive_school_ids = {
+        row[0] for row in db.query(School.id).filter(School.is_active == False).all()  # noqa: E712
+    }
+    if inactive_school_ids:
+        paused_class_ids = {
+            row[0] for row in db.query(Class.id).filter(Class.school_id.in_(inactive_school_ids)).all()
+        }
+        in_session -= paused_class_ids
+        if not in_session:
+            return []
 
     active_students = db.query(Student).filter(
         Student.is_active == True,  # noqa: E712

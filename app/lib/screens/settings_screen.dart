@@ -46,18 +46,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _saveSchool({bool? liveVideo, bool? groupMode}) async {
+  Future<void> _saveSchool({
+    bool? liveVideo,
+    bool? groupMode,
+    bool? smsEnabled,
+    bool? isActive,
+  }) async {
     final previous = _school;
     // Moved before the request so the switch answers the finger, not
     // the network; put back below if the server refuses.
     setState(() {
       _savingSchool = true;
-      _school = _school?.copyWith(liveVideoEnabled: liveVideo, groupMode: groupMode);
+      _school = _school?.copyWith(
+        liveVideoEnabled: liveVideo,
+        groupMode: groupMode,
+        smsEnabled: smsEnabled,
+        isActive: isActive,
+      );
     });
     try {
       final saved = await context.read<SchoolService>().updateSettings(
         liveVideoEnabled: liveVideo,
         groupMode: groupMode,
+        smsEnabled: smsEnabled,
+        isActive: isActive,
       );
       if (mounted) setState(() => _school = saved);
     } catch (exception) {
@@ -172,6 +184,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _school!.groupMode,
                     enabled: !_savingSchool,
                     onChanged: (value) => _saveSchool(groupMode: value),
+                  ),
+                  Divider(height: 1, indent: 56, color: context.colors.border),
+                  _SettingSwitch(
+                    icon: Icons.how_to_reg_outlined,
+                    title: l10n.schoolActiveSetting,
+                    subtitle: l10n.schoolActiveSettingHint,
+                    value: _school!.isActive,
+                    enabled: !_savingSchool,
+                    onChanged: (value) => _saveSchool(isActive: value),
+                  ),
+                  Divider(height: 1, indent: 56, color: context.colors.border),
+                  _SettingSwitch(
+                    icon: Icons.sms_outlined,
+                    title: l10n.smsEnabledSetting,
+                    subtitle: l10n.smsEnabledSettingHint,
+                    value: _school!.smsEnabled,
+                    enabled: !_savingSchool,
+                    onChanged: (value) => _saveSchool(smsEnabled: value),
                   ),
                 ],
               ),

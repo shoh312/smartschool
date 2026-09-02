@@ -43,10 +43,21 @@ class CameraResponse(CameraCreate):
 
 
 class SchoolSettings(BaseModel):
-    """The two switches a director owns for their whole school."""
+    """The switches a director owns for their whole school."""
 
     live_video_enabled: bool
     group_mode: bool
+    # Master stop for Robita SMS (credential texts, attendance-SMS fallback)
+    # -- for a school whose schedule is entered but has no camera watching
+    # it yet, so absence texts can be silenced without disabling the
+    # schedule itself.
+    sms_enabled: bool
+    # Pauses attendance recording (both "present" from a camera and
+    # "absent" from the day-end sweep) for the whole school -- for the same
+    # gap between "schedule is entered" and "a camera is actually watching
+    # it" that sms_enabled covers, but for the underlying data rather than
+    # just the notification.
+    is_active: bool
 
     class Config:
         from_attributes = True
@@ -55,6 +66,8 @@ class SchoolSettings(BaseModel):
 class SchoolSettingsUpdate(BaseModel):
     live_video_enabled: Optional[bool] = None
     group_mode: Optional[bool] = None
+    sms_enabled: Optional[bool] = None
+    is_active: Optional[bool] = None
 
 
 class CameraPositionCreate(BaseModel):
