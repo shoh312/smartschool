@@ -103,10 +103,12 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
           32,
         ).add(bottomNavPadding(context)),
         children: [
-          _Header(arrived: arrived, total: total),
-          const SizedBox(height: 22),
+          // The headline number and the split it breaks down into, in one
+          // card. They were two blocks with a gap between them, which spent
+          // the top third of the screen saying one thing twice.
           _Card(
             title: 'Bugungi holat',
+            leading: _Headline(arrived: arrived, total: total),
             child: AttendanceSplitBar(
               slices: [
                 StatusSlice(
@@ -278,8 +280,76 @@ class _WindowsDashboardScreenState extends State<WindowsDashboardScreen> {
       row.status == AttendanceStatus.leftSchool;
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.arrived, required this.total});
+class _Card extends StatelessWidget {
+  const _Card({
+    required this.title,
+    this.subtitle,
+    this.leading,
+    required this.child,
+  });
+
+  final String title;
+  final String? subtitle;
+
+  /// Sits on the title row, right of the heading. Lets the headline figure
+  /// share a card with the breakdown it belongs to instead of floating in
+  /// its own block above it.
+  final Widget? leading;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(fontSize: 12, color: colors.textMuted),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (leading != null) leading!,
+            ],
+          ),
+          SizedBox(height: leading == null ? 16 : 14),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// The day in one line, beside the breakdown rather than above it.
+class _Headline extends StatelessWidget {
+  const _Headline({required this.arrived, required this.total});
 
   final int arrived;
   final int total;
@@ -290,96 +360,46 @@ class _Header extends StatelessWidget {
     final percent = total == 0 ? 0 : (arrived * 100 / total).round();
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bugun maktabda',
-              style: TextStyle(fontSize: 13.5, color: colors.textSecondary),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                // Proportional figures on purpose: equal-width digits make a
-                // display-size number look loose.
-                Text(
-                  '$arrived',
-                  style: TextStyle(
-                    fontSize: 44,
-                    height: 1,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                Text(
-                  ' / $total',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: colors.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '$percent%',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        // Proportional figures on purpose: equal-width digits make a
+        // display-size number look loose.
+        Text(
+          '$arrived',
+          style: TextStyle(
+            fontSize: 34,
+            height: 1,
+            fontWeight: FontWeight.w700,
+            color: colors.textPrimary,
+          ),
         ),
-      ],
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  const _Card({required this.title, this.subtitle, required this.child});
-
-  final String title;
-  final String? subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
+        Text(
+          ' / $total',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: colors.textSecondary,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: colors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '$percent%',
             style: TextStyle(
-              fontSize: 14.5,
+              fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
+              color: colors.primary,
             ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 3),
-            Text(
-              subtitle!,
-              style: TextStyle(fontSize: 12, color: colors.textMuted),
-            ),
-          ],
-          const SizedBox(height: 18),
-          child,
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

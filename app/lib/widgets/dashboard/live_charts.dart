@@ -52,30 +52,36 @@ class AttendanceSplitBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(7),
           child: SizedBox(
-            height: 12,
-            child: total == 0
-                ? ColoredBox(color: colors.surfaceSunken)
-                : Row(
-                    children: [
-                      for (var i = 0; i < slices.length; i++)
-                        if (slices[i].count > 0) ...[
-                          Expanded(
-                            flex: slices[i].count,
-                            child: ColoredBox(color: slices[i].color),
-                          ),
-                          // A 2px gap of the surface, not a border: a stroke
-                          // around each segment would thicken the bar and
-                          // read as chrome.
-                          if (i != slices.length - 1)
-                            SizedBox(
-                              width: 2,
-                              child: ColoredBox(color: colors.surface),
-                            ),
-                        ],
+            height: 14,
+            // Stretched, not centred. A Row centres its children at their
+            // own height by default, and a ColoredBox with no child is zero
+            // tall -- so the bar rendered as nothing at all, leaving a card
+            // with a title, a gap, and a legend for a bar nobody could see.
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (total == 0)
+                  Expanded(child: ColoredBox(color: colors.surfaceSunken))
+                else
+                  for (var i = 0; i < slices.length; i++)
+                    if (slices[i].count > 0) ...[
+                      Expanded(
+                        flex: slices[i].count,
+                        child: ColoredBox(color: slices[i].color),
+                      ),
+                      // A 2px gap of the surface, not a border: a stroke
+                      // around each segment would thicken the bar and
+                      // read as chrome.
+                      if (i != slices.length - 1)
+                        SizedBox(
+                          width: 2,
+                          child: ColoredBox(color: colors.surface),
+                        ),
                     ],
-                  ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 14),
