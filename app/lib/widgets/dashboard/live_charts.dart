@@ -226,6 +226,73 @@ class _ArrivalTimelineChartState extends State<ArrivalTimelineChart> {
   }
 }
 
+/// A smooth path through the points that never turns back on itself.
+///
+/// Fritsch-Carlson monotone cubic interpolation: the tangent at every point
+/// is clamped so each segment stays monotonic between its neighbours. For a
+/// cumulative count that is the whole requirement -- the line may flatten,
+/// but it must never dip, and an ordinary spline dips wherever the data
+/// levels off.
+Path _monotonePath(List<double> xs, List<double> ys) {
+  final path = Path();
+  if (xs.isEmpty) return path;
+  path.moveTo(xs.first, ys.first);
+  if (xs.length == 1) return path;
+
+  final n = xs.length;
+  // Secant slopes between consecutive points.
+  final secants = <double>[];
+  for (var i = 0; i < n - 1; i++) {
+    final dx = xs[i + 1] - xs[i];
+    secants.add(dx == 0 ? 0 : (ys[i + 1] - ys[i]) / dx);
+  }
+
+  final tangents = <double>[secants.first];
+  for (var i = 1; i < n - 1; i++) {
+    // A flat neighbour on either side pins the tangent flat, which is what
+    // stops the curve bulging through a stretch where nobody arrived.
+    if (secants[i - 1] * secants[i] <= 0) {
+      tangents.add(0);
+    } else {
+      tangents.add((secants[i - 1] + secants[i]) / 2);
+    }
+  }
+  tangents.add(secants.last);
+
+  for (var i = 0; i < n - 1; i++) {
+    final dx = xs[i + 1] - xs[i];
+    if (dx == 0) {
+      path.lineTo(xs[i + 1], ys[i + 1]);
+      continue;
+    }
+    // Clamped so the segment cannot overshoot its own endpoints.
+    var m0 = tangents[i];
+    var m1 = tangents[i + 1];
+    if (secants[i] == 0) {
+      m0 = 0;
+      m1 = 0;
+    } else {
+      final a = m0 / secants[i];
+      final b = m1 / secants[i];
+      final h = a * a + b * b;
+      if (h > 9) {
+        final t = 3 / math.sqrt(h);
+        m0 = t * a * secants[i];
+        m1 = t * b * secants[i];
+      }
+    }
+    path.cubicTo(
+      xs[i] + dx / 3,
+      ys[i] + m0 * dx / 3,
+      xs[i + 1] - dx / 3,
+      ys[i + 1] - m1 * dx / 3,
+      xs[i + 1],
+      ys[i + 1],
+    );
+  }
+  return path;
+}
+
 class _ArrivalPainter extends CustomPainter {
   _ArrivalPainter({
     required this.points,
@@ -280,13 +347,20 @@ class _ArrivalPainter extends CustomPainter {
       _label(canvas, '$value', Offset(0, y - 6), text, 10.5);
     }
 
-    final path = Path()..moveTo(xFor(0), yFor(points.first.arrived));
-    for (var i = 1; i < points.length; i++) {
-      // Stepped, not smoothed: arrivals happen at moments, and a curve
-      // through them would invent pupils walking in between.
-      path.lineTo(xFor(i), yFor(points[i - 1].arrived));
-      path.lineTo(xFor(i), yFor(points[i].arrived));
-    }
+    // Smoothed, but only in a way that cannot lie.
+    //
+    // This started as a staircase, on the reasoning that pupils arrive at
+    // moments and a curve through them invents somebody walking in between.
+    // True, and beside the point at forty-odd arrivals: the steps stopped
+    // being information and became texture.
+    //
+    // The smoothing is monotone cubic (Fritsch-Carlson), not the usual
+    // Catmull-Rom, because this is a running total and a running total never
+    // goes down. An ordinary spline overshoots around a flat stretch and
+    // draws a dip -- a picture of pupils un-arriving.
+    final xs = [for (var i = 0; i < points.length; i++) xFor(i)];
+    final ys = [for (final point in points) yFor(point.arrived)];
+    final path = _monotonePath(xs, ys);
 
     final area = Path.from(path)
       ..lineTo(xFor(points.length - 1), 10 + plotHeight)
