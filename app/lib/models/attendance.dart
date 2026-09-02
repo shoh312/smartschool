@@ -73,6 +73,8 @@ class LiveAttendance {
     required this.lastName,
     required this.status,
     required this.attendanceDate,
+    this.classId,
+    this.className,
     this.cameraId,
     this.timeIn,
     this.timeOut,
@@ -84,6 +86,13 @@ class LiveAttendance {
   final String lastName;
   final AttendanceStatus status;
   final DateTime attendanceDate;
+
+  // Sent with the live feed rather than looked up on the client: the pupil
+  // list the app loads separately is not always complete, and joining the
+  // two made classes show nobody present while the header counted dozens.
+  final int? classId;
+  final String? className;
+
   final int? cameraId;
   final DateTime? timeIn;
   final DateTime? timeOut;
@@ -98,6 +107,8 @@ class LiveAttendance {
       lastName: json['last_name'] as String? ?? '',
       status: attendanceStatusFromApi(json['status'] as String?),
       attendanceDate: DateTime.parse(json['attendance_date'] as String),
+      classId: json['class_id'] as int?,
+      className: json['class_name'] as String?,
       cameraId: json['camera_id'] as int?,
       timeIn: _parseDateTime(json['time_in']),
       timeOut: _parseDateTime(json['time_out']),

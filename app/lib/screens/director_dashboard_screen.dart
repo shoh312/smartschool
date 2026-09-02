@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,7 @@ import 'class_attendance_analytics_screen.dart';
 import 'class_diary_screen.dart';
 import 'needs_attention_screen.dart';
 import 'school_calendar_screen.dart';
+import 'windows_dashboard_screen.dart';
 
 class DirectorDashboardScreen extends StatefulWidget {
   const DirectorDashboardScreen({super.key, this.isIntegrated = false});
@@ -45,6 +47,20 @@ class _DirectorDashboardScreenState extends State<DirectorDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Desktop gets its own dashboard entirely.
+    //
+    // Not a wider version of this one: the two are opened for different
+    // reasons. A phone is picked up for a minute to answer one question, so
+    // it shows shortcuts. A desktop in the office stays open all morning,
+    // where a live picture of who has arrived is worth more than a grid of
+    // buttons the director has already learned by heart.
+    //
+    // Windows only, deliberately -- this is the machine the school actually
+    // has on a desk.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+      return WindowsDashboardScreen(isIntegrated: widget.isIntegrated);
+    }
+
     final students = context.watch<StudentProvider>();
     final attendance = context.watch<AttendanceProvider>();
     final school = context.watch<SchoolProvider>();

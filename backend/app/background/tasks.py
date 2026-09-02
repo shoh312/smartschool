@@ -36,6 +36,15 @@ def _live_status_payload(db):
         & (Attendance.attendance_date == today),
     ).filter(Student.is_active == True).all()
 
+    # Class names come from here rather than being joined on the client.
+    #
+    # The desktop dashboard groups the day by class, and it used to do that
+    # by looking each pupil up in the list the app had loaded separately.
+    # The two disagreed -- that list is loaded for a different purpose and
+    # does not always hold every pupil -- so classes showed 0 present while
+    # the header counted 31. One source, one answer.
+    class_names = {row.id: row.name for row in db.query(Class).all()}
+
     return {
         "type": "attendance_status",
         "items": [
@@ -43,6 +52,8 @@ def _live_status_payload(db):
                 "student_id": student.id,
                 "first_name": student.first_name,
                 "last_name": student.last_name,
+                "class_id": student.class_id,
+                "class_name": class_names.get(student.class_id),
                 "status": attendance.status if attendance else "not_detected",
                 "attendance_date": today.isoformat(),
                 "time_in": attendance.time_in.isoformat() if attendance and attendance.time_in else None,
