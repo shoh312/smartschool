@@ -434,4 +434,20 @@
     <string name="ai_generate">Сгенерировать</string>
     <string name="ai_generating">Готовим черновик… это займёт немного времени</string>
     <string name="ai_done">Черновик добавлен. Неиспользуемых блоков пропущено: %1$d — проверьте остальные и сохраните.</string>
+    <string name="ai_short">ИИ</string>
+    <string name="ai_how">Как подготовить черновик?</string>
+    <string name="ai_src_topic">По теме</string>
+    <string name="ai_src_topic_hint">Напишите тему урока — остальное сделает ИИ.</string>
+    <string name="ai_src_photo">По странице учебника</string>
+    <string name="ai_src_photo_hint">Сфотографируйте страницу; вопросы будут по её содержанию.</string>
+    <string name="ai_src_text">По вашему тексту</string>
+    <string name="ai_src_text_hint">Вставьте большой фрагмент, конспект или статью.</string>
+    <string name="ai_topic_optional">Тема (необязательно)</string>
+    <string name="ai_kind">Что подготовить</string>
+    <string name="ai_generating_title">Готовим материал</string>
+    <string name="ai_generating_hint">Обычно 20–40 секунд. Каждый вопрос вы проверите перед сохранением.</string>
+    <string name="ai_step_reading">Читаем источник…</string>
+    <string name="ai_step_writing">Составляем вопросы…</string>
+    <string name="ai_step_checking">Проверяем ответы…</string>
+    <string name="ai_step_polishing">Наводим порядок…</string>
 </resources>

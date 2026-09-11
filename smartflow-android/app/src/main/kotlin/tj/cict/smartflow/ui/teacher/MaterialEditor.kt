@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -270,6 +271,15 @@ fun MaterialEditorScreen(materialId: Int?, onBack: () -> Unit, onSaved: () -> Un
     var aiOpen by remember { mutableStateOf(false) }
     LaunchedEffect(ui.saved) { if (ui.saved) onSaved() }
 
+    if (aiOpen) {
+        AiDraftFlow(
+            generating = ui.generating,
+            onCancel = { aiOpen = false },
+            onGenerate = { ctx, kind, topic, text, photo, q, p, types, diff, lang -> vm.generate(ctx, kind, topic, text, photo, q, p, types, diff, lang) },
+        )
+        return
+    }
+
     PageBackground {
         Column(Modifier.fillMaxSize()) {
             ScreenHeader(if (materialId == null) stringResource(R.string.material_new) else stringResource(R.string.material_edit), onBack = onBack)
@@ -282,9 +292,9 @@ fun MaterialEditorScreen(materialId: Int?, onBack: () -> Unit, onSaved: () -> Un
                 }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ActionPill(stringResource(R.string.add_page), Icons.Rounded.Add) { newKind = "page"; editing = -1 }
-                        ActionPill(stringResource(R.string.add_question), Icons.Rounded.Add) { newKind = "single"; editing = -1 }
-                        ActionPill(stringResource(R.string.ai_draft), Icons.Rounded.AutoAwesome, accent = true) { aiOpen = true }
+                        ActionPill(stringResource(R.string.add_page), Icons.Rounded.Add, Modifier.weight(1f)) { newKind = "page"; editing = -1 }
+                        ActionPill(stringResource(R.string.add_question), Icons.Rounded.Add, Modifier.weight(1f)) { newKind = "single"; editing = -1 }
+                        ActionPill(stringResource(R.string.ai_short), Icons.Rounded.AutoAwesome, Modifier.weight(1f), accent = true) { aiOpen = true }
                     }
                 }
                 itemsIndexed(ui.blocks) { i, b ->
@@ -306,7 +316,6 @@ fun MaterialEditorScreen(materialId: Int?, onBack: () -> Unit, onSaved: () -> Un
         BlockSheet(initial, onDismiss = { editing = null }, onSave = { b -> if (index >= 0) vm.replace(index, b) else vm.add(b); editing = null })
     }
     LaunchedEffect(ui.dropped, ui.error) { if (ui.dropped != null || ui.error != null) aiOpen = false }
-    if (aiOpen) AiSheet(ui.generating, onDismiss = { if (!ui.generating) aiOpen = false }, onGenerate = { ctx, kind, topic, text, photo, q, p, types, diff, lang -> vm.generate(ctx, kind, topic, text, photo, q, p, types, diff, lang) })
     if (ui.error != null || ui.dropped != null) {
         AlertDialog(
             onDismissRequest = vm::clearFlags, containerColor = c.surface, shape = RoundedCornerShape(Radius.lg),
@@ -316,15 +325,16 @@ fun MaterialEditorScreen(materialId: Int?, onBack: () -> Unit, onSaved: () -> Un
     }
 }
 
+/** Three equal buttons in one row: same height, one line each. */
 @Composable
-private fun ActionPill(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Boolean = false, onClick: () -> Unit) {
+private fun ActionPill(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, accent: Boolean = false, onClick: () -> Unit) {
     val c = MaterialTheme.smart
     Row(
-        Modifier.clip(RoundedCornerShape(999.dp)).background(if (accent) c.brand else c.surface).border(1.dp, if (accent) c.brand else c.border, RoundedCornerShape(999.dp)).clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier.height(44.dp).clip(RoundedCornerShape(Radius.md)).background(if (accent) c.brand else c.surface).border(1.dp, if (accent) c.brand else c.border, RoundedCornerShape(Radius.md)).clickable(onClick = onClick).padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
     ) {
         Icon(icon, null, tint = if (accent) Color.White else c.brand, modifier = Modifier.size(16.dp)); HSpace(6.dp)
-        Text(text, style = MaterialTheme.typography.labelMedium, color = if (accent) Color.White else c.ink)
+        Text(text, style = MaterialTheme.typography.labelMedium, color = if (accent) Color.White else c.ink, maxLines = 1)
     }
 }
 
@@ -449,77 +459,4 @@ private fun PairEditor(left: List<String>, right: List<String>, onChange: (List<
         }
     }
     GhostButton(stringResource(R.string.add_item), onClick = { onChange(left + "", right + "") })
-}
-
-// ---------------------------------------------------------- AI sheet
-
-@Composable
-private fun AiSheet(
-    generating: Boolean,
-    onDismiss: () -> Unit,
-    onGenerate: (Context, String, String, String, Uri?, Int, Int, List<String>, String, String) -> Unit,
-) {
-    val c = MaterialTheme.smart
-    val context = LocalContext.current
-    val locale = currentLocale()
-    var kind by remember { mutableStateOf("lesson") }
-    var topic by remember { mutableStateOf("") }
-    var text by remember { mutableStateOf("") }
-    var photo by remember { mutableStateOf<Uri?>(null) }
-    var questions by remember { mutableStateOf(8) }
-    var difficulty by remember { mutableStateOf("medium") }
-    var types by remember { mutableStateOf(setOf("single", "truefalse")) }
-    val captureUri = remember { FileProvider.getUriForFile(context, "${context.packageName}.files", File(context.cacheDir, "ai_capture.jpg")) }
-    val take = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) photo = captureUri }
-    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) photo = uri }
-    val language = when (locale.language) { "ru" -> "русский"; "en" -> "english"; else -> "tojik (kirill)" }
-
-    EditorSheet(onDismiss) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.AutoAwesome, null, tint = c.brand); HSpace(8.dp)
-            Text(stringResource(R.string.ai_draft), style = MaterialTheme.typography.titleLarge, color = c.ink)
-        }
-        Text(stringResource(R.string.ai_hint), style = MaterialTheme.typography.bodySmall, color = c.inkSecondary)
-        VSpace(14.dp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Pill(stringResource(R.string.ai_kind_lesson), kind == "lesson") { kind = "lesson" }
-            Pill(stringResource(R.string.ai_kind_test), kind == "test") { kind = "test" }
-        }
-        VSpace(12.dp)
-        AppTextField(topic, { topic = it }, stringResource(R.string.ai_topic)); VSpace(8.dp)
-        AppTextField(text, { text = it }, stringResource(R.string.ai_source_text), singleLine = false); VSpace(8.dp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            GhostButton(stringResource(R.string.scan_take_photo), onClick = { take.launch(captureUri) })
-            GhostButton(stringResource(R.string.scan_pick_photo), onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
-            if (photo != null) Chip(stringResource(R.string.photo_taken), c.mint, c.mintSoft)
-        }
-        VSpace(12.dp)
-        Text(stringResource(R.string.ai_questions), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf(5, 8, 10, 15).forEach { n -> Pill("$n", questions == n) { questions = n } } }
-        VSpace(12.dp)
-        Text(stringResource(R.string.ai_types), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(questionKinds) { (k, label) -> Pill(stringResource(label), k in types) { types = if (k in types && types.size > 1) types - k else types + k } }
-        }
-        VSpace(12.dp)
-        Text(stringResource(R.string.ai_difficulty), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Pill(stringResource(R.string.diff_easy), difficulty == "easy") { difficulty = "easy" }
-            Pill(stringResource(R.string.diff_medium), difficulty == "medium") { difficulty = "medium" }
-            Pill(stringResource(R.string.diff_hard), difficulty == "hard") { difficulty = "hard" }
-        }
-        VSpace(18.dp)
-        if (generating) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(color = c.brand, modifier = Modifier.size(20.dp)); HSpace(10.dp)
-                Text(stringResource(R.string.ai_generating), style = MaterialTheme.typography.bodyMedium, color = c.inkSecondary)
-            }
-        } else {
-            PrimaryButton(
-                stringResource(R.string.ai_generate),
-                onClick = { onGenerate(context, kind, topic, text, photo, questions, if (kind == "test") 0 else 2, types.toList(), difficulty, language) },
-                enabled = topic.isNotBlank() || text.isNotBlank() || photo != null,
-            )
-        }
-    }
 }

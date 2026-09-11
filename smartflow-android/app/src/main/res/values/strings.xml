@@ -459,4 +459,20 @@
     <string name="ai_generate">Generate</string>
     <string name="ai_generating">Drafting… this takes a moment</string>
     <string name="ai_done">Draft added. %1$d unusable blocks were left out — check the rest and save.</string>
+    <string name="ai_short">AI</string>
+    <string name="ai_how">How should the draft be made?</string>
+    <string name="ai_src_topic">From a topic</string>
+    <string name="ai_src_topic_hint">Type the subject of the lesson — AI writes the rest.</string>
+    <string name="ai_src_photo">From a textbook page</string>
+    <string name="ai_src_photo_hint">Photograph a page; the questions come from what is on it.</string>
+    <string name="ai_src_text">From your text</string>
+    <string name="ai_src_text_hint">Paste a long passage, notes or an article.</string>
+    <string name="ai_topic_optional">Topic (optional)</string>
+    <string name="ai_kind">What to make</string>
+    <string name="ai_generating_title">Drafting your material</string>
+    <string name="ai_generating_hint">Usually 20–40 seconds. You will check every question before it is saved.</string>
+    <string name="ai_step_reading">Reading the source…</string>
+    <string name="ai_step_writing">Writing questions…</string>
+    <string name="ai_step_checking">Checking the answers…</string>
+    <string name="ai_step_polishing">Tidying up…</string>
 </resources>

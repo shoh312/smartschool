@@ -434,4 +434,20 @@
     <string name="ai_generate">Тайёр кардан</string>
     <string name="ai_generating">Лоиҳа тайёр мешавад… каме вақт мегирад</string>
     <string name="ai_done">Лоиҳа илова шуд. %1$d блоки корношоям партофта шуд — боқимондаро санҷед ва нигоҳ доред.</string>
+    <string name="ai_short">ҲС</string>
+    <string name="ai_how">Лоиҳа чӣ тавр тайёр шавад?</string>
+    <string name="ai_src_topic">Аз рӯи мавзӯъ</string>
+    <string name="ai_src_topic_hint">Мавзӯи дарсро нависед — боқимондаро ҲС мекунад.</string>
+    <string name="ai_src_photo">Аз саҳифаи китоб</string>
+    <string name="ai_src_photo_hint">Саҳифаро акс гиред; саволҳо аз мазмуни он мешаванд.</string>
+    <string name="ai_src_text">Аз матни шумо</string>
+    <string name="ai_src_text_hint">Порчаи калон, конспект ё мақоларо гузоред.</string>
+    <string name="ai_topic_optional">Мавзӯъ (ихтиёрӣ)</string>
+    <string name="ai_kind">Чӣ тайёр кунем</string>
+    <string name="ai_generating_title">Мавод тайёр мешавад</string>
+    <string name="ai_generating_hint">Одатан 20–40 сония. Ҳар саволро пеш аз нигоҳ доштан месанҷед.</string>
+    <string name="ai_step_reading">Манбаъ хонда мешавад…</string>
+    <string name="ai_step_writing">Саволҳо тартиб дода мешаванд…</string>
+    <string name="ai_step_checking">Ҷавобҳо санҷида мешаванд…</string>
+    <string name="ai_step_polishing">Ба тартиб оварда мешавад…</string>
 </resources>
