@@ -470,7 +470,7 @@
     <string name="ai_topic_optional">Topic (optional)</string>
     <string name="ai_kind">What to make</string>
     <string name="ai_generating_title">Drafting your material</string>
-    <string name="ai_generating_hint">Usually 20–40 seconds. You will check every question before it is saved.</string>
+    <string name="ai_generating_hint">Usually 1–4 minutes. You will check every question before it is saved.</string>
     <string name="ai_step_reading">Reading the source…</string>
     <string name="ai_step_writing">Writing questions…</string>
     <string name="ai_step_checking">Checking the answers…</string>

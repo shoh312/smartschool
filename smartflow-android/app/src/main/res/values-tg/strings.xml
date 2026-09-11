@@ -445,7 +445,7 @@
     <string name="ai_topic_optional">Мавзӯъ (ихтиёрӣ)</string>
     <string name="ai_kind">Чӣ тайёр кунем</string>
     <string name="ai_generating_title">Мавод тайёр мешавад</string>
-    <string name="ai_generating_hint">Одатан 20–40 сония. Ҳар саволро пеш аз нигоҳ доштан месанҷед.</string>
+    <string name="ai_generating_hint">Одатан 1–4 дақиқа. Ҳар саволро пеш аз нигоҳ доштан месанҷед.</string>
     <string name="ai_step_reading">Манбаъ хонда мешавад…</string>
     <string name="ai_step_writing">Саволҳо тартиб дода мешаванд…</string>
     <string name="ai_step_checking">Ҷавобҳо санҷида мешаванд…</string>

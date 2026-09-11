@@ -81,7 +81,7 @@ async def _serve_once() -> None:
             async with send_lock:
                 await ws.send(stream_id.encode("ascii") + kind + data)
 
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://relay.local", timeout=110) as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://relay.local", timeout=400) as client:
             async for raw in ws:
                 if isinstance(raw, (bytes, bytearray)):
                     stream = streams.get(raw[:36].decode("ascii", "replace"))

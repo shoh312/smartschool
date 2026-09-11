@@ -5,6 +5,7 @@ import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -87,6 +88,7 @@ interface SchoolApi {
     suspend fun absences(@Query("class_id") classId: Int, @Query("subject") subject: String?): List<AbsenceDto>
 
     @Multipart
+    @Headers("X-Long-Timeout: 1")
     @POST("journal/scan-photo")
     suspend fun scanJournal(
         @Part("class_id") classId: RequestBody,
@@ -116,6 +118,7 @@ interface SchoolApi {
     suspend fun deleteMaterial(@Path("id") id: Int)
 
     @Multipart
+    @Headers("X-Long-Timeout: 1")
     @POST("materials/ai/generate")
     suspend fun aiGenerate(
         @Part("kind") kind: RequestBody,

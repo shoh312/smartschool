@@ -130,6 +130,22 @@ class SchoolHostInterceptor(private val session: SessionStore) : Interceptor {
     }
 }
 
+/**
+ * Calls that wait on Gemini (drafting a material, reading a journal page)
+ * take minutes, not seconds. They carry a marker header and get a long read
+ * timeout; everything else keeps the short one so a dead LAN fails fast.
+ */
+const val LONG_TIMEOUT_HEADER = "X-Long-Timeout"
+
+class LongTimeoutInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        if (request.header(LONG_TIMEOUT_HEADER) == null) return chain.proceed(request)
+        return chain.withReadTimeout(360, TimeUnit.SECONDS).withWriteTimeout(120, TimeUnit.SECONDS)
+            .proceed(request.newBuilder().removeHeader(LONG_TIMEOUT_HEADER).build())
+    }
+}
+
 object SchoolApiClient {
     const val PLACEHOLDER = "http://school.placeholder/"
 
@@ -139,6 +155,7 @@ object SchoolApiClient {
         .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor(SchoolHostInterceptor(session))
         .addInterceptor(AuthInterceptor(session))
+        .addInterceptor(LongTimeoutInterceptor())
         .apply {
             if (BuildConfig.DEBUG) addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
         }

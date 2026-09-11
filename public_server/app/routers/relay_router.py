@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["relay"])
 
-HTTP_TIMEOUT = 120  # scan-photo goes through Gemini; give it room
+HTTP_TIMEOUT = 400  # drafting a material through Gemini can take minutes
 HOP_HEADERS = {"host", "connection", "content-length", "transfer-encoding", "keep-alive", "upgrade"}
 
 

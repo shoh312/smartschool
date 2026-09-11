@@ -445,7 +445,7 @@
     <string name="ai_topic_optional">Тема (необязательно)</string>
     <string name="ai_kind">Что подготовить</string>
     <string name="ai_generating_title">Готовим материал</string>
-    <string name="ai_generating_hint">Обычно 20–40 секунд. Каждый вопрос вы проверите перед сохранением.</string>
+    <string name="ai_generating_hint">Обычно 1–4 минуты. Каждый вопрос вы проверите перед сохранением.</string>
     <string name="ai_step_reading">Читаем источник…</string>
     <string name="ai_step_writing">Составляем вопросы…</string>
     <string name="ai_step_checking">Проверяем ответы…</string>
