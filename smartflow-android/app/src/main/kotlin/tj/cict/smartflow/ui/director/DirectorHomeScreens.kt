@@ -246,6 +246,10 @@ fun cameraLook(cam: CameraStatusDto): Pair<String, Color> {
     fun mmss(s: Int) = "%d:%02d".format(s / 60, s % 60)
     return when {
         cam.phase == "off" -> stringResource(R.string.cam_off) to c.inkTertiary
+        // Between lessons the server closes the stream on purpose (nothing to
+        // watch, nothing to spend CPU on) and reports connected=false. That
+        // is idle, not broken -- only a failure *during* a lesson is offline.
+        cam.phase == "dars vaqti emas" -> stringResource(R.string.cam_idle) to c.inkTertiary
         !cam.connected -> stringResource(R.string.cam_offline) to c.rose
         cam.rollCall -> stringResource(R.string.cam_roll_call) to c.coral
         cam.detecting -> stringResource(R.string.cam_detecting) to c.mint
