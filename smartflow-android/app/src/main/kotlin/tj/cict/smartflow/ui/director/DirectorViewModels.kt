@@ -40,6 +40,8 @@ import tj.cict.smartflow.data.dto.CameraStatusDto
 import tj.cict.smartflow.data.dto.ClassDto
 import tj.cict.smartflow.data.dto.ClassSubjectAverageDto
 import tj.cict.smartflow.data.dto.ClassSubjectDto
+import tj.cict.smartflow.data.dto.GradeDto
+import tj.cict.smartflow.data.dto.AbsenceDto
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
 import tj.cict.smartflow.data.dto.LiveStatusDto
 import tj.cict.smartflow.data.dto.NeedsAttentionDto
@@ -318,6 +320,49 @@ class ClassDetailViewModel(private val repo: DirectorRepository) : ViewModel() {
             _ui.value = ClassDetailUi(s.await().toUiState(), a.await().toUiState(), r.await().toUiState())
         }
     }
+}
+
+// ----------------------------------------------------------- journal
+
+data class JournalData(val subjects: List<String>, val grades: List<GradeDto>, val absences: List<AbsenceDto>)
+
+data class DirectorJournalUi(
+    val data: UiState<JournalData> = UiState.Loading,
+    /** null = the first subject in the list. */
+    val subject: String? = null,
+)
+
+class DirectorJournalViewModel(private val repo: DirectorRepository) : ViewModel() {
+    private val _ui = MutableStateFlow(DirectorJournalUi())
+    val ui: StateFlow<DirectorJournalUi> = _ui.asStateFlow()
+    private var loaded: Int? = null
+
+    fun load(classId: Int, force: Boolean = false) {
+        if (loaded == classId && !force) return
+        loaded = classId
+        _ui.update { it.copy(data = UiState.Loading) }
+        viewModelScope.launch {
+            val g = viewModelScope.async { repo.grades(classId) }
+            val a = viewModelScope.async { repo.absences(classId) }
+            val t = viewModelScope.async { repo.classSubjects(classId) }
+            val grades = g.await(); val absences = a.await(); val taught = t.await()
+            val data = when {
+                grades is ApiResult.Err -> UiState.Failed(grades.error)
+                else -> {
+                    val gl = (grades as ApiResult.Ok).value
+                    // The marks are the journal; a failed absence lookup only loses the "absent" cells.
+                    val al = (absences as? ApiResult.Ok)?.value.orEmpty()
+                    // Subjects that have marks first (most useful), then the rest of the timetable.
+                    val withMarks = gl.map { it.subject }.distinct()
+                    val rest = (al.map { it.subject } + (taught as? ApiResult.Ok)?.value.orEmpty().mapNotNull { it.subject }).distinct().filter { it !in withMarks }.sorted()
+                    UiState.Ready(JournalData(withMarks + rest, gl, al))
+                }
+            }
+            _ui.update { it.copy(data = data) }
+        }
+    }
+
+    fun select(subject: String) = _ui.update { it.copy(subject = subject) }
 }
 
 // ----------------------------------------------------------- settings

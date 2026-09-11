@@ -225,7 +225,7 @@ fun ClassesScreen(vm: SchoolViewModel, onBack: () -> Unit, onOpen: (ClassDto) ->
 }
 
 @Composable
-fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Unit, onOpenStudent: (Int, String) -> Unit, vm: ClassDetailViewModel = koinViewModel()) {
+fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Unit, onOpenStudent: (Int, String) -> Unit, onJournal: () -> Unit, vm: ClassDetailViewModel = koinViewModel()) {
     LaunchedEffect(cls.id) { vm.load(cls.id) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val school by schoolVm.ui.collectAsStateWithLifecycle()
@@ -233,7 +233,7 @@ fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Un
     val pupils = (school.students as? UiState.Ready)?.data.orEmpty().filter { it.classId == cls.id }
     PageBackground {
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader(cls.name, subtitle = stringResource(R.string.pupils_count, pupils.size), onBack = onBack)
+            ScreenHeader(cls.name, subtitle = stringResource(R.string.pupils_count, pupils.size), onBack = onBack, trailing = { JournalButton(onJournal) })
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 (ui.averages as? UiState.Ready)?.data?.takeIf { it.isNotEmpty() }?.let { subs ->
                     item {

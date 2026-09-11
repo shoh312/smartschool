@@ -73,7 +73,7 @@ interface SchoolApi {
     suspend fun roster(@Path("classId") classId: Int): List<StudentDto>
 
     @GET("grades")
-    suspend fun grades(@Query("class_id") classId: Int, @Query("subject") subject: String, @Query("limit") limit: Int = 500): List<GradeDto>
+    suspend fun grades(@Query("class_id") classId: Int, @Query("subject") subject: String?, @Query("limit") limit: Int = 500): List<GradeDto>
 
     @POST("grades")
     suspend fun createGrade(@Body body: GradeCreateRequest): GradeDto

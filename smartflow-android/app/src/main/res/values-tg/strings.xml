@@ -450,4 +450,10 @@
     <string name="ai_step_writing">Саволҳо тартиб дода мешаванд…</string>
     <string name="ai_step_checking">Ҷавобҳо санҷида мешаванд…</string>
     <string name="ai_step_polishing">Ба тартиб оварда мешавад…</string>
+    <string name="journal_empty">Ҳоло баҳо нест</string>
+    <string name="journal_empty_body">Баҳоҳо ва ғоибҳо ҳамин ки муаллимон ворид кунанд, дар ин ҷо пайдо мешаванд.</string>
+    <string name="journal_marks_count">%1$d баҳо</string>
+    <string name="journal_absences_count">%1$d ғоиб</string>
+    <string name="journal_absent_short">ғ</string>
+    <string name="journal_legend_absent">дар дарс набуд</string>
 </resources>

@@ -44,6 +44,7 @@ import tj.cict.smartflow.ui.rating.RatingScreen
 import tj.cict.smartflow.data.dto.ClassDto
 import tj.cict.smartflow.ui.director.CamerasScreen
 import tj.cict.smartflow.ui.director.ClassDetailScreen
+import tj.cict.smartflow.ui.director.DirectorJournalScreen
 import tj.cict.smartflow.ui.director.ClassesScreen
 import tj.cict.smartflow.ui.director.DirectorAnalyticsScreen
 import tj.cict.smartflow.ui.director.DirectorAnnouncementsScreen
@@ -322,7 +323,15 @@ private fun DirectorGraph(name: String, onSignOut: () -> Unit) {
             composable<ClassesRoute> { ClassesScreen(schoolVm, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(ClassDetailRoute(it.id, it.name, it.grade)) }) }
             composable<ClassDetailRoute> { e ->
                 val r = e.toRoute<ClassDetailRoute>()
-                ClassDetailScreen(ClassDto(r.classId, r.name, r.grade), schoolVm, onBack = { nav.popBackStack() }, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) })
+                ClassDetailScreen(
+                    ClassDto(r.classId, r.name, r.grade), schoolVm, onBack = { nav.popBackStack() },
+                    onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) },
+                    onJournal = { nav.navigate(DirectorJournalRoute(r.classId, r.name)) },
+                )
+            }
+            composable<DirectorJournalRoute> { e ->
+                val r = e.toRoute<DirectorJournalRoute>()
+                DirectorJournalScreen(r.classId, r.name, schoolVm, onBack = { nav.popBackStack() }, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) })
             }
             composable<StudentsRoute> { StudentsScreen(schoolVm, onBack = { nav.popBackStack() }) }
             composable<TeachersRoute> { TeachersScreen(schoolVm, onBack = { nav.popBackStack() }) }

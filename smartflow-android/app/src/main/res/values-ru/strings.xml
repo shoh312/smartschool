@@ -450,4 +450,10 @@
     <string name="ai_step_writing">Составляем вопросы…</string>
     <string name="ai_step_checking">Проверяем ответы…</string>
     <string name="ai_step_polishing">Наводим порядок…</string>
+    <string name="journal_empty">Оценок пока нет</string>
+    <string name="journal_empty_body">Оценки и пропуски появятся здесь, как только учителя их внесут.</string>
+    <string name="journal_marks_count">%1$d оценок</string>
+    <string name="journal_absences_count">%1$d пропусков</string>
+    <string name="journal_absent_short">н</string>
+    <string name="journal_legend_absent">не был на уроке</string>
 </resources>

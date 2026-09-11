@@ -475,4 +475,10 @@
     <string name="ai_step_writing">Writing questions…</string>
     <string name="ai_step_checking">Checking the answers…</string>
     <string name="ai_step_polishing">Tidying up…</string>
+    <string name="journal_empty">No marks yet</string>
+    <string name="journal_empty_body">Marks and absences appear here as soon as teachers enter them.</string>
+    <string name="journal_marks_count">%1$d marks</string>
+    <string name="journal_absences_count">%1$d absences</string>
+    <string name="journal_absent_short">a</string>
+    <string name="journal_legend_absent">absent from the lesson</string>
 </resources>

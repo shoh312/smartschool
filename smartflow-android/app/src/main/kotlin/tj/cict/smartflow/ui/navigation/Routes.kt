@@ -39,6 +39,7 @@ import kotlinx.serialization.Serializable
 @Serializable object LiveVideoRoute
 @Serializable object ClassesRoute
 @Serializable data class ClassDetailRoute(val classId: Int, val name: String, val grade: Int?)
+@Serializable data class DirectorJournalRoute(val classId: Int, val name: String)
 @Serializable object StudentsRoute
 @Serializable object TeachersRoute
 @Serializable object CamerasRoute
