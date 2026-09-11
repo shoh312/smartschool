@@ -154,7 +154,7 @@ fun RatingScreen(childrenVm: ChildrenViewModel, bottomPadding: Dp, vm: RatingVie
 }
 
 @Composable
-private fun RatingBody(a: AnalyticsDto, bottomPadding: Dp) {
+fun RatingBody(a: AnalyticsDto, bottomPadding: Dp) {
     val c = MaterialTheme.smart
     LazyColumn(
         Modifier.fillMaxSize(),

@@ -56,6 +56,7 @@ import tj.cict.smartflow.ui.director.PositionsScreen
 import tj.cict.smartflow.ui.director.SchoolHubScreen
 import tj.cict.smartflow.ui.director.SchoolViewModel
 import tj.cict.smartflow.ui.director.SettingsScreen
+import tj.cict.smartflow.ui.director.StudentRatingScreen
 import tj.cict.smartflow.ui.director.StudentsScreen
 import tj.cict.smartflow.ui.director.TeachersScreen
 import tj.cict.smartflow.ui.teacher.ClassJournalScreen
@@ -302,13 +303,17 @@ private fun DirectorGraph(name: String, onSignOut: () -> Unit) {
                     onTeachers = { nav.navigate(TeachersRoute) }, onCameras = { nav.navigate(CamerasRoute) },
                 )
             }
-            composable<AnalyticsRoute> { DirectorAnalyticsScreen(schoolVm, bottomPadding = padding) }
+            composable<AnalyticsRoute> { DirectorAnalyticsScreen(schoolVm, bottomPadding = padding, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) }) }
+            composable<StudentRatingRoute> { e ->
+                val r = e.toRoute<StudentRatingRoute>()
+                StudentRatingScreen(r.studentId, r.name, onBack = { nav.popBackStack() })
+            }
 
             composable<LiveVideoRoute> { LiveVideoScreen(onBack = { nav.popBackStack() }) }
             composable<ClassesRoute> { ClassesScreen(schoolVm, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(ClassDetailRoute(it.id, it.name, it.grade)) }) }
             composable<ClassDetailRoute> { e ->
                 val r = e.toRoute<ClassDetailRoute>()
-                ClassDetailScreen(ClassDto(r.classId, r.name, r.grade), schoolVm, onBack = { nav.popBackStack() })
+                ClassDetailScreen(ClassDto(r.classId, r.name, r.grade), schoolVm, onBack = { nav.popBackStack() }, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) })
             }
             composable<StudentsRoute> { StudentsScreen(schoolVm, onBack = { nav.popBackStack() }) }
             composable<TeachersRoute> { TeachersScreen(schoolVm, onBack = { nav.popBackStack() }) }

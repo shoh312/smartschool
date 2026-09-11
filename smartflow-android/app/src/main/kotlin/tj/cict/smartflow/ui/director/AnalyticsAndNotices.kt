@@ -84,7 +84,7 @@ import tj.cict.smartflow.ui.theme.smart
 // ================================================================= Analytics
 
 @Composable
-fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, vm: DirectorAnalyticsViewModel = koinViewModel()) {
+fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpenStudent: (Int, String) -> Unit, vm: DirectorAnalyticsViewModel = koinViewModel()) {
     LaunchedEffect(Unit) { vm.load() }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val school by schoolVm.ui.collectAsStateWithLifecycle()
@@ -109,7 +109,7 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, vm: Di
                 is UiState.Failed -> ErrorState(s.error.message(), onRetry = { vm.pickClass(ui.classId) })
                 is UiState.Ready -> if (s.data.isEmpty()) EmptyState(R.drawable.ill_trophy, stringResource(R.string.rating_empty)) else {
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(s.data, key = { it.studentId }) { e -> RankRow(e) }
+                        items(s.data, key = { it.studentId }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }) }
                     }
                 }
             }
@@ -124,7 +124,7 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, vm: Di
                         if (d.biggestDecliners.isNotEmpty()) {
                             item { Text(stringResource(R.string.attention_decline), style = MaterialTheme.typography.titleMedium, color = c.ink, modifier = Modifier.padding(top = 6.dp)) }
                             items(d.biggestDecliners, key = { "d${it.studentId}" }) { e ->
-                                SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp) {
+                                SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         ChildAvatar(Child(e.studentId, e.firstName, e.lastName, e.className), 38.dp); HSpace(12.dp)
                                         Column(Modifier.weight(1f)) {
@@ -141,7 +141,7 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, vm: Di
                         }
                         if (d.bottomPerformers.isNotEmpty()) {
                             item { Text(stringResource(R.string.attention_bottom), style = MaterialTheme.typography.titleMedium, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
-                            items(d.bottomPerformers, key = { "b${it.studentId}" }) { e -> RankRow(e) }
+                            items(d.bottomPerformers, key = { "b${it.studentId}" }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }) }
                         }
                     }
                 }
@@ -159,10 +159,10 @@ private fun Pill(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RankRow(e: LeaderboardEntryDto) {
+private fun RankRow(e: LeaderboardEntryDto, onClick: () -> Unit) {
     val c = MaterialTheme.smart
     val medal = when (e.position) { 1 -> c.amber; 2 -> Color(0xFF9CA3AF); 3 -> Color(0xFFC77B3F); else -> null }
-    SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp) {
+    SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(34.dp).clip(CircleShape).background(medal?.copy(alpha = 0.18f) ?: c.surfaceSoft), contentAlignment = Alignment.Center) {
                 Text("${e.position}", style = MaterialTheme.typography.labelLarge, color = medal ?: c.inkSecondary)

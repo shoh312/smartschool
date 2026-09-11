@@ -47,3 +47,5 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 
 @Serializable data class PositionsRoute(val cameraId: Int, val cameraName: String)
+
+@Serializable data class StudentRatingRoute(val studentId: Int, val name: String)

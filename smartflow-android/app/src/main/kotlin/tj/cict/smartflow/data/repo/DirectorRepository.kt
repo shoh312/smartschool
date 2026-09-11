@@ -15,6 +15,7 @@ import tj.cict.smartflow.core.session.Role
 import tj.cict.smartflow.core.session.Session
 import tj.cict.smartflow.core.session.SessionStore
 import tj.cict.smartflow.data.api.SchoolApi
+import tj.cict.smartflow.data.dto.AnalyticsDto
 import tj.cict.smartflow.data.dto.AnnouncementCreateRequest
 import tj.cict.smartflow.data.dto.AssignClassRequest
 import tj.cict.smartflow.data.dto.CalendarEventCreateRequest
@@ -172,6 +173,7 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
 
     // ----------------------------------------------------- analytics
 
+    suspend fun studentAnalytics(studentId: Int, quarter: Int?): ApiResult<AnalyticsDto> = safeCall { api.studentAnalytics(studentId, quarter) }
     suspend fun schoolRanking(): ApiResult<List<LeaderboardEntryDto>> = safeCall { api.schoolRanking() }
     suspend fun classRanking(classId: Int): ApiResult<List<LeaderboardEntryDto>> = safeCall { api.classRanking(classId) }
     suspend fun needsAttention(): ApiResult<NeedsAttentionDto> = safeCall { api.needsAttention() }

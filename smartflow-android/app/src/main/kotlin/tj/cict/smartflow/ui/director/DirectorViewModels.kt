@@ -30,6 +30,7 @@ import tj.cict.smartflow.core.network.ApiError
 import tj.cict.smartflow.core.network.ApiResult
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.toUiState
+import tj.cict.smartflow.data.dto.AnalyticsDto
 import tj.cict.smartflow.data.dto.CalendarEventDto
 import tj.cict.smartflow.data.dto.CameraCreateRequest
 import tj.cict.smartflow.data.dto.CameraDto
@@ -371,6 +372,35 @@ class DirectorAnalyticsViewModel(private val repo: DirectorRepository) : ViewMod
         viewModelScope.launch {
             val r = if (classId == null) repo.schoolRanking() else repo.classRanking(classId)
             if (_ui.value.classId == classId) _ui.update { it.copy(ranking = r.toUiState()) }
+        }
+    }
+}
+
+/** One pupil's full rating, as the director sees it -- same body as the parent's screen. */
+class StudentRatingViewModel(private val repo: DirectorRepository) : ViewModel() {
+    private val _state = MutableStateFlow<UiState<AnalyticsDto>>(UiState.Loading)
+    val state: StateFlow<UiState<AnalyticsDto>> = _state.asStateFlow()
+    private val _quarter = MutableStateFlow<Int?>(null)
+    val quarter: StateFlow<Int?> = _quarter.asStateFlow()
+    private var studentId = 0
+
+    fun load(id: Int) {
+        if (studentId == id && _state.value is UiState.Ready) return
+        studentId = id
+        fetch()
+    }
+
+    fun pickQuarter(q: Int) {
+        _quarter.value = q
+        fetch()
+    }
+
+    private fun fetch() {
+        val q = _quarter.value
+        _state.value = UiState.Loading
+        viewModelScope.launch {
+            val r = repo.studentAnalytics(studentId, q)
+            if (_quarter.value == q) _state.value = r.toUiState()
         }
     }
 }

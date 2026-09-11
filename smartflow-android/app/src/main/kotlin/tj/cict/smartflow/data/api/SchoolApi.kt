@@ -12,6 +12,7 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import tj.cict.smartflow.data.dto.AbsenceDto
+import tj.cict.smartflow.data.dto.AnalyticsDto
 import tj.cict.smartflow.data.dto.AnnouncementCreateRequest
 import tj.cict.smartflow.data.dto.AssignClassRequest
 import tj.cict.smartflow.data.dto.CalendarEventCreateRequest
@@ -212,6 +213,9 @@ interface SchoolApi {
 
     @DELETE("calendar/events/{id}")
     suspend fun deleteEvent(@Path("id") id: Int)
+
+    @GET("analytics/student/{id}")
+    suspend fun studentAnalytics(@Path("id") studentId: Int, @Query("quarter") quarter: Int? = null): AnalyticsDto
 
     @GET("analytics/school/ranking")
     suspend fun schoolRanking(@Query("quarter") quarter: Int? = null): List<LeaderboardEntryDto>

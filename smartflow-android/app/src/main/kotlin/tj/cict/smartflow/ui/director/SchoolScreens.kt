@@ -223,7 +223,7 @@ fun ClassesScreen(vm: SchoolViewModel, onBack: () -> Unit, onOpen: (ClassDto) ->
 }
 
 @Composable
-fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Unit, vm: ClassDetailViewModel = koinViewModel()) {
+fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Unit, onOpenStudent: (Int, String) -> Unit, vm: ClassDetailViewModel = koinViewModel()) {
     LaunchedEffect(cls.id) { vm.load(cls.id) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val school by schoolVm.ui.collectAsStateWithLifecycle()
@@ -265,7 +265,7 @@ fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Un
                 item { Text(stringResource(R.string.students_title), style = MaterialTheme.typography.titleLarge, color = c.ink, modifier = Modifier.padding(top = 6.dp)) }
                 val ranks = (ui.ranking as? UiState.Ready)?.data.orEmpty().associateBy { it.studentId }
                 items(pupils.sortedBy { it.lastName }, key = { it.id }) { s ->
-                    SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp) {
+                    SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp, onClick = { onOpenStudent(s.id, "${s.lastName} ${s.firstName}") }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             ChildAvatar(Child(s.id, s.firstName, s.lastName, s.className), 38.dp); HSpace(12.dp)
                             Text("${s.lastName} ${s.firstName}", style = MaterialTheme.typography.titleSmall, color = c.ink, modifier = Modifier.weight(1f))
