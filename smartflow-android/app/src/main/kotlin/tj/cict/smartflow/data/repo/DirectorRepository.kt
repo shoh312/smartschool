@@ -4,6 +4,7 @@ import java.io.File
 import java.time.LocalDate
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import tj.cict.smartflow.core.network.ApiError
@@ -37,9 +38,18 @@ import tj.cict.smartflow.data.dto.StudentDto
 import tj.cict.smartflow.data.dto.TeacherCreateRequest
 import tj.cict.smartflow.data.dto.TeacherDto
 
-/** Everything a director does against the school server, with the demo alongside. */
+/** What a director edits: the pupil as the form holds it. */
+data class StudentEdit(
+    val firstName: String,
+    val lastName: String,
+    val classId: Int,
+    val parentPhone: String?,
+    val username: String? = null,
+    val password: String? = null,
+)
+
+/** Everything a director does against the school server. */
 class DirectorRepository(private val api: SchoolApi, private val session: SessionStore) {
-    private suspend fun isDemo() = session.token() == DemoDirector.TOKEN
 
     private suspend fun <T> safeCall(block: suspend () -> T): ApiResult<T> {
         val result = rawCall(block)
@@ -47,13 +57,10 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
         return result
     }
 
-    private fun text(v: String) = v.toRequestBody("text/plain".toMediaType())
+    private fun text(v: String): RequestBody = v.toRequestBody("text/plain".toMediaType())
+    private fun photoPart(photo: File, mime: String) = MultipartBody.Part.createFormData("file", photo.name, photo.asRequestBody(mime.toMediaType()))
 
     suspend fun login(email: String, password: String, serverUrl: String?): ApiResult<Unit> {
-        if (email.trim().equals(DemoDirector.EMAIL, ignoreCase = true) || email.trim().equals("demo", ignoreCase = true)) {
-            session.save(Session(DemoDirector.TOKEN, Role.DIRECTOR, 1, DemoDirector.NAME, DemoDirector.EMAIL, null, null))
-            return ApiResult.Ok(Unit)
-        }
         val url = serverUrl ?: return ApiResult.Err(ApiError.Network)
         session.rememberServerUrl(url)
         return when (val r = safeCall { api.directorLogin(DirectorLoginRequest(email.trim(), password)) }) {
@@ -66,8 +73,6 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
         }
     }
 
-    suspend fun loginDemo() = login(DemoDirector.EMAIL, "", null)
-
     /** The token and server for a websocket, which cannot carry headers. */
     suspend fun streamUrl(cameraId: Int): String? {
         val s = session.current() ?: return null
@@ -77,123 +82,89 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
 
     // ---------------------------------------------------------- live
 
-    suspend fun liveStatus(): ApiResult<List<LiveStatusDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.liveStatus()) else safeCall { api.liveStatus() }
-
-    suspend fun cameraStatus(): ApiResult<List<CameraStatusDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.cameraStatus()) else safeCall { api.cameraStatus() }
+    suspend fun liveStatus(): ApiResult<List<LiveStatusDto>> = safeCall { api.liveStatus() }
+    suspend fun cameraStatus(): ApiResult<List<CameraStatusDto>> = safeCall { api.cameraStatus() }
 
     // ------------------------------------------------------- classes
 
     suspend fun classes(): ApiResult<List<ClassDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.classes.toList()) else safeCall { api.classes() }.map { it.sortedWith(compareBy({ it.grade ?: 0 }, { it.name })) }
+        safeCall { api.classes() }.map { it.sortedWith(compareBy({ it.grade ?: 0 }, { it.name })) }
 
-    suspend fun createClass(name: String, grade: Int?): ApiResult<ClassDto> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.addClass(name, grade)) else safeCall { api.createClass(ClassCreateRequest(name, grade)) }
-
-    suspend fun deleteClass(id: Int): ApiResult<Unit> =
-        if (isDemo()) { DemoDirector.removeClass(id); ApiResult.Ok(Unit) } else safeCall { api.deleteClass(id) }
-
-    suspend fun classSubjects(classId: Int): ApiResult<List<ClassSubjectDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.subjectsOf(classId)) else safeCall { api.classSubjects(classId) }
+    suspend fun createClass(name: String, grade: Int?): ApiResult<ClassDto> = safeCall { api.createClass(ClassCreateRequest(name, grade)) }
+    suspend fun deleteClass(id: Int): ApiResult<Unit> = safeCall { api.deleteClass(id) }
+    suspend fun classSubjects(classId: Int): ApiResult<List<ClassSubjectDto>> = safeCall { api.classSubjects(classId) }
 
     // ------------------------------------------------------ students
 
     suspend fun students(): ApiResult<List<StudentDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.students()) else safeCall { api.allStudents() }.map { list -> list.filter { it.isActive } }
+        safeCall { api.allStudents() }.map { list -> list.filter { it.isActive } }
 
     suspend fun createStudent(firstName: String, lastName: String, classId: Int, parentPhone: String, parentName: String?, photo: File, mime: String): ApiResult<StudentDto> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.addStudent(firstName, lastName, classId))
-        else safeCall {
+        safeCall {
             api.createStudent(
                 text(firstName), text(lastName), text(classId.toString()), text(parentPhone),
                 parentName?.takeIf { it.isNotBlank() }?.let { text(it) },
-                MultipartBody.Part.createFormData("file", photo.name, photo.asRequestBody(mime.toMediaType())),
+                photoPart(photo, mime),
             )
         }
 
-    suspend fun deleteStudent(id: Int): ApiResult<Unit> =
-        if (isDemo()) { DemoDirector.removeStudent(id); ApiResult.Ok(Unit) } else safeCall { api.deleteStudent(id) }
+    suspend fun updateStudent(id: Int, edit: StudentEdit, photo: File?, mime: String?): ApiResult<StudentDto> =
+        safeCall {
+            api.updateStudent(
+                id, text(edit.firstName), text(edit.lastName), text(edit.classId.toString()),
+                edit.parentPhone?.takeIf { it.isNotBlank() }?.let { text(it) },
+                edit.username?.takeIf { it.isNotBlank() }?.let { text(it) },
+                edit.password?.takeIf { it.isNotBlank() }?.let { text(it) },
+                if (photo != null && mime != null) photoPart(photo, mime) else null,
+            )
+        }
+
+    suspend fun deleteStudent(id: Int): ApiResult<Unit> = safeCall { api.deleteStudent(id) }
 
     // ------------------------------------------------------ teachers
 
-    suspend fun teachers(): ApiResult<List<TeacherDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.teachers.toList()) else safeCall { api.teachers() }
+    suspend fun teachers(): ApiResult<List<TeacherDto>> = safeCall { api.teachers() }
 
     suspend fun createTeacher(name: String, email: String, password: String, subject: String?): ApiResult<TeacherDto> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.addTeacher(name, email, subject))
-        else safeCall { api.createTeacher(TeacherCreateRequest(name, email, password, subject?.takeIf { it.isNotBlank() })) }
+        safeCall { api.createTeacher(TeacherCreateRequest(name, email, password, subject?.takeIf { it.isNotBlank() })) }
 
     suspend fun assignClass(teacherId: Int, classId: Int, subject: String): ApiResult<ClassAssignmentDto> =
-        if (isDemo()) ApiResult.Ok(ClassAssignmentDto(0, classId, subject, DemoDirector.classes.firstOrNull { it.id == classId }?.name))
-        else safeCall { api.assignClass(teacherId, AssignClassRequest(classId, subject)) }
+        safeCall { api.assignClass(teacherId, AssignClassRequest(classId, subject)) }
 
     // ------------------------------------------------------- cameras
 
-    suspend fun cameras(): ApiResult<List<CameraDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.cameras.toList()) else safeCall { api.cameras() }
+    suspend fun cameras(): ApiResult<List<CameraDto>> = safeCall { api.cameras() }
 
-    suspend fun saveCamera(id: Int?, body: CameraCreateRequest): ApiResult<CameraDto> = when {
-        isDemo() -> (if (id == null) DemoDirector.addCamera(body) else DemoDirector.updateCamera(id, body))?.let { ApiResult.Ok(it) } ?: ApiResult.Err(ApiError.Detail("not_found", 404))
-        id == null -> safeCall { api.createCamera(body) }
-        else -> safeCall { api.updateCamera(id, body) }
-    }
+    suspend fun saveCamera(id: Int?, body: CameraCreateRequest): ApiResult<CameraDto> =
+        if (id == null) safeCall { api.createCamera(body) } else safeCall { api.updateCamera(id, body) }
 
-    suspend fun deleteCamera(id: Int): ApiResult<Unit> =
-        if (isDemo()) { DemoDirector.removeCamera(id); ApiResult.Ok(Unit) } else safeCall { api.deleteCamera(id) }
+    suspend fun deleteCamera(id: Int): ApiResult<Unit> = safeCall { api.deleteCamera(id) }
 
     // ------------------------------------------------------ settings
 
-    suspend fun settings(): ApiResult<SchoolSettingsDto> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.settings) else safeCall { api.settings() }
-
-    suspend fun updateSettings(update: SchoolSettingsUpdate): ApiResult<SchoolSettingsDto> =
-        if (isDemo()) {
-            val s = DemoDirector.settings
-            DemoDirector.settings = s.copy(
-                liveVideoEnabled = update.liveVideoEnabled ?: s.liveVideoEnabled, groupMode = update.groupMode ?: s.groupMode,
-                smsEnabled = update.smsEnabled ?: s.smsEnabled, isActive = update.isActive ?: s.isActive,
-            )
-            ApiResult.Ok(DemoDirector.settings)
-        } else safeCall { api.updateSettings(update) }
+    suspend fun settings(): ApiResult<SchoolSettingsDto> = safeCall { api.settings() }
+    suspend fun updateSettings(update: SchoolSettingsUpdate): ApiResult<SchoolSettingsDto> = safeCall { api.updateSettings(update) }
 
     // ----------------------------------------------- announcements & calendar
 
-    suspend fun announcements(): ApiResult<List<SchoolAnnouncementDto>> =
-        if (isDemo()) ApiResult.Ok(demoAnnouncements.toList()) else safeCall { api.announcements() }
-
-    private val demoAnnouncements = DemoTeacher.announcements().toMutableList()
+    suspend fun announcements(): ApiResult<List<SchoolAnnouncementDto>> = safeCall { api.announcements() }
 
     suspend fun createAnnouncement(title: String, body: String, classId: Int?): ApiResult<SchoolAnnouncementDto> =
-        if (isDemo()) ApiResult.Ok(SchoolAnnouncementDto(100 + demoAnnouncements.size, classId, title, body, java.time.LocalDateTime.now()).also { demoAnnouncements.add(0, it) })
-        else safeCall { api.createAnnouncement(AnnouncementCreateRequest(title, body, classId)) }
+        safeCall { api.createAnnouncement(AnnouncementCreateRequest(title, body, classId)) }
 
-    suspend fun deleteAnnouncement(id: Int): ApiResult<Unit> =
-        if (isDemo()) { demoAnnouncements.removeAll { it.id == id }; ApiResult.Ok(Unit) } else safeCall { api.deleteAnnouncement(id) }
+    suspend fun deleteAnnouncement(id: Int): ApiResult<Unit> = safeCall { api.deleteAnnouncement(id) }
 
-    private val demoEvents = DemoData.calendar().toMutableList()
-
-    suspend fun calendar(): ApiResult<List<CalendarEventDto>> =
-        if (isDemo()) ApiResult.Ok(demoEvents.toList()) else safeCall { api.calendar() }
+    suspend fun calendar(): ApiResult<List<CalendarEventDto>> = safeCall { api.calendar() }
 
     suspend fun createEvent(title: String, description: String?, type: String, start: LocalDate, end: LocalDate?, classId: Int?): ApiResult<CalendarEventDto> =
-        if (isDemo()) ApiResult.Ok(CalendarEventDto(100 + demoEvents.size, title, description, type, start, end).also { demoEvents += it })
-        else safeCall { api.createEvent(CalendarEventCreateRequest(title, description, type, start, end, classId)) }
+        safeCall { api.createEvent(CalendarEventCreateRequest(title, description, type, start, end, classId)) }
 
-    suspend fun deleteEvent(id: Int): ApiResult<Unit> =
-        if (isDemo()) { demoEvents.removeAll { it.id == id }; ApiResult.Ok(Unit) } else safeCall { api.deleteEvent(id) }
+    suspend fun deleteEvent(id: Int): ApiResult<Unit> = safeCall { api.deleteEvent(id) }
 
     // ----------------------------------------------------- analytics
 
-    suspend fun schoolRanking(): ApiResult<List<LeaderboardEntryDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.ranking(null)) else safeCall { api.schoolRanking() }
-
-    suspend fun classRanking(classId: Int): ApiResult<List<LeaderboardEntryDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.ranking(classId)) else safeCall { api.classRanking(classId) }
-
-    suspend fun needsAttention(): ApiResult<NeedsAttentionDto> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.needsAttention()) else safeCall { api.needsAttention() }
-
-    suspend fun classSubjectAverages(classId: Int): ApiResult<List<ClassSubjectAverageDto>> =
-        if (isDemo()) ApiResult.Ok(DemoDirector.classSubjects(classId)) else safeCall { api.classSubjectAverages(classId) }
+    suspend fun schoolRanking(): ApiResult<List<LeaderboardEntryDto>> = safeCall { api.schoolRanking() }
+    suspend fun classRanking(classId: Int): ApiResult<List<LeaderboardEntryDto>> = safeCall { api.classRanking(classId) }
+    suspend fun needsAttention(): ApiResult<NeedsAttentionDto> = safeCall { api.needsAttention() }
+    suspend fun classSubjectAverages(classId: Int): ApiResult<List<ClassSubjectAverageDto>> = safeCall { api.classSubjectAverages(classId) }
 }

@@ -56,6 +56,8 @@ fun ApiError.message(): String = when (this) {
         "code_not_requested" -> stringResource(R.string.error_code_not_requested)
         "code_already_used" -> stringResource(R.string.error_code_expired)
         "password_too_short" -> stringResource(R.string.error_password_short)
+        "school_not_found" -> stringResource(R.string.server_not_found)
+        "school_offline" -> stringResource(R.string.server_not_found)
         else -> stringResource(R.string.error_generic)
     }
     is ApiError.Unknown -> stringResource(R.string.error_generic)

@@ -63,7 +63,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
 import tj.cict.smartflow.core.network.ApiError
-import tj.cict.smartflow.core.network.SchoolDiscovery
 import tj.cict.smartflow.core.util.message
 import tj.cict.smartflow.ui.components.AppTextField
 import tj.cict.smartflow.ui.components.GhostButton
@@ -238,10 +237,6 @@ fun LoginScreen(onNeedsPassword: (String) -> Unit, vm: AuthViewModel = koinViewM
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        VSpace(4.dp)
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            GhostButton(stringResource(R.string.login_demo), onClick = vm::enterDemo, color = MaterialTheme.smart.inkTertiary)
-        }
     }
 }
 
@@ -249,38 +244,6 @@ fun LoginScreen(onNeedsPassword: (String) -> Unit, vm: AuthViewModel = koinViewM
 private fun TeacherForm(ui: LoginUi, vm: AuthViewModel, showPassword: Boolean, onTogglePassword: () -> Unit) {
     val c = MaterialTheme.smart
     val focus = LocalFocusManager.current
-    var manual by remember { mutableStateOf(false) }
-    // Server line: found / searching / not found, with a way to type it.
-    val serverShape = RoundedCornerShape(Radius.sm)
-    Column(Modifier.fillMaxWidth().clip(serverShape).background(if (ui.serverUrl != null) c.mintSoft else c.surfaceSoft).padding(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                when {
-                    ui.serverSearching -> stringResource(R.string.server_searching)
-                    ui.serverUrl == SchoolDiscovery.RELAY_URL -> stringResource(R.string.server_relay)
-                    ui.serverUrl != null -> stringResource(R.string.server_found, ui.serverUrl.removePrefix("http://").trimEnd('/'))
-                    else -> stringResource(R.string.server_not_found)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = if (ui.serverUrl != null) c.mint else c.inkSecondary,
-                modifier = Modifier.weight(1f),
-            )
-            if (!ui.serverSearching) GhostButton(if (manual) stringResource(R.string.cancel) else stringResource(R.string.server_manual), onClick = { manual = !manual; if (!manual) vm.findServer() })
-        }
-        if (manual) {
-            VSpace(8.dp)
-            AppTextField(
-                value = ui.serverManual, onValueChange = vm::onServerManual, label = stringResource(R.string.server_label),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { vm.checkManualServer() }),
-                isError = ui.serverBad,
-            )
-            if (ui.serverBad) Text(stringResource(R.string.server_bad), style = MaterialTheme.typography.bodySmall, color = c.rose)
-            VSpace(6.dp)
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { GhostButton(stringResource(R.string.server_check), onClick = vm::checkManualServer) }
-        }
-    }
-    VSpace(12.dp)
     AppTextField(
         value = ui.email, onValueChange = vm::onEmail, label = stringResource(R.string.email_label), leading = Icons.Outlined.Person,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next, autoCorrectEnabled = false),
@@ -296,7 +259,7 @@ private fun TeacherForm(ui: LoginUi, vm: AuthViewModel, showPassword: Boolean, o
     VSpace(18.dp)
     PrimaryButton(
         stringResource(R.string.login_button), onClick = { focus.clearFocus(); vm.submitTeacherLogin() }, loading = ui.busy,
-        enabled = ui.email.isNotBlank() && ui.teacherPassword.isNotEmpty() && (ui.serverUrl != null || ui.email.trim().equals("demo", true)),
+        enabled = ui.email.isNotBlank() && ui.teacherPassword.isNotEmpty(),
     )
     VSpace(14.dp)
     Text(if (ui.director) stringResource(R.string.director_login_hint) else stringResource(R.string.teacher_login_hint), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())

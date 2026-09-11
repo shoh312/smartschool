@@ -19,7 +19,6 @@
     <string name="password_label">Password</string>
     <string name="login_button">Sign in</string>
     <string name="login_forgot">Forgot your password?</string>
-    <string name="login_demo">Try the demo</string>
     <string name="login_first_time">First time here? Just enter your number — we\'ll send a code.</string>
     <string name="error_phone_not_registered">This number isn\'t registered by any school yet.</string>
     <string name="error_invalid_credentials">Wrong phone number or password.</string>
@@ -228,9 +227,6 @@
     <string name="server_found">School server: %1$s</string>
     <string name="server_relay">Connected via the internet (outside the school network)</string>
     <string name="server_not_found">School server not found — neither on this network nor over the internet.</string>
-    <string name="server_manual">Enter the address manually</string>
-    <string name="server_check">Check</string>
-    <string name="server_bad">Nothing answered at that address.</string>
     <string name="teacher_login_hint">Sign in with the email and password the director gave you.</string>
     <string name="nav_journal">Journal</string>
     <string name="nav_materials">Materials</string>
@@ -322,12 +318,12 @@
     <string name="lesson_upcoming">Not started yet</string>
     <string name="lesson_finished">Finished</string>
     <string name="video_fullscreen">Full screen</string>
+    <string name="video_silent">Connected, but the camera is not sending frames right now — it only runs during lessons.</string>
     <string name="video_title">Live video</string>
     <string name="video_pick_camera">Choose a camera</string>
     <string name="video_connecting">Connecting to the camera…</string>
     <string name="video_disabled">Live video is switched off in settings.</string>
     <string name="video_lost">The stream stopped. Tap to reconnect.</string>
-    <string name="video_demo">Live video needs the school server — in the demo there is no camera to watch.</string>
     <string name="school_title">School</string>
     <string name="classes_title">Classes</string>
     <string name="add_class">Add a class</string>
@@ -397,4 +393,14 @@
     <string name="event_end">End date (optional)</string>
     <string name="date_format_hint">YYYY-MM-DD</string>
     <string name="create">Create</string>
+    <string name="onb_skip">Skip</string>
+    <string name="onb_start">Get started</string>
+    <string name="onb_lang_title">Choose your language</string>
+    <string name="onb_lang_body">You can change it later in your profile.</string>
+    <string name="onb_two_title">Attendance, taken by the camera</string>
+    <string name="onb_two_body">Cameras in the classroom recognise pupils as they arrive. No roll call — the school and parents see it live.</string>
+    <string name="onb_three_title">Everything about your child, in one place</string>
+    <string name="onb_three_body">Grades, diary, homework, rating and school news — and a message the moment your child walks in.</string>
+    <string name="student_login_title">Pupil\'s own sign-in</string>
+    <string name="student_login_hint_dir">Optional. Set a username and password so the pupil can use the app themselves.</string>
 </resources>

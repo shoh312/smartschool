@@ -138,6 +138,19 @@ interface SchoolApi {
         @Part file: MultipartBody.Part,
     ): StudentDto
 
+    @Multipart
+    @PUT("students/{id}")
+    suspend fun updateStudent(
+        @Path("id") id: Int,
+        @Part("first_name") firstName: RequestBody,
+        @Part("last_name") lastName: RequestBody,
+        @Part("class_id") classId: RequestBody,
+        @Part("parent_phone") parentPhone: RequestBody?,
+        @Part("username") username: RequestBody?,
+        @Part("password") password: RequestBody?,
+        @Part file: MultipartBody.Part?,
+    ): StudentDto
+
     @DELETE("students/{id}")
     suspend fun deleteStudent(@Path("id") id: Int)
 

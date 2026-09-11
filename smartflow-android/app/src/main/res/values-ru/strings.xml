@@ -15,7 +15,6 @@
     <string name="password_label">Пароль</string>
     <string name="login_button">Войти</string>
     <string name="login_forgot">Забыли пароль?</string>
-    <string name="login_demo">Посмотреть демо</string>
     <string name="login_first_time">Впервые здесь? Просто введите номер — мы отправим код.</string>
     <string name="error_phone_not_registered">Этот номер ещё не зарегистрирован ни одной школой.</string>
     <string name="error_invalid_credentials">Неверный номер телефона или пароль.</string>
@@ -204,9 +203,6 @@
     <string name="server_found">Школьный сервер: %1$s</string>
     <string name="server_relay">Подключено через интернет (вне школьной сети)</string>
     <string name="server_not_found">Школьный сервер не найден — ни в этой сети, ни через интернет.</string>
-    <string name="server_manual">Ввести адрес вручную</string>
-    <string name="server_check">Проверить</string>
-    <string name="server_bad">По этому адресу никто не ответил.</string>
     <string name="teacher_login_hint">Войдите с почтой и паролем, которые дал директор.</string>
     <string name="nav_journal">Журнал</string>
     <string name="nav_materials">Материалы</string>
@@ -297,12 +293,12 @@
     <string name="lesson_upcoming">Ещё не началось</string>
     <string name="lesson_finished">Завершено</string>
     <string name="video_fullscreen">На весь экран</string>
+    <string name="video_silent">Подключено, но камера сейчас не передаёт кадры — она работает только во время уроков.</string>
     <string name="video_title">Живое видео</string>
     <string name="video_pick_camera">Выберите камеру</string>
     <string name="video_connecting">Подключаемся к камере…</string>
     <string name="video_disabled">Живое видео выключено в настройках.</string>
     <string name="video_lost">Поток прервался. Нажмите, чтобы подключиться снова.</string>
-    <string name="video_demo">Для живого видео нужен школьный сервер — в демо камеры нет.</string>
     <string name="school_title">Школа</string>
     <string name="classes_title">Классы</string>
     <string name="add_class">Добавить класс</string>
@@ -372,4 +368,14 @@
     <string name="event_end">Дата окончания (необязательно)</string>
     <string name="date_format_hint">ГГГГ-ММ-ДД</string>
     <string name="create">Создать</string>
+    <string name="onb_skip">Пропустить</string>
+    <string name="onb_start">Начать</string>
+    <string name="onb_lang_title">Выберите язык</string>
+    <string name="onb_lang_body">Его можно поменять позже в профиле.</string>
+    <string name="onb_two_title">Посещаемость отмечает камера</string>
+    <string name="onb_two_body">Камеры в классе узнают учеников, когда они приходят. Без переклички — школа и родители видят это сразу.</string>
+    <string name="onb_three_title">Всё о вашем ребёнке в одном месте</string>
+    <string name="onb_three_body">Оценки, дневник, домашние задания, рейтинг и школьные новости — и сообщение в ту же минуту, когда ребёнок вошёл.</string>
+    <string name="student_login_title">Вход для самого ученика</string>
+    <string name="student_login_hint_dir">Необязательно. Задайте логин и пароль, чтобы ученик сам пользовался приложением.</string>
 </resources>

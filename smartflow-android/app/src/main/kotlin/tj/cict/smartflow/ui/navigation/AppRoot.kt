@@ -10,6 +10,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,6 +39,7 @@ import tj.cict.smartflow.ui.home.ChildrenViewModel
 import tj.cict.smartflow.ui.home.HomeScreen
 import tj.cict.smartflow.ui.home.StudentHomeScreen
 import tj.cict.smartflow.ui.homework.HomeworkScreen
+import tj.cict.smartflow.ui.onboarding.OnboardingScreen
 import tj.cict.smartflow.ui.rating.RatingScreen
 import tj.cict.smartflow.data.dto.ClassDto
 import tj.cict.smartflow.ui.director.CamerasScreen
@@ -70,6 +72,7 @@ import tj.cict.smartflow.ui.teacher.TeacherHomeScreen
 fun AppRoot() {
     val sessionVm: SessionViewModel = koinViewModel()
     val state by sessionVm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { sessionVm.refreshSchoolServer() }
 
     AnimatedContent(
         targetState = state,
@@ -79,6 +82,7 @@ fun AppRoot() {
     ) { s ->
         when (s) {
             SessionState.Loading -> PageBackground { Box(Modifier.fillMaxSize()) }
+            SessionState.Onboarding -> OnboardingScreen(onDone = sessionVm::finishOnboarding)
             SessionState.SignedOut -> AuthGraph()
             is SessionState.SignedIn -> when (s.session.role) {
                 Role.PARENT -> ParentGraph(parentId = s.session.ownerId, parentName = s.session.fullName, onSignOut = sessionVm::signOut)

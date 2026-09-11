@@ -22,24 +22,10 @@ sealed interface LoginOutcome {
     data class NeedsPassword(val phone: String) : LoginOutcome
 }
 
+/** Parent and pupil sign-in, against the Public Server. */
 class AuthRepository(private val api: PublicApi, private val session: SessionStore) {
 
-    /** The demo family: no server, no SMS, every screen full. */
-    suspend fun loginDemo() {
-        session.save(Session(DemoData.TOKEN, Role.PARENT, DemoData.PARENT_ID, DemoData.PARENT_NAME, DemoData.PHONE))
-    }
-
-    /** The demo pupil -- the elder child of the demo family, signed in as herself. */
-    suspend fun loginDemoStudent() {
-        val me = DemoData.children.first()
-        session.save(Session(DemoData.TOKEN, Role.STUDENT, me.id, me.fullName, DemoData.STUDENT_USERNAME, me.className))
-    }
-
     suspend fun login(phone: String, password: String?): ApiResult<LoginOutcome> {
-        if (phone == DemoData.PHONE) {
-            loginDemo()
-            return ApiResult.Ok(LoginOutcome.SignedIn)
-        }
         val result = safeCall { api.login(LoginRequest(phone, password?.takeIf { it.isNotBlank() })) }
         return when (result) {
             is ApiResult.Err -> result
@@ -56,10 +42,6 @@ class AuthRepository(private val api: PublicApi, private val session: SessionSto
     }
 
     suspend fun loginStudent(username: String, password: String): ApiResult<Unit> {
-        if (username.trim().equals(DemoData.STUDENT_USERNAME, ignoreCase = true)) {
-            loginDemoStudent()
-            return ApiResult.Ok(Unit)
-        }
         val result = safeCall { api.studentLogin(StudentLoginRequest(username.trim(), password)) }
         return when (result) {
             is ApiResult.Err -> result

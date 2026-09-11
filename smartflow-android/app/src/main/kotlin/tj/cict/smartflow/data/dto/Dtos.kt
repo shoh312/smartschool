@@ -56,6 +56,7 @@ data class StudentDto(
     @SerialName("class_name") val className: String? = null,
     @SerialName("parent_phone") val parentPhone: String? = null,
     @SerialName("parent_name") val parentName: String? = null,
+    val username: String? = null,
     @SerialName("first_name") val firstName: String,
     @SerialName("last_name") val lastName: String,
     @SerialName("is_active") val isActive: Boolean = true,

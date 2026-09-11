@@ -49,7 +49,7 @@ val appModule = module {
     single { ParentRepository(get(), get()) }
     single(named("school")) { SchoolApiClient.okHttp(get()) }
     single { SchoolApiClient.api(get(named("school"))) }
-    single { TeacherRepository(get(), get(named("school")), get()) }
+    single { TeacherRepository(get(), get()) }
     single { DirectorRepository(get(), get()) }
 
     viewModelOf(::SessionViewModel)

@@ -3,6 +3,7 @@ package tj.cict.smartflow.core.session
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -40,6 +41,13 @@ class SessionStore(private val context: Context) {
         val selectedChild = intPreferencesKey("selected_child")
         val serverUrl = stringPreferencesKey("server_url")
         val lastServerUrl = stringPreferencesKey("last_server_url")
+        val onboarded = booleanPreferencesKey("onboarded")
+    }
+
+    val onboarded: Flow<Boolean> = context.dataStore.data.map { it[Keys.onboarded] ?: false }
+
+    suspend fun markOnboarded() {
+        context.dataStore.edit { it[Keys.onboarded] = true }
     }
 
     val session: Flow<Session?> = context.dataStore.data.map { prefs ->
@@ -85,6 +93,11 @@ class SessionStore(private val context: Context) {
         }
     }
 
+    /** The school server moved (LAN <-> relay) while signed in. */
+    suspend fun updateServerUrl(url: String) {
+        context.dataStore.edit { it[Keys.serverUrl] = url; it[Keys.lastServerUrl] = url }
+    }
+
     suspend fun rememberChild(id: Int) {
         context.dataStore.edit { it[Keys.selectedChild] = id }
     }
@@ -92,8 +105,10 @@ class SessionStore(private val context: Context) {
     suspend fun clear() {
         context.dataStore.edit { prefs ->
             val keep = prefs[Keys.lastServerUrl]
+            val onboarded = prefs[Keys.onboarded]
             prefs.clear()
             keep?.let { prefs[Keys.lastServerUrl] = it }
+            onboarded?.let { prefs[Keys.onboarded] = it }
         }
     }
 }

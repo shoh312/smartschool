@@ -418,9 +418,14 @@ private fun VideoSurface(state: VideoState, onReconnect: () -> Unit, modifier: M
             is VideoState.Failed -> Column(Modifier.clickable(onClick = onReconnect).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Rounded.VideocamOff, null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(36.dp)); VSpace(8.dp)
                 Text(
-                    when (state.reason) { "demo" -> stringResource(R.string.video_demo); "live_video_disabled" -> stringResource(R.string.video_disabled); else -> stringResource(R.string.video_lost) },
+                    if (state.reason == "live_video_disabled") stringResource(R.string.video_disabled) else stringResource(R.string.video_lost),
                     color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
                 )
+            }
+            is VideoState.Silent -> Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Rounded.Videocam, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(36.dp)); VSpace(8.dp)
+                Text(stringResource(R.string.video_silent), color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                state.phase?.let { Text(it, color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall) }
             }
             VideoState.Idle -> Text(emptyHint, color = Color.White.copy(alpha = 0.7f))
         }

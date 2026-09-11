@@ -28,6 +28,17 @@ import tj.cict.smartflow.data.api.SchoolApi
  * the API port. The sender's address is the server's address.
  */
 object SchoolDiscovery {
+    /**
+     * Reachability checks must hit the address they are given. The school
+     * API client rewrites every request's host to the saved server address
+     * (see [SchoolHostInterceptor]) -- probing the relay through it would
+     * silently probe the old LAN address instead and always fail off-site.
+     */
+    val probeClient: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(4, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
+        .build()
+
     const val PORT = 8734
     private const val REQUEST = "SMARTSCHOOL_DISCOVER_V1"
     private const val REPLY_PREFIX = "SMARTSCHOOL_HERE:"

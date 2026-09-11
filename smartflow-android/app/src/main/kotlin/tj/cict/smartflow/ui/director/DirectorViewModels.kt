@@ -46,6 +46,7 @@ import tj.cict.smartflow.data.dto.SchoolSettingsUpdate
 import tj.cict.smartflow.data.dto.StudentDto
 import tj.cict.smartflow.data.dto.TeacherDto
 import tj.cict.smartflow.data.repo.DirectorRepository
+import tj.cict.smartflow.data.repo.StudentEdit
 import tj.cict.smartflow.domain.AttendanceStatus
 
 // ---------------------------------------------------------------- live
@@ -102,6 +103,8 @@ sealed interface VideoState {
     data object Idle : VideoState
     data object Connecting : VideoState
     data class Streaming(val frame: Bitmap) : VideoState
+    /** Socket open, nothing arriving -- the camera is not producing right now. */
+    data class Silent(val phase: String?) : VideoState
     data class Failed(val reason: String) : VideoState
 }
 
@@ -118,13 +121,12 @@ class LiveVideoViewModel(private val repo: DirectorRepository, private val clien
     private val _selected = MutableStateFlow<Int?>(null)
     val selected: StateFlow<Int?> = _selected.asStateFlow()
     private var socket: WebSocket? = null
-    private var demo = false
+    private var silence: Job? = null
 
     fun load() {
         viewModelScope.launch {
             val r = repo.cameras()
             _cameras.value = r.toUiState()
-            demo = repo.streamUrl(0) == null
             val first = (r as? ApiResult.Ok)?.value?.firstOrNull { it.isActive }?.id
             if (_selected.value == null && first != null) select(first)
         }
@@ -141,13 +143,25 @@ class LiveVideoViewModel(private val repo: DirectorRepository, private val clien
         disconnect()
         viewModelScope.launch {
             val url = repo.streamUrl(cameraId)
-            if (url == null) { _state.value = VideoState.Failed("demo"); return@launch }
+            if (url == null) { _state.value = VideoState.Failed("closed"); return@launch }
             _state.value = VideoState.Connecting
+            // The server keeps the socket open even when the camera thread is
+            // idle between lessons, so "connected" alone would sit on a spinner
+            // for an hour. After a few silent seconds, say what the camera is doing.
+            silence?.cancel()
+            silence = viewModelScope.launch {
+                delay(6_000)
+                if (_state.value is VideoState.Connecting) {
+                    val st = (repo.cameraStatus() as? ApiResult.Ok)?.value?.firstOrNull { it.cameraId == cameraId }
+                    if (_state.value is VideoState.Connecting) _state.value = VideoState.Silent(st?.phase)
+                }
+            }
             socket = client.newWebSocket(
                 Request.Builder().url(url).build(),
                 object : WebSocketListener() {
                     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                         val bmp = BitmapFactory.decodeByteArray(bytes.toByteArray(), 0, bytes.size) ?: return
+                        silence?.cancel()
                         _state.value = VideoState.Streaming(bmp)
                     }
                     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
@@ -162,6 +176,7 @@ class LiveVideoViewModel(private val repo: DirectorRepository, private val clien
     }
 
     fun disconnect() {
+        silence?.cancel()
         socket?.close(1000, null)
         socket = null
         if (_state.value !is VideoState.Failed) _state.value = VideoState.Idle
@@ -219,6 +234,14 @@ class SchoolViewModel(private val repo: DirectorRepository) : ViewModel() {
             File(context.cacheDir, "student_face.jpg").also { out -> context.contentResolver.openInputStream(photo)?.use { it.copyTo(out.outputStream()) } }
         }
         repo.createStudent(first, last, classId, phone, parentName, file, context.contentResolver.getType(photo) ?: "image/jpeg")
+    })
+    fun updateStudent(context: Context, id: Int, edit: StudentEdit, photo: Uri?) = write({
+        val file = photo?.let { uri ->
+            withContext(Dispatchers.IO) {
+                File(context.cacheDir, "student_face_edit.jpg").also { out -> context.contentResolver.openInputStream(uri)?.use { it.copyTo(out.outputStream()) } }
+            }
+        }
+        repo.updateStudent(id, edit, file, photo?.let { context.contentResolver.getType(it) ?: "image/jpeg" })
     })
     fun deleteStudent(id: Int) = write({ repo.deleteStudent(id) })
 

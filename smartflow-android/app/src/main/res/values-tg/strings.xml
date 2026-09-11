@@ -15,7 +15,6 @@
     <string name="password_label">Рамз</string>
     <string name="login_button">Ворид шудан</string>
     <string name="login_forgot">Рамзро фаромӯш кардед?</string>
-    <string name="login_demo">Намоиши демо</string>
     <string name="login_first_time">Бори аввал аст? Танҳо рақамро нависед — мо код мефиристем.</string>
     <string name="error_phone_not_registered">Ин рақамро ҳанӯз ягон мактаб сабт накардааст.</string>
     <string name="error_invalid_credentials">Рақами телефон ё рамз нодуруст аст.</string>
@@ -204,9 +203,6 @@
     <string name="server_found">Сервери мактаб: %1$s</string>
     <string name="server_relay">Тавассути интернет пайваст (берун аз шабакаи мактаб)</string>
     <string name="server_not_found">Сервери мактаб ёфт нашуд — на дар ин шабака, на тавассути интернет.</string>
-    <string name="server_manual">Суроғаро дастӣ ворид кунед</string>
-    <string name="server_check">Санҷидан</string>
-    <string name="server_bad">Дар ин суроға касе ҷавоб надод.</string>
     <string name="teacher_login_hint">Бо почта ва рамзе, ки директор додааст, ворид шавед.</string>
     <string name="nav_journal">Журнал</string>
     <string name="nav_materials">Маводҳо</string>
@@ -297,12 +293,12 @@
     <string name="lesson_upcoming">Ҳанӯз оғоз нашуд</string>
     <string name="lesson_finished">Тамом шуд</string>
     <string name="video_fullscreen">Экрани пурра</string>
+    <string name="video_silent">Пайваст аст, вале камера ҳоло кадр намефиристад — он танҳо ҳангоми дарс кор мекунад.</string>
     <string name="video_title">Видеои зинда</string>
     <string name="video_pick_camera">Камераро интихоб кунед</string>
     <string name="video_connecting">Ба камера пайваст мешавем…</string>
     <string name="video_disabled">Видеои зинда дар танзимот хомӯш аст.</string>
     <string name="video_lost">Ҷараён қатъ шуд. Барои пайвасти дубора пахш кунед.</string>
-    <string name="video_demo">Барои видеои зинда сервери мактаб лозим аст — дар демо камера нест.</string>
     <string name="school_title">Мактаб</string>
     <string name="classes_title">Синфҳо</string>
     <string name="add_class">Илова кардани синф</string>
@@ -372,4 +368,14 @@
     <string name="event_end">Санаи анҷом (ихтиёрӣ)</string>
     <string name="date_format_hint">СССС-ММ-РР</string>
     <string name="create">Сохтан</string>
+    <string name="onb_skip">Гузаштан</string>
+    <string name="onb_start">Оғоз</string>
+    <string name="onb_lang_title">Забонро интихоб кунед</string>
+    <string name="onb_lang_body">Онро баъдтар дар профил иваз кардан мумкин.</string>
+    <string name="onb_two_title">Давомотро камера қайд мекунад</string>
+    <string name="onb_two_body">Камераҳо дар синф хонандагонро ҳангоми омадан мешиносанд. Бе рӯйхатхонӣ — мактаб ва волидайн онро дарҳол мебинанд.</string>
+    <string name="onb_three_title">Ҳама чиз дар бораи фарзандатон дар як ҷо</string>
+    <string name="onb_three_body">Баҳоҳо, рӯзнома, вазифаи хонагӣ, рейтинг ва хабарҳои мактаб — ва паём дар ҳамон дақиқае, ки фарзанд ворид шуд.</string>
+    <string name="student_login_title">Воридшавии худи хонанда</string>
+    <string name="student_login_hint_dir">Ихтиёрӣ. Логин ва рамз гузоред, то хонанда худаш аз барнома истифода барад.</string>
 </resources>

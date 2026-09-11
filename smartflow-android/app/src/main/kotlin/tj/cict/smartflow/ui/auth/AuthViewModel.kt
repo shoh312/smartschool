@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tj.cict.smartflow.core.network.ApiError
 import tj.cict.smartflow.core.network.ApiResult
-import tj.cict.smartflow.core.network.SchoolDiscovery
 import tj.cict.smartflow.data.repo.AuthRepository
 import tj.cict.smartflow.data.repo.LoginOutcome
 import tj.cict.smartflow.data.repo.DirectorRepository
@@ -31,8 +30,6 @@ data class LoginUi(
     /** School-server lookup, teacher tab only. */
     val serverUrl: String? = null,
     val serverSearching: Boolean = false,
-    val serverManual: String = "",
-    val serverBad: Boolean = false,
 ) {
     val student: Boolean get() = tab == 1
     val teacher: Boolean get() = tab == 2
@@ -77,17 +74,6 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
     fun onPhone(v: String) = _login.update { it.copy(phone = v, error = null) }
     fun onPassword(v: String) = _login.update { it.copy(password = v, error = null) }
 
-    fun enterDemo() {
-        viewModelScope.launch {
-            when (_login.value.tab) {
-                1 -> repo.loginDemoStudent()
-                2 -> teachers.loginDemo()
-                3 -> directors.loginDemo()
-                else -> repo.loginDemo()
-            }
-        }
-    }
-
     fun setTab(tab: Int) {
         _login.update { it.copy(tab = tab, error = null) }
         if (tab >= 2 && _login.value.serverUrl == null && !_login.value.serverSearching) findServer()
@@ -95,22 +81,12 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
 
     fun onEmail(v: String) = _login.update { it.copy(email = v, error = null) }
     fun onTeacherPassword(v: String) = _login.update { it.copy(teacherPassword = v, error = null) }
-    fun onServerManual(v: String) = _login.update { it.copy(serverManual = v, serverBad = false) }
 
     fun findServer() {
-        _login.update { it.copy(serverSearching = true, serverBad = false) }
+        _login.update { it.copy(serverSearching = true) }
         viewModelScope.launch {
             val url = teachers.resolveServer()
             _login.update { it.copy(serverSearching = false, serverUrl = url) }
-        }
-    }
-
-    fun checkManualServer() {
-        val url = SchoolDiscovery.normalise(_login.value.serverManual) ?: run { _login.update { it.copy(serverBad = true) }; return }
-        _login.update { it.copy(serverSearching = true, serverBad = false) }
-        viewModelScope.launch {
-            val ok = teachers.checkServer(url)
-            _login.update { it.copy(serverSearching = false, serverUrl = if (ok) url else it.serverUrl, serverBad = !ok) }
         }
     }
 
@@ -119,7 +95,14 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
         if (ui.busy || ui.email.isBlank()) return
         _login.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            val r = if (ui.director) directors.login(ui.email, ui.teacherPassword, ui.serverUrl) else teachers.login(ui.email, ui.teacherPassword, ui.serverUrl)
+            // Discovery runs quietly when the tab opens; if it has not found
+            // the server yet (or failed), one more try before giving up.
+            val server = ui.serverUrl ?: teachers.resolveServer().also { url -> _login.update { it.copy(serverUrl = url) } }
+            if (server == null) {
+                _login.update { it.copy(busy = false, error = ApiError.Detail("school_not_found", 0)) }
+                return@launch
+            }
+            val r = if (ui.director) directors.login(ui.email, ui.teacherPassword, server) else teachers.login(ui.email, ui.teacherPassword, server)
             when (r) {
                 is ApiResult.Ok -> _login.update { it.copy(busy = false) }
                 is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error) }

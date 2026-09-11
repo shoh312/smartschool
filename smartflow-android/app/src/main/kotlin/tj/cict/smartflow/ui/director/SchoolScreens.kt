@@ -68,6 +68,7 @@ import tj.cict.smartflow.data.dto.CameraDto
 import tj.cict.smartflow.data.dto.ClassDto
 import tj.cict.smartflow.data.dto.StudentDto
 import tj.cict.smartflow.data.dto.TeacherDto
+import tj.cict.smartflow.data.repo.StudentEdit
 import tj.cict.smartflow.domain.Child
 import tj.cict.smartflow.ui.components.AppTextField
 import tj.cict.smartflow.ui.components.ChildAvatar
@@ -285,6 +286,7 @@ fun StudentsScreen(vm: SchoolViewModel, onBack: () -> Unit) {
     val c = MaterialTheme.smart
     var query by remember { mutableStateOf("") }
     var adding by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<StudentDto?>(null) }
     var deleting by remember { mutableStateOf<StudentDto?>(null) }
     PageBackground {
         Column(Modifier.fillMaxSize()) {
@@ -300,7 +302,7 @@ fun StudentsScreen(vm: SchoolViewModel, onBack: () -> Unit) {
                     if (rows.isEmpty()) { EmptyState(R.drawable.ill_backpack, stringResource(R.string.no_students)); return@Column }
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(rows, key = { it.id }) { st ->
-                            SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp) {
+                            SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp, onClick = { editing = st }) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ChildAvatar(Child(st.id, st.firstName, st.lastName, st.className), 38.dp); HSpace(12.dp)
                                     Column(Modifier.weight(1f)) {
@@ -317,6 +319,7 @@ fun StudentsScreen(vm: SchoolViewModel, onBack: () -> Unit) {
         }
     }
     if (adding) AddStudentSheet(vm, ui.classList, ui.busy, onDismiss = { adding = false })
+    editing?.let { st -> EditStudentSheet(st, vm, ui.classList, ui.busy, onDismiss = { editing = null }, onDelete = { deleting = st; editing = null }) }
     deleting?.let { st -> ConfirmDialog(stringResource(R.string.delete_student_confirm, "${st.firstName} ${st.lastName}"), onConfirm = { vm.deleteStudent(st.id) }, onDismiss = { deleting = null }) }
     ErrorDialog(vm)
 }
@@ -357,6 +360,68 @@ private fun AddStudentSheet(vm: SchoolViewModel, classes: List<ClassDto>, busy: 
             stringResource(R.string.create),
             onClick = { vm.createStudent(context, first.trim(), last.trim(), classId!!, phone, parent.trim(), photo!!); onDismiss() },
             enabled = first.isNotBlank() && last.isNotBlank() && classId != null && phone.filter(Char::isDigit).length >= 9 && photo != null, loading = busy,
+        )
+    }
+}
+
+/** Everything about one pupil, editable: name, class, parent, login, a fresh face photo. */
+@Composable
+private fun EditStudentSheet(st: StudentDto, vm: SchoolViewModel, classes: List<ClassDto>, busy: Boolean, onDismiss: () -> Unit, onDelete: () -> Unit) {
+    val c = MaterialTheme.smart
+    val context = LocalContext.current
+    var first by remember(st) { mutableStateOf(st.firstName) }
+    var last by remember(st) { mutableStateOf(st.lastName) }
+    var phone by remember(st) { mutableStateOf(st.parentPhone.orEmpty()) }
+    var classId by remember(st) { mutableStateOf(st.classId ?: classes.firstOrNull()?.id) }
+    var username by remember(st) { mutableStateOf(st.username.orEmpty()) }
+    var password by remember(st) { mutableStateOf("") }
+    var photo by remember(st) { mutableStateOf<Uri?>(null) }
+    val captureUri = remember { FileProvider.getUriForFile(context, "${context.packageName}.files", File(context.cacheDir, "student_capture.jpg")) }
+    val take = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) photo = captureUri }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) photo = uri }
+    Sheet(onDismiss) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ChildAvatar(Child(st.id, st.firstName, st.lastName, st.className), 48.dp)
+            HSpace(12.dp)
+            Column(Modifier.weight(1f)) {
+                Text("${st.lastName} ${st.firstName}", style = MaterialTheme.typography.titleLarge, color = c.ink)
+                st.className?.let { Text(stringResource(R.string.class_label, it), style = MaterialTheme.typography.bodySmall, color = c.inkSecondary) }
+            }
+            Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onDelete), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Delete, stringResource(R.string.delete), tint = c.rose) }
+        }
+        VSpace(16.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.weight(1f)) { AppTextField(first, { first = it }, stringResource(R.string.first_name)) }
+            Box(Modifier.weight(1f)) { AppTextField(last, { last = it }, stringResource(R.string.last_name)) }
+        }
+        VSpace(10.dp)
+        ClassPicker(classes, classId) { classId = it }
+        VSpace(10.dp)
+        AppTextField(phone, { phone = it }, stringResource(R.string.parent_phone), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+        VSpace(14.dp)
+        Text(stringResource(R.string.student_login_title), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
+        Text(stringResource(R.string.student_login_hint_dir), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary)
+        VSpace(8.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.weight(1f)) { AppTextField(username, { username = it }, stringResource(R.string.username_label), keyboardOptions = KeyboardOptions(autoCorrectEnabled = false)) }
+            Box(Modifier.weight(1f)) { AppTextField(password, { password = it }, stringResource(R.string.setup_password)) }
+        }
+        VSpace(14.dp)
+        Text(stringResource(R.string.student_photo), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
+        VSpace(6.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            GhostButton(stringResource(R.string.scan_take_photo), onClick = { take.launch(captureUri) })
+            GhostButton(stringResource(R.string.scan_pick_photo), onClick = { pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+            if (photo != null) Chip(stringResource(R.string.photo_taken), c.mint, c.mintSoft)
+        }
+        VSpace(18.dp)
+        PrimaryButton(
+            stringResource(R.string.save),
+            onClick = {
+                vm.updateStudent(context, st.id, StudentEdit(first.trim(), last.trim(), classId!!, phone.trim().ifBlank { null }, username.trim().ifBlank { null }, password.ifBlank { null }), photo)
+                onDismiss()
+            },
+            enabled = first.isNotBlank() && last.isNotBlank() && classId != null, loading = busy,
         )
     }
 }
