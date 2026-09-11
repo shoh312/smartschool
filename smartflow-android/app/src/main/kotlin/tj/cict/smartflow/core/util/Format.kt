@@ -64,3 +64,19 @@ fun ApiError.message(): String = when (this) {
     }
     is ApiError.Unknown -> stringResource(R.string.error_generic)
 }
+
+/** Digits typed on a number pad, shown as HH:MM -- the colon is not on that keyboard. */
+fun formatTimeInput(raw: String): String {
+    val d = raw.filter(Char::isDigit).take(4)
+    return if (d.length <= 2) d else d.substring(0, 2) + ":" + d.substring(2)
+}
+
+/** Same for dates: 20260915 -> 2026-09-15. */
+fun formatDateInput(raw: String): String {
+    val d = raw.filter(Char::isDigit).take(8)
+    return when {
+        d.length <= 4 -> d
+        d.length <= 6 -> d.substring(0, 4) + "-" + d.substring(4)
+        else -> d.substring(0, 4) + "-" + d.substring(4, 6) + "-" + d.substring(6)
+    }
+}

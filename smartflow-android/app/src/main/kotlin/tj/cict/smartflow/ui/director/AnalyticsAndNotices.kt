@@ -54,6 +54,7 @@ import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.currentLocale
+import tj.cict.smartflow.core.util.formatDateInput
 import tj.cict.smartflow.core.util.dayMonthTime
 import tj.cict.smartflow.core.util.formatAverage
 import tj.cict.smartflow.core.util.message
@@ -287,8 +288,8 @@ fun DirectorCalendarScreen(schoolVm: SchoolViewModel, onBack: () -> Unit, vm: Di
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(eventTypes) { (key, label) -> Pill(stringResource(label), type == key) { type = key } } }
             VSpace(10.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.weight(1f)) { AppTextField(start, { start = it }, stringResource(R.string.event_start), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = startDate == null) }
-                Box(Modifier.weight(1f)) { AppTextField(end, { end = it }, stringResource(R.string.event_end), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = end.isNotBlank() && endDate == null) }
+                Box(Modifier.weight(1f)) { AppTextField(start, { start = formatDateInput(it) }, stringResource(R.string.event_start), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = startDate == null) }
+                Box(Modifier.weight(1f)) { AppTextField(end, { end = formatDateInput(it) }, stringResource(R.string.event_end), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = end.isNotBlank() && endDate == null) }
             }
             Text(stringResource(R.string.date_format_hint), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary); VSpace(10.dp)
             Text(stringResource(R.string.ann_for), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)

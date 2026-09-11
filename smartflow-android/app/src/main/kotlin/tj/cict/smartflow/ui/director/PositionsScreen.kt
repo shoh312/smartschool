@@ -52,6 +52,7 @@ import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.currentLocale
+import tj.cict.smartflow.core.util.formatTimeInput
 import tj.cict.smartflow.core.util.message
 import tj.cict.smartflow.data.dto.CameraPositionCreateRequest
 import tj.cict.smartflow.data.dto.CameraPositionDto
@@ -135,8 +136,8 @@ fun PositionsScreen(cameraId: Int, cameraName: String, schoolVm: SchoolViewModel
                 Text(stringResource(R.string.position_group), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
                 ClassPicker(school.classList, classId) { classId = it }; VSpace(12.dp)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(Modifier.weight(1f)) { AppTextField(start, { start = it }, stringResource(R.string.position_start), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = start.isNotBlank() && !TIME.matches(start.trim())) }
-                    Box(Modifier.weight(1f)) { AppTextField(end, { end = it }, stringResource(R.string.position_end), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = end.isNotBlank() && !TIME.matches(end.trim())) }
+                    Box(Modifier.weight(1f)) { AppTextField(start, { start = formatTimeInput(it) }, stringResource(R.string.position_start), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = start.isNotBlank() && !TIME.matches(start.trim())) }
+                    Box(Modifier.weight(1f)) { AppTextField(end, { end = formatTimeInput(it) }, stringResource(R.string.position_end), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = end.isNotBlank() && !TIME.matches(end.trim())) }
                 }
                 Text(stringResource(R.string.position_time_hint), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary); VSpace(12.dp)
                 Text(stringResource(R.string.position_day), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
