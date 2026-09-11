@@ -10,6 +10,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.border
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import tj.cict.smartflow.core.util.formatDateInput
+import tj.cict.smartflow.core.util.formatTimeInput
+import tj.cict.smartflow.data.dto.ClassAssignmentDto
+import tj.cict.smartflow.ui.components.AppTextField
+import tj.cict.smartflow.ui.components.GhostButton
+import tj.cict.smartflow.ui.components.RoundIconButton
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,15 +77,20 @@ import tj.cict.smartflow.ui.theme.Radius
 import tj.cict.smartflow.ui.theme.smart
 
 @Composable
-fun MaterialsScreen(bottomPadding: Dp, onBack: (() -> Unit)?, onOpenResults: (Int) -> Unit, vm: MaterialsViewModel = koinViewModel()) {
+fun MaterialsScreen(bottomPadding: Dp, onBack: (() -> Unit)?, onOpenResults: (Int) -> Unit, onCreate: () -> Unit, onEdit: (Int) -> Unit, classesVm: TeacherClassesViewModel, vm: MaterialsViewModel = koinViewModel()) {
     LaunchedEffect(Unit) { vm.load() }
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    val error by vm.error.collectAsStateWithLifecycle()
+    val classes by classesVm.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(0) }
+    var assigning by remember { mutableStateOf<MaterialSummaryDto?>(null) }
+    var deleting by remember { mutableStateOf<MaterialSummaryDto?>(null) }
     val locale = currentLocale()
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader(stringResource(R.string.materials_title), onBack = onBack)
+            ScreenHeader(stringResource(R.string.materials_title), onBack = onBack, trailing = { RoundIconButton(Icons.Rounded.Add, stringResource(R.string.material_new), onCreate) })
             SegmentRow(Modifier.padding(horizontal = 20.dp)) {
                 Segment(stringResource(R.string.materials_assigned), tab == 0) { tab = 0 }
                 Segment(stringResource(R.string.materials_mine), tab == 1) { tab = 1 }
@@ -91,19 +112,38 @@ fun MaterialsScreen(bottomPadding: Dp, onBack: (() -> Unit)?, onOpenResults: (In
                     is UiState.Failed -> ErrorState(s.error.message(), onRetry = { vm.load(force = true) })
                     is UiState.Ready -> if (s.data.isEmpty()) EmptyState(R.drawable.ill_clipboard, stringResource(R.string.materials_empty)) else {
                         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(s.data, key = { it.id }) { m -> MaterialRow(m) }
+                            items(s.data, key = { it.id }) { m -> MaterialRow(m, onEdit = { onEdit(m.id) }, onAssign = { assigning = m }, onDelete = { deleting = m }) }
                         }
                     }
                 }
             }
         }
     }
+
+    assigning?.let { m ->
+        AssignSheet(m, (classes as? UiState.Ready)?.data.orEmpty(), busy, onDismiss = { assigning = null }, onAssign = { ids, mode, due, att -> vm.assign(m.id, ids, mode, due, att) { assigning = null } })
+    }
+    deleting?.let { m ->
+        AlertDialog(
+            onDismissRequest = { deleting = null }, containerColor = MaterialTheme.smart.surface, shape = RoundedCornerShape(Radius.lg),
+            title = { Text(stringResource(R.string.delete_material_confirm, m.title), style = MaterialTheme.typography.titleMedium) },
+            confirmButton = { TextButton(onClick = { vm.delete(m.id); deleting = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.smart.rose) } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    error?.let { err ->
+        AlertDialog(
+            onDismissRequest = vm::clearError, containerColor = MaterialTheme.smart.surface, shape = RoundedCornerShape(Radius.lg),
+            text = { Text(err.message(), style = MaterialTheme.typography.bodyLarge) },
+            confirmButton = { TextButton(onClick = vm::clearError) { Text(stringResource(R.string.done)) } },
+        )
+    }
 }
 
 @Composable
-private fun MaterialRow(m: MaterialSummaryDto) {
+private fun MaterialRow(m: MaterialSummaryDto, onEdit: () -> Unit, onAssign: () -> Unit, onDelete: () -> Unit) {
     val c = MaterialTheme.smart
-    SoftCard(contentPadding = PaddingValues(14.dp), elevation = 5.dp) {
+    SoftCard(contentPadding = PaddingValues(14.dp), elevation = 5.dp, onClick = onEdit) {
         Text(m.subject, style = MaterialTheme.typography.labelSmall, color = c.brandDeep)
         Text(m.title, style = MaterialTheme.typography.titleMedium, color = c.ink)
         if (!m.description.isNullOrBlank()) Text(m.description, style = MaterialTheme.typography.bodySmall, color = c.inkSecondary, maxLines = 2)
@@ -112,6 +152,12 @@ private fun MaterialRow(m: MaterialSummaryDto) {
             Text(stringResource(R.string.material_meta, m.questionCount, m.maxScore), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary)
             HSpace(10.dp)
             if (m.assignedClassCount > 0) Chip(stringResource(R.string.assigned_to_n, m.assignedClassCount), c.mint, c.mintSoft)
+        }
+        VSpace(8.dp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            GhostButton(stringResource(R.string.delete), onClick = onDelete, color = c.inkTertiary)
+            GhostButton(stringResource(R.string.edit), onClick = onEdit)
+            GhostButton(stringResource(R.string.assign_material), onClick = onAssign)
         }
     }
 }
@@ -146,6 +192,66 @@ private fun AssignmentRow(a: TeacherAssignmentDto, locale: java.util.Locale, onC
             Chip(stringResource(R.string.results_transferred), c.mint, c.mintSoft)
         }
     }
+}
+
+@Composable
+private fun AssignSheet(m: MaterialSummaryDto, classes: List<ClassAssignmentDto>, busy: Boolean, onDismiss: () -> Unit, onAssign: (List<Int>, String, String?, Int?) -> Unit) {
+    val c = MaterialTheme.smart
+    val distinct = remember(classes) { classes.distinctBy { it.classId } }
+    var picked by remember { mutableStateOf(setOf<Int>()) }
+    var mode by remember { mutableStateOf("practice") }
+    var date by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var attempts by remember { mutableStateOf<Int?>(null) }
+    val dateOk = date.isBlank() || runCatching { java.time.LocalDate.parse(date) }.isSuccess
+    val timeOk = time.isBlank() || Regex("^([01]?\\d|2[0-3]):[0-5]\\d$").matches(time)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface,
+        shape = RoundedCornerShape(topStart = Radius.xl, topEnd = Radius.xl),
+        dragHandle = { Box(Modifier.padding(top = 12.dp, bottom = 4.dp).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(c.border)) },
+    ) {
+        Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 28.dp)) {
+            Text(m.title, style = MaterialTheme.typography.titleLarge, color = c.ink)
+            Text(stringResource(R.string.assign_material), style = MaterialTheme.typography.bodySmall, color = c.inkSecondary); VSpace(14.dp)
+            Text(stringResource(R.string.assign_classes), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(distinct, key = { it.classId }) { cls -> TogglePill(cls.className ?: "#${cls.classId}", cls.classId in picked) { picked = if (cls.classId in picked) picked - cls.classId else picked + cls.classId } }
+            }
+            VSpace(12.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TogglePill(stringResource(R.string.mode_practice), mode == "practice") { mode = "practice" }
+                TogglePill(stringResource(R.string.mode_control), mode == "control") { mode = "control" }
+            }
+            VSpace(12.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.weight(1f)) { AppTextField(date, { date = formatDateInput(it) }, stringResource(R.string.assign_due_date), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = !dateOk) }
+                Box(Modifier.weight(1f)) { AppTextField(time, { time = formatTimeInput(it) }, stringResource(R.string.assign_due_time), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = !timeOk) }
+            }
+            Text(stringResource(R.string.assign_due_hint), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary); VSpace(12.dp)
+            Text(stringResource(R.string.assign_attempts), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TogglePill(stringResource(R.string.attempts_unlimited), attempts == null) { attempts = null }
+                listOf(1, 2, 3).forEach { n -> TogglePill("$n", attempts == n) { attempts = n } }
+            }
+            VSpace(18.dp)
+            PrimaryButton(
+                stringResource(R.string.assign_material),
+                onClick = {
+                    val due = if (date.isNotBlank()) date + "T" + (time.ifBlank { "23:59" }) + ":00" else null
+                    onAssign(picked.toList(), mode, due, attempts)
+                },
+                enabled = picked.isNotEmpty() && dateOk && timeOk, loading = busy,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TogglePill(text: String, selected: Boolean, onClick: () -> Unit) {
+    val c = MaterialTheme.smart
+    Box(
+        Modifier.clip(RoundedCornerShape(999.dp)).background(if (selected) c.brand else c.surfaceSoft).border(1.dp, if (selected) c.brand else c.border, RoundedCornerShape(999.dp)).clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+    ) { Text(text, style = MaterialTheme.typography.labelMedium, color = if (selected) Color.White else c.ink) }
 }
 
 // =============================================================== Results

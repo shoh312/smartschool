@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -146,12 +148,12 @@ fun ClassCard(cls: ClassAssignmentDto, modifier: Modifier = Modifier, onClick: (
     SoftCard(modifier, contentPadding = PaddingValues(14.dp), elevation = 6.dp, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).clip(RoundedCornerShape(Radius.md)).background(color.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                Text(cls.className ?: "?", style = MaterialTheme.typography.titleLarge, color = color)
+                Icon(Icons.Rounded.Groups, null, tint = color, modifier = Modifier.size(28.dp))
             }
             HSpace(14.dp)
             Column(Modifier.weight(1f)) {
-                Text(cls.subject ?: "", style = MaterialTheme.typography.titleMedium, color = c.ink)
-                Text(stringResource(R.string.class_label, cls.className ?: ""), style = MaterialTheme.typography.bodySmall, color = c.inkSecondary)
+                Text(cls.className ?: "", style = MaterialTheme.typography.titleMedium, color = c.ink)
+                if (!cls.subject.isNullOrBlank() && cls.subject != cls.className) Text(cls.subject, style = MaterialTheme.typography.bodySmall, color = c.inkSecondary)
             }
         }
     }

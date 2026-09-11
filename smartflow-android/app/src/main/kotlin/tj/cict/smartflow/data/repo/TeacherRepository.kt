@@ -16,6 +16,12 @@ import tj.cict.smartflow.core.session.Session
 import tj.cict.smartflow.core.session.SessionStore
 import tj.cict.smartflow.data.api.SchoolApi
 import tj.cict.smartflow.data.dto.AbsenceDto
+import tj.cict.smartflow.data.dto.AiGenerateResponse
+import tj.cict.smartflow.data.dto.AssignmentCreateRequest
+import tj.cict.smartflow.data.dto.BlockInDto
+import tj.cict.smartflow.data.dto.MaterialCreateRequest
+import tj.cict.smartflow.data.dto.MaterialFullDto
+import tj.cict.smartflow.data.dto.MaterialUpdateRequest
 import tj.cict.smartflow.data.dto.AssignmentResultsDto
 import tj.cict.smartflow.data.dto.CalendarEventDto
 import tj.cict.smartflow.data.dto.ClassAssignmentDto
@@ -104,6 +110,28 @@ class TeacherRepository(private val api: SchoolApi, private val session: Session
     suspend fun materials(): ApiResult<List<MaterialSummaryDto>> = safeCall { api.materials() }
 
     suspend fun assignments(): ApiResult<List<TeacherAssignmentDto>> = safeCall { api.assignments() }
+
+    suspend fun material(id: Int): ApiResult<MaterialFullDto> = safeCall { api.material(id) }
+
+    suspend fun saveMaterial(id: Int?, title: String, description: String?, blocks: List<BlockInDto>): ApiResult<MaterialFullDto> =
+        if (id == null) safeCall { api.createMaterial(MaterialCreateRequest(title, description, null, blocks)) }
+        else safeCall { api.updateMaterial(id, MaterialUpdateRequest(title, description, blocks)) }
+
+    suspend fun deleteMaterial(id: Int): ApiResult<Unit> = safeCall { api.deleteMaterial(id) }
+
+    suspend fun aiGenerate(kind: String, topic: String?, sourceText: String?, questionCount: Int, pageCount: Int, types: List<String>, difficulty: String, language: String, file: File?, mime: String?): ApiResult<AiGenerateResponse> {
+        fun t(v: String) = v.toRequestBody("text/plain".toMediaType())
+        return safeCall {
+            api.aiGenerate(
+                t(kind), topic?.takeIf { it.isNotBlank() }?.let { t(it) }, sourceText?.takeIf { it.isNotBlank() }?.let { t(it) },
+                t(questionCount.toString()), t(pageCount.toString()), t(types.joinToString(",")), t(difficulty), t(language),
+                if (file != null && mime != null) MultipartBody.Part.createFormData("file", file.name, file.asRequestBody(mime.toMediaType())) else null,
+            )
+        }
+    }
+
+    suspend fun assign(materialId: Int, classIds: List<Int>, mode: String, dueAt: String?, maxAttempts: Int?): ApiResult<List<TeacherAssignmentDto>> =
+        safeCall { api.createAssignments(AssignmentCreateRequest(materialId, classIds, mode, dueAt, maxAttempts)) }
 
     suspend fun results(id: Int): ApiResult<AssignmentResultsDto> = safeCall { api.results(id) }
 

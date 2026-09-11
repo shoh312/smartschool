@@ -156,3 +156,51 @@ data class SchoolAnnouncementDto(
     @Serializable(LocalDateTimeSerializer::class)
     @SerialName("created_at") val createdAt: LocalDateTime? = null,
 )
+
+// ------------------------------------------------ authoring materials
+
+/** A block as the teacher writes it: the key travels with it here. */
+@Serializable
+data class BlockInDto(
+    @SerialName("block_type") val blockType: String,
+    val body: String = "",
+    @SerialName("question_type") val questionType: String? = null,
+    val options: kotlinx.serialization.json.JsonElement? = null,
+    val correct: kotlinx.serialization.json.JsonElement? = null,
+    val points: Int = 1,
+    /** Present on saved and drafted blocks; ignored when sending. */
+    val id: Int? = null,
+    val position: Int = 0,
+)
+
+@Serializable
+data class MaterialCreateRequest(val title: String, val description: String? = null, val subject: String? = null, val blocks: List<BlockInDto>)
+
+@Serializable
+data class MaterialUpdateRequest(val title: String? = null, val description: String? = null, val blocks: List<BlockInDto>? = null)
+
+@Serializable
+data class MaterialFullDto(
+    val id: Int,
+    val title: String,
+    val description: String? = null,
+    val subject: String,
+    val blocks: List<BlockInDto> = emptyList(),
+)
+
+@Serializable
+data class AiGenerateResponse(
+    val title: String = "",
+    val description: String? = null,
+    val blocks: List<BlockInDto> = emptyList(),
+    @SerialName("dropped_count") val droppedCount: Int = 0,
+)
+
+@Serializable
+data class AssignmentCreateRequest(
+    @SerialName("material_id") val materialId: Int,
+    @SerialName("class_ids") val classIds: List<Int>,
+    val mode: String = "practice",
+    @SerialName("due_at") val dueAt: String? = null,
+    @SerialName("max_attempts") val maxAttempts: Int? = null,
+)

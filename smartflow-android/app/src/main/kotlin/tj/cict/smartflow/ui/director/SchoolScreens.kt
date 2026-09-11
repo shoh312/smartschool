@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -193,10 +194,11 @@ fun ClassesScreen(vm: SchoolViewModel, onBack: () -> Unit, onOpen: (ClassDto) ->
                             val c = MaterialTheme.smart
                             SoftCard(contentPadding = PaddingValues(12.dp), elevation = 4.dp, onClick = { onOpen(cls) }) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(46.dp).clip(RoundedCornerShape(Radius.sm)).background(c.brandSoft), contentAlignment = Alignment.Center) { Text(cls.name, style = MaterialTheme.typography.titleMedium, color = c.brandDeep) }
+                                    Box(Modifier.size(46.dp).clip(RoundedCornerShape(Radius.sm)).background(c.brandSoft), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Groups, null, tint = c.brandDeep) }
                                     HSpace(12.dp)
                                     Column(Modifier.weight(1f)) {
-                                        Text(stringResource(R.string.pupils_count, counts[cls.id] ?: 0), style = MaterialTheme.typography.bodyMedium, color = c.ink)
+                                        Text(cls.name, style = MaterialTheme.typography.titleMedium, color = c.ink)
+                                        Text(stringResource(R.string.pupils_count, counts[cls.id] ?: 0), style = MaterialTheme.typography.bodySmall, color = c.inkSecondary)
                                         Text(listOfNotNull(cls.startTime, cls.endTime).joinToString(" – "), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
                                     }
                                     Box(Modifier.size(36.dp).clip(CircleShape).clickable { deleting = cls }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Delete, null, tint = c.inkTertiary, modifier = Modifier.size(20.dp)) }

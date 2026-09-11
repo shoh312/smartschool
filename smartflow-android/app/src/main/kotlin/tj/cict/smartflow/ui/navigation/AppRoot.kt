@@ -61,6 +61,7 @@ import tj.cict.smartflow.ui.director.StudentsScreen
 import tj.cict.smartflow.ui.director.TeachersScreen
 import tj.cict.smartflow.ui.teacher.ClassJournalScreen
 import tj.cict.smartflow.ui.teacher.JournalClassesScreen
+import tj.cict.smartflow.ui.teacher.MaterialEditorScreen
 import tj.cict.smartflow.ui.teacher.MaterialsScreen
 import tj.cict.smartflow.ui.teacher.ResultsScreen
 import tj.cict.smartflow.ui.teacher.ScanJournalScreen
@@ -252,7 +253,15 @@ private fun TeacherGraph(teacherId: Int, name: String, subject: String?, onSignO
                 JournalClassesScreen(classesVm, bottomPadding = padding, onOpenClass = { nav.navigate(ClassJournalRoute(it.classId, it.subject.orEmpty(), it.className.orEmpty())) })
             }
             composable<DiaryRoute> { TeacherDiaryScreen(classesVm, teacherId = teacherId, bottomPadding = padding) }
-            composable<MaterialsRoute> { MaterialsScreen(bottomPadding = padding, onBack = null, onOpenResults = { nav.navigate(ResultsRoute(it)) }) }
+            composable<MaterialsRoute> {
+                MaterialsScreen(
+                    bottomPadding = padding, onBack = null, onOpenResults = { nav.navigate(ResultsRoute(it)) },
+                    onCreate = { nav.navigate(MaterialEditorRoute(null)) }, onEdit = { nav.navigate(MaterialEditorRoute(it)) }, classesVm = classesVm,
+                )
+            }
+            composable<MaterialEditorRoute> { e ->
+                MaterialEditorScreen(e.toRoute<MaterialEditorRoute>().materialId, onBack = { nav.popBackStack() }, onSaved = { nav.popBackStack() })
+            }
 
             composable<ClassJournalRoute> { e ->
                 val r = e.toRoute<ClassJournalRoute>()

@@ -22,6 +22,7 @@ import tj.cict.smartflow.ui.director.StudentRatingViewModel
 import tj.cict.smartflow.ui.director.SchoolViewModel
 import tj.cict.smartflow.ui.director.SettingsViewModel
 import tj.cict.smartflow.ui.teacher.ClassJournalViewModel
+import tj.cict.smartflow.ui.teacher.MaterialEditorViewModel
 import tj.cict.smartflow.ui.teacher.MaterialsViewModel
 import tj.cict.smartflow.ui.teacher.ResultsViewModel
 import tj.cict.smartflow.ui.teacher.ScanJournalViewModel
@@ -73,6 +74,7 @@ val appModule = module {
     viewModelOf(::TeacherDiaryViewModel)
     viewModelOf(::ScanJournalViewModel)
     viewModelOf(::MaterialsViewModel)
+    viewModelOf(::MaterialEditorViewModel)
     viewModelOf(::ResultsViewModel)
     viewModelOf(::SchoolInfoViewModel)
     viewModelOf(::LiveViewModel)

@@ -12,6 +12,11 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import tj.cict.smartflow.data.dto.AbsenceDto
+import tj.cict.smartflow.data.dto.AiGenerateResponse
+import tj.cict.smartflow.data.dto.AssignmentCreateRequest
+import tj.cict.smartflow.data.dto.MaterialCreateRequest
+import tj.cict.smartflow.data.dto.MaterialFullDto
+import tj.cict.smartflow.data.dto.MaterialUpdateRequest
 import tj.cict.smartflow.data.dto.AnalyticsDto
 import tj.cict.smartflow.data.dto.AnnouncementCreateRequest
 import tj.cict.smartflow.data.dto.AssignClassRequest
@@ -97,6 +102,35 @@ interface SchoolApi {
 
     @GET("materials")
     suspend fun materials(@Query("scope") scope: String = "mine"): List<MaterialSummaryDto>
+
+    @GET("materials/{id}")
+    suspend fun material(@Path("id") id: Int): MaterialFullDto
+
+    @POST("materials")
+    suspend fun createMaterial(@Body body: MaterialCreateRequest): MaterialFullDto
+
+    @PATCH("materials/{id}")
+    suspend fun updateMaterial(@Path("id") id: Int, @Body body: MaterialUpdateRequest): MaterialFullDto
+
+    @DELETE("materials/{id}")
+    suspend fun deleteMaterial(@Path("id") id: Int)
+
+    @Multipart
+    @POST("materials/ai/generate")
+    suspend fun aiGenerate(
+        @Part("kind") kind: RequestBody,
+        @Part("topic") topic: RequestBody?,
+        @Part("source_text") sourceText: RequestBody?,
+        @Part("question_count") questionCount: RequestBody,
+        @Part("page_count") pageCount: RequestBody,
+        @Part("question_types") questionTypes: RequestBody,
+        @Part("difficulty") difficulty: RequestBody,
+        @Part("language") language: RequestBody,
+        @Part file: MultipartBody.Part?,
+    ): AiGenerateResponse
+
+    @POST("material-assignments")
+    suspend fun createAssignments(@Body body: AssignmentCreateRequest): List<TeacherAssignmentDto>
 
     @GET("material-assignments")
     suspend fun assignments(): List<TeacherAssignmentDto>

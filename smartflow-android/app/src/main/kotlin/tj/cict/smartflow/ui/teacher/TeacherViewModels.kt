@@ -244,6 +244,33 @@ class MaterialsViewModel(private val repo: TeacherRepository) : ViewModel() {
     val ui: StateFlow<MaterialsUi> = _ui.asStateFlow()
     private var loaded = false
 
+    private val _busy = MutableStateFlow(false)
+    val busy: StateFlow<Boolean> = _busy.asStateFlow()
+    private val _error = MutableStateFlow<ApiError?>(null)
+    val error: StateFlow<ApiError?> = _error.asStateFlow()
+
+    fun assign(materialId: Int, classIds: List<Int>, mode: String, dueAt: String?, maxAttempts: Int?, onDone: () -> Unit) {
+        if (_busy.value) return
+        _busy.value = true
+        viewModelScope.launch {
+            when (val r = repo.assign(materialId, classIds, mode, dueAt, maxAttempts)) {
+                is ApiResult.Ok -> { _busy.value = false; load(force = true); onDone() }
+                is ApiResult.Err -> { _busy.value = false; _error.value = r.error }
+            }
+        }
+    }
+
+    fun delete(materialId: Int) {
+        viewModelScope.launch {
+            when (val r = repo.deleteMaterial(materialId)) {
+                is ApiResult.Ok -> load(force = true)
+                is ApiResult.Err -> _error.value = r.error
+            }
+        }
+    }
+
+    fun clearError() { _error.value = null }
+
     fun load(force: Boolean = false) {
         if (loaded && !force) return
         loaded = true
