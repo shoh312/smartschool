@@ -102,13 +102,14 @@ class SessionStore(private val context: Context) {
         context.dataStore.edit { it[Keys.selectedChild] = id }
     }
 
+    /** Signing out returns the app to its first-launch state: the onboarding
+     *  (language choice included) is shown again. Only the last known
+     *  school address survives, so the next login needs no discovery. */
     suspend fun clear() {
         context.dataStore.edit { prefs ->
             val keep = prefs[Keys.lastServerUrl]
-            val onboarded = prefs[Keys.onboarded]
             prefs.clear()
             keep?.let { prefs[Keys.lastServerUrl] = it }
-            onboarded?.let { prefs[Keys.onboarded] = it }
         }
     }
 }
