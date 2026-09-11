@@ -25,6 +25,14 @@ class AppConstants {
   /// fallback above is used so the app still works if this mechanism breaks.
   static String? _resolvedApiBaseUrl;
 
+  /// The school server as seen through the Public Server's tunnel
+  /// (`/relay/...` there is forwarded to whichever school is connected).
+  /// Used when the phone is not on the school network at all.
+  static String get schoolRelayBaseUrl => '$publicServerBaseUrl/relay';
+
+  /// True while requests are going the long way round, over the internet.
+  static bool get isUsingRelay => apiBaseUrl == schoolRelayBaseUrl;
+
   static String get apiBaseUrl => _resolvedApiBaseUrl ?? _fallbackApiBaseUrl;
 
   static String get websocketUrl =>

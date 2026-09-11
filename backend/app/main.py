@@ -64,6 +64,7 @@ from app.background.sync_worker import sync_background_loop
 from app.background.attempt_pull_worker import attempt_pull_loop
 from app.database import SessionLocal
 from app.discovery import start_discovery_responder
+from app.relay_client import relay_loop
 from app.utils.config import settings
 from app.services.auth_service import ensure_default_director
 from app.ai.live_detection import start_detection_background
@@ -160,4 +161,7 @@ async def start_background_tasks():
     # work, which is written there because that's where the pupil is.
     asyncio.create_task(attempt_pull_loop())
     asyncio.create_task(start_discovery_responder(settings.school_server_port))
+    # Dials out to the Public Server and stays connected, so phones off the
+    # school Wi-Fi can still reach this box (see app/relay_client.py).
+    asyncio.create_task(relay_loop())
     threading.Thread(target=start_detection_background, daemon=True).start()

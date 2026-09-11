@@ -32,6 +32,7 @@ from app.routers.diary_router import router as diary_router
 from app.routers.calendar_router import router as calendar_router
 from app.routers.announcement_router import router as announcement_router
 from app.routers.material_router import router as material_router
+from app.routers.relay_router import router as relay_router
 from app.background.reminder_worker import reminder_loop
 
 Base.metadata.create_all(bind=engine)
@@ -58,6 +59,7 @@ app.include_router(diary_router)
 app.include_router(calendar_router)
 app.include_router(announcement_router)
 app.include_router(material_router)
+app.include_router(relay_router)
 
 
 @app.on_event("startup")

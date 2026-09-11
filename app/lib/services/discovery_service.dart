@@ -18,8 +18,13 @@ import 'token_storage.dart';
 Future<void> resolveSchoolServerUrl(TokenStorage tokenStorage) async {
   final discovery = DiscoveryService();
   final cachedUrl = await tokenStorage.readServerUrl();
+  final relayUrl = AppConstants.schoolRelayBaseUrl;
 
-  if (cachedUrl != null && await discovery.isReachable(cachedUrl)) {
+  // A cached LAN address that still answers wins outright. A cached *relay*
+  // address is different: it always answers from anywhere, so trusting it
+  // first would keep a phone on the slow internet path even while it sits
+  // on the school Wi-Fi. For that one, the LAN is asked again first.
+  if (cachedUrl != null && cachedUrl != relayUrl && await discovery.isReachable(cachedUrl)) {
     AppConstants.setResolvedBaseUrl(cachedUrl);
     return;
   }
@@ -31,9 +36,21 @@ Future<void> resolveSchoolServerUrl(TokenStorage tokenStorage) async {
     return;
   }
 
-  // Broadcast went unanswered. That does not mean the server is down --
-  // many routers refuse to pass broadcast between wireless clients, and on
-  // those networks the question never reaches it. Walk the subnet instead.
+  // Not on the school network (or its router swallows broadcast). The
+  // Public Server keeps a tunnel open to the school server -- see
+  // relay_client.py there -- and answers for it under /relay. Checked
+  // before the subnet scan because the scan takes twenty seconds and, off
+  // the school Wi-Fi, can only fail.
+  if (await discovery.isReachable(relayUrl, timeout: const Duration(seconds: 6))) {
+    AppConstants.setResolvedBaseUrl(relayUrl);
+    await tokenStorage.saveServerUrl(relayUrl);
+    return;
+  }
+
+  // Broadcast went unanswered and there is no tunnel either. That does not
+  // mean the server is down -- many routers refuse to pass broadcast between
+  // wireless clients, and on those networks the question never reaches it.
+  // Walk the subnet instead.
   final scanned = await LanScanService().findServer(
     port: AppConstants.schoolServerPort,
     marker: LanScanService.backendMarker,
@@ -45,13 +62,6 @@ Future<void> resolveSchoolServerUrl(TokenStorage tokenStorage) async {
   }
 }
 
-/// Points the Public Server at whatever is serving it on this network.
-///
-/// Only for the on-site setup this project is being tested with, where the
-/// Public Server happens to run on the same machine as the school's. In a
-/// real deployment it lives on the internet at a fixed address and none of
-/// this applies -- which is why the saved address always wins here, and a
-/// scan is only attempted when nothing has been configured.
 Future<void> resolvePublicServerUrl(TokenStorage tokenStorage) async {
   final discovery = DiscoveryService();
   final saved = await tokenStorage.readPublicServerUrl();

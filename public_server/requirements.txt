@@ -10,3 +10,6 @@ firebase_admin==7.4.0
 # dependency of firebase_admin, which is luck rather than a contract --
 # dropping push notifications would have taken SMS down with it.
 requests==2.32.3
+# The relay (routers/relay_router.py) serves websockets; uvicorn needs an
+# implementation to speak them. Same version the school server runs.
+websockets==16.0
