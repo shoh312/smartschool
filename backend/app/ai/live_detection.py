@@ -781,12 +781,34 @@ def _run_camera_once(camera_id: int, camera_source: str):
             last_refresh = now
 
         if class_id is None:
-            # Nobody is timetabled into the room, so the camera stays closed
-            # -- for the live view too. It used to open on demand out of
-            # hours, which meant a room could be watched between lessons,
-            # when whoever is in it (the next shift arriving, a teacher on
-            # a break) is not the group anyone was given access to. Off the
-            # timetable, off the wire.
+            # Nobody is timetabled into the room, so there is nobody to
+            # recognise -- but a director asking to see the room is a
+            # different question from whether a lesson is running. The camera
+            # used to disconnect outright here, so opening the live view out
+            # of hours showed nothing at all and looked like a broken stream
+            # rather than an empty schedule.
+            if stream_manager.has_viewers(camera_id):
+                if cap is None:
+                    cap = _connect()
+                    if cap is None:
+                        time.sleep(2)
+                        continue
+                    consecutive_read_failures = 0
+                    print(f"[+] Camera {camera_id}: connected for live view (no lesson)")
+                ret, frame = cap.read()
+                if ret:
+                    stream_manager.update_frame(frame, camera_id=camera_id)
+                else:
+                    consecutive_read_failures += 1
+                    if consecutive_read_failures >= 50:
+                        cap.release()
+                        cap = None
+                        consecutive_read_failures = 0
+                set_camera_status(camera_id, class_id=None, connected=True,
+                                  detecting=False, phase="dars vaqti emas",
+                                  _next_detection_at=None)
+                continue
+
             if cap is not None:
                 cap.release()
                 cap = None
