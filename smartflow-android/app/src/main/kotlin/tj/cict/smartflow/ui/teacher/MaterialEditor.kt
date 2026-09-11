@@ -270,6 +270,10 @@ fun MaterialEditorScreen(materialId: Int?, onBack: () -> Unit, onSaved: () -> Un
     var newKind by remember { mutableStateOf<String?>(null) }
     var aiOpen by remember { mutableStateOf(false) }
     LaunchedEffect(ui.saved) { if (ui.saved) onSaved() }
+    // Must sit above the early return below: while the AI flow is showing, the
+    // editor body is not composed, so an effect placed there would never fire
+    // and the flow would fall back to its form once generation ended.
+    LaunchedEffect(ui.dropped, ui.error) { if (ui.dropped != null || ui.error != null) aiOpen = false }
 
     if (aiOpen) {
         AiDraftFlow(
@@ -315,7 +319,6 @@ fun MaterialEditorScreen(materialId: Int?, onBack: () -> Unit, onSaved: () -> Un
         val initial = if (index >= 0) ui.blocks[index] else EditBlock(newKind ?: "single", options = if (newKind == "single" || newKind == "order") listOf("", "") else emptyList(), left = if (newKind == "match") listOf("", "") else emptyList(), right = if (newKind == "match") listOf("", "") else emptyList(), answers = if (newKind == "fill") listOf("") else emptyList())
         BlockSheet(initial, onDismiss = { editing = null }, onSave = { b -> if (index >= 0) vm.replace(index, b) else vm.add(b); editing = null })
     }
-    LaunchedEffect(ui.dropped, ui.error) { if (ui.dropped != null || ui.error != null) aiOpen = false }
     if (ui.error != null || ui.dropped != null) {
         AlertDialog(
             onDismissRequest = vm::clearFlags, containerColor = c.surface, shape = RoundedCornerShape(Radius.lg),

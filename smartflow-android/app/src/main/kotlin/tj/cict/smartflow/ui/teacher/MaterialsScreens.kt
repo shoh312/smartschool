@@ -78,7 +78,8 @@ import tj.cict.smartflow.ui.theme.smart
 
 @Composable
 fun MaterialsScreen(bottomPadding: Dp, onBack: (() -> Unit)?, onOpenResults: (Int) -> Unit, onCreate: () -> Unit, onEdit: (Int) -> Unit, classesVm: TeacherClassesViewModel, vm: MaterialsViewModel = koinViewModel()) {
-    LaunchedEffect(Unit) { vm.load() }
+    // Re-fetch on every entry: coming back from the editor must show the material just saved.
+    LaunchedEffect(Unit) { vm.load(force = true) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
