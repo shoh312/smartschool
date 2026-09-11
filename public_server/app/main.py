@@ -72,3 +72,26 @@ async def start_background_tasks():
 @app.get("/")
 def root():
     return {"message": "SmartSchool Public Server Running"}
+
+
+# --------------------------------------------------------------------------
+# The web app for directors and teachers (smartflow-web, built with Vite)
+# lives in public_server/web/ and is served from /web/. Any path under it
+# that is not a real file falls back to index.html so the browser router
+# can take over; a missing build simply leaves /web/ answering 404.
+# --------------------------------------------------------------------------
+from pathlib import Path
+
+from fastapi.responses import FileResponse
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+
+if (WEB_DIR / "index.html").is_file():
+
+    @app.get("/web", include_in_schema=False)
+    @app.get("/web/{path:path}", include_in_schema=False)
+    def web_app(path: str = ""):
+        candidate = (WEB_DIR / path).resolve() if path else None
+        if candidate is not None and candidate.is_file() and WEB_DIR in candidate.parents:
+            return FileResponse(candidate)
+        return FileResponse(WEB_DIR / "index.html")

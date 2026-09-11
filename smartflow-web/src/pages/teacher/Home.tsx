@@ -1,0 +1,56 @@
+import { Link } from 'react-router-dom'
+import { teacher } from '../../api/endpoints'
+import { useT } from '../../i18n'
+import { useSession } from '../../App'
+import { IcBook, IcLayers, IcUsers } from '../../ui/icons'
+import { Empty, ErrorBox, Skeleton, todayIso, useAsync, useFmt } from '../../ui/kit'
+import { TopBar } from '../../ui/Shell'
+
+const TONES = ['brand', 'coral', 'sky', 'mint', 'amber']
+
+export function TeacherHome() {
+  const { t } = useT()
+  const f = useFmt()
+  const session = useSession()
+  const classes = useAsync(() => teacher.classes(), [])
+  const assignments = useAsync(() => teacher.assignments(), [])
+  const open = (assignments.data ?? []).filter((a) => a.submitted_count < a.student_count).length
+
+  return (
+    <>
+      <TopBar title={t('greeting', session?.fullName.split(' ')[0] ?? '')} sub={f.dateLong(todayIso())} />
+      <div className="hero mb24">
+        <h2>{t('teacher_hero_title')}</h2>
+        <p>{t('teacher_hero_body')}</p>
+        <div className="row wrap mt16" style={{ gap: 8 }}>
+          {session?.subject && <span className="pill-w">📚 {session.subject}</span>}
+          <span className="pill-w">🏫 {t('classes_n', classes.data?.length ?? 0)}</span>
+          {open > 0 && <span className="pill-w">📝 {t('open_assignments', open)}</span>}
+        </div>
+      </div>
+      <div className="grid c3 mb24">
+        <Link to="/materials" className="card clickable"><div className="stat"><div className="stat-ic" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}><IcLayers /></div><div><div className="bold" style={{ fontSize: 15 }}>{t('nav_materials')}</div><div className="small muted">{t('materials_hint')}</div></div></div></Link>
+        <Link to="/diary" className="card clickable"><div className="stat"><div className="stat-ic" style={{ background: 'var(--mint-soft)', color: 'var(--mint)' }}><IcBook /></div><div><div className="bold" style={{ fontSize: 15 }}>{t('nav_diary')}</div><div className="small muted">{t('diary_hint')}</div></div></div></Link>
+        <Link to="/announcements" className="card clickable"><div className="stat"><div className="stat-ic" style={{ background: 'var(--amber-soft)', color: 'var(--amber)' }}>📣</div><div><div className="bold" style={{ fontSize: 15 }}>{t('nav_announcements')}</div><div className="small muted">{t('announcements_hint')}</div></div></div></Link>
+      </div>
+      <div className="section-title">{t('my_classes')}</div>
+      <ErrorBox error={classes.error} onRetry={classes.reload} />
+      {classes.loading && !classes.data && <Skeleton rows={3} h={80} />}
+      {classes.data?.length === 0 && <Empty icon="🎒" title={t('no_classes')} body={t('no_classes_teacher')} />}
+      <div className="grid c3">
+        {classes.data?.map((c) => (
+          <Link key={c.id} to={`/journal/${c.class_id}/${encodeURIComponent(c.subject ?? '')}`} className="card clickable">
+            <div className="row">
+              <div className="stat-ic" style={{ background: `var(--${TONES[c.class_id % 5]}-soft)`, color: `var(--${TONES[c.class_id % 5]})` }}><IcUsers /></div>
+              <div className="grow">
+                <div className="bold" style={{ fontSize: 16 }}>{c.class_name}</div>
+                {c.subject && c.subject !== c.class_name && <div className="small muted">{c.subject}</div>}
+              </div>
+              <span className="chip brand">{t('journal')}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
+  )
+}
