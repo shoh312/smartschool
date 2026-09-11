@@ -403,4 +403,15 @@
     <string name="onb_three_body">Grades, diary, homework, rating and school news — and a message the moment your child walks in.</string>
     <string name="student_login_title">Pupil\'s own sign-in</string>
     <string name="student_login_hint_dir">Optional. Set a username and password so the pupil can use the app themselves.</string>
+    <string name="positions_title">Timetable</string>
+    <string name="add_position">Add a slot</string>
+    <string name="positions_empty">No slots yet</string>
+    <string name="positions_hint">In group mode the camera only looks for a group during its slot. No slots — no attendance.</string>
+    <string name="position_group">Group</string>
+    <string name="position_start">From</string>
+    <string name="position_end">To</string>
+    <string name="position_time_hint">HH:MM, e.g. 14:00</string>
+    <string name="position_day">Day</string>
+    <string name="position_every_day">Every day</string>
+    <string name="position_subject">Subject (optional, defaults to the group name)</string>
 </resources>

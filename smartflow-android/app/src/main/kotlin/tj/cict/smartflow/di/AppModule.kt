@@ -17,6 +17,7 @@ import tj.cict.smartflow.ui.director.DirectorAnalyticsViewModel
 import tj.cict.smartflow.ui.director.DirectorNoticesViewModel
 import tj.cict.smartflow.ui.director.LiveVideoViewModel
 import tj.cict.smartflow.ui.director.LiveViewModel
+import tj.cict.smartflow.ui.director.PositionsViewModel
 import tj.cict.smartflow.ui.director.SchoolViewModel
 import tj.cict.smartflow.ui.director.SettingsViewModel
 import tj.cict.smartflow.ui.teacher.ClassJournalViewModel
@@ -78,6 +79,7 @@ val appModule = module {
     viewModelOf(::SchoolViewModel)
     viewModelOf(::ClassDetailViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::PositionsViewModel)
     viewModelOf(::DirectorAnalyticsViewModel)
     viewModelOf(::DirectorNoticesViewModel)
 }

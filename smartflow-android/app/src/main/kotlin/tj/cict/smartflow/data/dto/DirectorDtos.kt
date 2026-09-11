@@ -165,3 +165,26 @@ data class NeedsAttentionDto(
 
 @Serializable
 data class ClassSubjectAverageDto(val subject: String, val average: Double, @SerialName("grade_count") val gradeCount: Int, @SerialName("student_count") val studentCount: Int)
+
+/** One slot in a camera's day: which group sits in front of it, from when to when. */
+@Serializable
+data class CameraPositionDto(
+    val id: Int,
+    @SerialName("camera_id") val cameraId: Int,
+    @SerialName("class_id") val classId: Int,
+    @SerialName("class_name") val className: String? = null,
+    val subject: String? = null,
+    /** 0 = Monday … 6 = Sunday; null = every day. */
+    @SerialName("day_of_week") val dayOfWeek: Int? = null,
+    @SerialName("start_time") val startTime: String,
+    @SerialName("end_time") val endTime: String,
+)
+
+@Serializable
+data class CameraPositionCreateRequest(
+    @SerialName("class_id") val classId: Int,
+    @SerialName("start_time") val startTime: String,
+    @SerialName("end_time") val endTime: String,
+    val subject: String? = null,
+    @SerialName("day_of_week") val dayOfWeek: Int? = null,
+)

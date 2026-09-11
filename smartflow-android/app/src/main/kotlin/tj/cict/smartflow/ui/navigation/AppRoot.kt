@@ -52,6 +52,7 @@ import tj.cict.smartflow.ui.director.DirectorHomeScreen
 import tj.cict.smartflow.ui.director.LiveAttendanceScreen
 import tj.cict.smartflow.ui.director.LiveVideoScreen
 import tj.cict.smartflow.ui.director.LiveViewModel
+import tj.cict.smartflow.ui.director.PositionsScreen
 import tj.cict.smartflow.ui.director.SchoolHubScreen
 import tj.cict.smartflow.ui.director.SchoolViewModel
 import tj.cict.smartflow.ui.director.SettingsScreen
@@ -311,7 +312,11 @@ private fun DirectorGraph(name: String, onSignOut: () -> Unit) {
             }
             composable<StudentsRoute> { StudentsScreen(schoolVm, onBack = { nav.popBackStack() }) }
             composable<TeachersRoute> { TeachersScreen(schoolVm, onBack = { nav.popBackStack() }) }
-            composable<CamerasRoute> { CamerasScreen(schoolVm, liveVm, onBack = { nav.popBackStack() }) }
+            composable<CamerasRoute> { CamerasScreen(schoolVm, liveVm, onBack = { nav.popBackStack() }, onPositions = { nav.navigate(PositionsRoute(it.id, it.name)) }) }
+            composable<PositionsRoute> { e ->
+                val r = e.toRoute<PositionsRoute>()
+                PositionsScreen(r.cameraId, r.cameraName, schoolVm, onBack = { nav.popBackStack() })
+            }
             composable<DirectorAnnouncementsRoute> { DirectorAnnouncementsScreen(schoolVm, onBack = { nav.popBackStack() }) }
             composable<DirectorCalendarRoute> { DirectorCalendarScreen(schoolVm, onBack = { nav.popBackStack() }) }
             composable<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }

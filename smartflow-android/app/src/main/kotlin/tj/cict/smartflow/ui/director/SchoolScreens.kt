@@ -487,7 +487,7 @@ fun TeachersScreen(vm: SchoolViewModel, onBack: () -> Unit) {
 // =================================================================== Cameras
 
 @Composable
-fun CamerasScreen(vm: SchoolViewModel, liveVm: LiveViewModel, onBack: () -> Unit) {
+fun CamerasScreen(vm: SchoolViewModel, liveVm: LiveViewModel, onBack: () -> Unit, onPositions: (CameraDto) -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val live by liveVm.ui.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { liveVm.refresh() }
@@ -518,6 +518,10 @@ fun CamerasScreen(vm: SchoolViewModel, liveVm: LiveViewModel, onBack: () -> Unit
                                     Chip(label, color, color.copy(alpha = 0.15f))
                                     HSpace(4.dp)
                                     Box(Modifier.size(34.dp).clip(CircleShape).clickable { deleting = cam }, contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Delete, null, tint = c.inkTertiary, modifier = Modifier.size(18.dp)) }
+                                }
+                                VSpace(8.dp)
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                    GhostButton(stringResource(R.string.positions_title), onClick = { onPositions(cam) })
                                 }
                             }
                         }

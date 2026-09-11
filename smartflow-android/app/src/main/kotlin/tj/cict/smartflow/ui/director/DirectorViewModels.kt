@@ -33,6 +33,8 @@ import tj.cict.smartflow.core.util.toUiState
 import tj.cict.smartflow.data.dto.CalendarEventDto
 import tj.cict.smartflow.data.dto.CameraCreateRequest
 import tj.cict.smartflow.data.dto.CameraDto
+import tj.cict.smartflow.data.dto.CameraPositionCreateRequest
+import tj.cict.smartflow.data.dto.CameraPositionDto
 import tj.cict.smartflow.data.dto.CameraStatusDto
 import tj.cict.smartflow.data.dto.ClassDto
 import tj.cict.smartflow.data.dto.ClassSubjectAverageDto
@@ -250,6 +252,46 @@ class SchoolViewModel(private val repo: DirectorRepository) : ViewModel() {
 
     fun saveCamera(id: Int?, body: CameraCreateRequest) = write({ repo.saveCamera(id, body) })
     fun deleteCamera(id: Int) = write({ repo.deleteCamera(id) })
+
+    fun clearError() = _ui.update { it.copy(error = null) }
+}
+
+data class PositionsUi(
+    val rows: UiState<List<CameraPositionDto>> = UiState.Loading,
+    val busy: Boolean = false,
+    val error: ApiError? = null,
+)
+
+/** The timetable of one camera in group mode. */
+class PositionsViewModel(private val repo: DirectorRepository) : ViewModel() {
+    private val _ui = MutableStateFlow(PositionsUi())
+    val ui: StateFlow<PositionsUi> = _ui.asStateFlow()
+    private var cameraId = 0
+
+    fun load(camera: Int) {
+        cameraId = camera
+        viewModelScope.launch { _ui.update { it.copy(rows = repo.positions(camera).toUiState()) } }
+    }
+
+    fun add(body: CameraPositionCreateRequest) {
+        if (_ui.value.busy) return
+        _ui.update { it.copy(busy = true, error = null) }
+        viewModelScope.launch {
+            when (val r = repo.addPosition(cameraId, body)) {
+                is ApiResult.Ok -> { _ui.update { it.copy(busy = false) }; load(cameraId) }
+                is ApiResult.Err -> _ui.update { it.copy(busy = false, error = r.error) }
+            }
+        }
+    }
+
+    fun delete(positionId: Int) {
+        viewModelScope.launch {
+            when (val r = repo.deletePosition(cameraId, positionId)) {
+                is ApiResult.Ok -> load(cameraId)
+                is ApiResult.Err -> _ui.update { it.copy(error = r.error) }
+            }
+        }
+    }
 
     fun clearError() = _ui.update { it.copy(error = null) }
 }

@@ -378,4 +378,15 @@
     <string name="onb_three_body">Баҳоҳо, рӯзнома, вазифаи хонагӣ, рейтинг ва хабарҳои мактаб — ва паём дар ҳамон дақиқае, ки фарзанд ворид шуд.</string>
     <string name="student_login_title">Воридшавии худи хонанда</string>
     <string name="student_login_hint_dir">Ихтиёрӣ. Логин ва рамз гузоред, то хонанда худаш аз барнома истифода барад.</string>
+    <string name="positions_title">Ҷадвал</string>
+    <string name="add_position">Илова кардани вақт</string>
+    <string name="positions_empty">Ҳанӯз вақт нест</string>
+    <string name="positions_hint">Дар режими гурӯҳҳо камера гурӯҳро танҳо дар вақти он меҷӯяд. Вақт нест — давомот нест.</string>
+    <string name="position_group">Гурӯҳ</string>
+    <string name="position_start">Аз</string>
+    <string name="position_end">То</string>
+    <string name="position_time_hint">СС:ДД, масалан 14:00</string>
+    <string name="position_day">Рӯз</string>
+    <string name="position_every_day">Ҳар рӯз</string>
+    <string name="position_subject">Фан (ихтиёрӣ, пешфарз — номи гурӯҳ)</string>
 </resources>

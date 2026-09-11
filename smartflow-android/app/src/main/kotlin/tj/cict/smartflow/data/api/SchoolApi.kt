@@ -17,6 +17,8 @@ import tj.cict.smartflow.data.dto.AssignClassRequest
 import tj.cict.smartflow.data.dto.CalendarEventCreateRequest
 import tj.cict.smartflow.data.dto.CameraCreateRequest
 import tj.cict.smartflow.data.dto.CameraDto
+import tj.cict.smartflow.data.dto.CameraPositionCreateRequest
+import tj.cict.smartflow.data.dto.CameraPositionDto
 import tj.cict.smartflow.data.dto.CameraStatusDto
 import tj.cict.smartflow.data.dto.ClassCreateRequest
 import tj.cict.smartflow.data.dto.ClassDto
@@ -180,6 +182,15 @@ interface SchoolApi {
 
     @DELETE("cameras/{id}")
     suspend fun deleteCamera(@Path("id") id: Int)
+
+    @GET("cameras/{id}/positions")
+    suspend fun positions(@Path("id") cameraId: Int): List<CameraPositionDto>
+
+    @POST("cameras/{id}/positions")
+    suspend fun createPosition(@Path("id") cameraId: Int, @Body body: CameraPositionCreateRequest): CameraPositionDto
+
+    @DELETE("cameras/{id}/positions/{positionId}")
+    suspend fun deletePosition(@Path("id") cameraId: Int, @Path("positionId") positionId: Int)
 
     @GET("attendance/live-status")
     suspend fun liveStatus(): List<LiveStatusDto>

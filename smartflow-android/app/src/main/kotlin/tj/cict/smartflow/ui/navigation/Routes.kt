@@ -45,3 +45,5 @@ import kotlinx.serialization.Serializable
 @Serializable object DirectorAnnouncementsRoute
 @Serializable object DirectorCalendarRoute
 @Serializable object SettingsRoute
+
+@Serializable data class PositionsRoute(val cameraId: Int, val cameraName: String)

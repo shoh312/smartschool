@@ -378,4 +378,15 @@
     <string name="onb_three_body">Оценки, дневник, домашние задания, рейтинг и школьные новости — и сообщение в ту же минуту, когда ребёнок вошёл.</string>
     <string name="student_login_title">Вход для самого ученика</string>
     <string name="student_login_hint_dir">Необязательно. Задайте логин и пароль, чтобы ученик сам пользовался приложением.</string>
+    <string name="positions_title">Расписание</string>
+    <string name="add_position">Добавить слот</string>
+    <string name="positions_empty">Слотов пока нет</string>
+    <string name="positions_hint">В режиме групп камера ищет группу только в её слот. Нет слотов — нет посещаемости.</string>
+    <string name="position_group">Группа</string>
+    <string name="position_start">С</string>
+    <string name="position_end">До</string>
+    <string name="position_time_hint">ЧЧ:ММ, например 14:00</string>
+    <string name="position_day">День</string>
+    <string name="position_every_day">Каждый день</string>
+    <string name="position_subject">Предмет (необязательно, по умолчанию — название группы)</string>
 </resources>

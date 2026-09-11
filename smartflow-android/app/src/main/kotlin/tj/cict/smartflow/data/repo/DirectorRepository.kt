@@ -21,6 +21,8 @@ import tj.cict.smartflow.data.dto.CalendarEventCreateRequest
 import tj.cict.smartflow.data.dto.CalendarEventDto
 import tj.cict.smartflow.data.dto.CameraCreateRequest
 import tj.cict.smartflow.data.dto.CameraDto
+import tj.cict.smartflow.data.dto.CameraPositionCreateRequest
+import tj.cict.smartflow.data.dto.CameraPositionDto
 import tj.cict.smartflow.data.dto.CameraStatusDto
 import tj.cict.smartflow.data.dto.ClassAssignmentDto
 import tj.cict.smartflow.data.dto.ClassCreateRequest
@@ -139,6 +141,13 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
         if (id == null) safeCall { api.createCamera(body) } else safeCall { api.updateCamera(id, body) }
 
     suspend fun deleteCamera(id: Int): ApiResult<Unit> = safeCall { api.deleteCamera(id) }
+
+    suspend fun positions(cameraId: Int): ApiResult<List<CameraPositionDto>> = safeCall { api.positions(cameraId) }
+
+    suspend fun addPosition(cameraId: Int, body: CameraPositionCreateRequest): ApiResult<CameraPositionDto> =
+        safeCall { api.createPosition(cameraId, body) }
+
+    suspend fun deletePosition(cameraId: Int, positionId: Int): ApiResult<Unit> = safeCall { api.deletePosition(cameraId, positionId) }
 
     // ------------------------------------------------------ settings
 

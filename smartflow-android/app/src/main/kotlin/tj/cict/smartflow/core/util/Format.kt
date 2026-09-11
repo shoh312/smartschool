@@ -58,7 +58,9 @@ fun ApiError.message(): String = when (this) {
         "password_too_short" -> stringResource(R.string.error_password_short)
         "school_not_found" -> stringResource(R.string.server_not_found)
         "school_offline" -> stringResource(R.string.server_not_found)
-        else -> stringResource(R.string.error_generic)
+        // A sentence rather than a code: the server already said it in words
+        // ("this time is taken 14:00-15:00"), so show it as is.
+        else -> if (code.contains(' ')) code else stringResource(R.string.error_generic)
     }
     is ApiError.Unknown -> stringResource(R.string.error_generic)
 }
