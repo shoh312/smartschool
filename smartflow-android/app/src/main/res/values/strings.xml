@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">SmartFlow</string>
+
+    <!-- Common -->
+    <string name="retry">Try again</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
+    <string name="today">Today</string>
+    <string name="select_child">Choose a child</string>
+    <string name="error_network">No connection. Check the internet and try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_session">Your session has ended. Please sign in again.</string>
+
+    <!-- Login -->
+    <string name="login_title">Welcome back</string>
+    <string name="login_subtitle">Sign in with the phone number the school registered for you.</string>
+    <string name="phone_label">Phone number</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Sign in</string>
+    <string name="login_forgot">Forgot your password?</string>
+    <string name="login_demo">Try the demo</string>
+    <string name="login_first_time">First time here? Just enter your number — we\'ll send a code.</string>
+    <string name="error_phone_not_registered">This number isn\'t registered by any school yet.</string>
+    <string name="error_invalid_credentials">Wrong phone number or password.</string>
+
+    <!-- Verify -->
+    <string name="verify_title">Confirmation code</string>
+    <string name="verify_subtitle">We sent a code to %1$s</string>
+    <string name="verify_not_delivered">The SMS couldn\'t be sent — ask the school for your code.</string>
+    <string name="verify_resend">Send the code again</string>
+    <string name="verify_resend_in">Send again in %1$d s</string>
+    <string name="verify_button">Confirm</string>
+    <string name="error_code_invalid">That code isn\'t right.</string>
+    <string name="error_code_expired">The code has expired. Request a new one.</string>
+    <string name="error_code_not_requested">Request a code first.</string>
+    <string name="error_too_many">Too many attempts. Please wait a little.</string>
+
+    <!-- Set password -->
+    <string name="setup_title">Create a password</string>
+    <string name="setup_subtitle">Your name, and a password for next time.</string>
+    <string name="setup_name">Your name</string>
+    <string name="setup_password">New password</string>
+    <string name="setup_button">Save and continue</string>
+    <string name="error_password_short">The password must be at least 4 characters.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_diary">Diary</string>
+    <string name="nav_rating">Rating</string>
+    <string name="nav_alerts">Alerts</string>
+
+    <!-- Home -->
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="home_children">Your children</string>
+    <string name="home_no_children_title">No children linked yet</string>
+    <string name="home_no_children_body">Once the school registers your child under this number, they\'ll appear here.</string>
+    <string name="home_quick">Quick actions</string>
+    <string name="action_attendance">Attendance</string>
+    <string name="action_grades">Grades</string>
+    <string name="action_homework">Homework</string>
+    <string name="action_assignments">Assignments</string>
+    <string name="action_calendar">Calendar</string>
+    <string name="action_announcements">Announcements</string>
+    <string name="class_label">Class %1$s</string>
+
+    <!-- Attendance statuses -->
+    <string name="status_present">At school</string>
+    <string name="status_late">Came late</string>
+    <string name="status_absent">Absent</string>
+    <string name="status_left">Left school</string>
+    <string name="status_unknown">No news yet</string>
+    <string name="arrived_at">Arrived at %1$s</string>
+    <string name="left_at">Left at %1$s</string>
+
+    <!-- Attendance history -->
+    <string name="attendance_title">Attendance</string>
+    <string name="attendance_empty">No attendance records yet.</string>
+    <string name="present_days">Present</string>
+    <string name="late_days">Late</string>
+    <string name="absent_days">Absent</string>
+    <string name="time_in">In</string>
+    <string name="time_out">Out</string>
+
+    <!-- Grades -->
+    <string name="grades_title">Grades</string>
+    <string name="grades_empty">No grades yet.</string>
+    <string name="quarter_format">Quarter %1$d</string>
+    <string name="quarter_short">Q%1$d</string>
+    <string name="quarter_all">All</string>
+    <string name="average">Average</string>
+    <string name="grades_count">%1$d grades</string>
+
+    <!-- Diary -->
+    <string name="diary_title">Diary</string>
+    <string name="diary_empty">No lessons on this day.</string>
+    <string name="homework_label">Homework</string>
+    <string name="teacher_comment">Teacher\'s note</string>
+    <string name="room_label">Room %1$s</string>
+    <string name="homework_title">Homework</string>
+    <string name="homework_empty">No homework assigned.</string>
+    <string name="minutes_format">%1$d min</string>
+
+    <!-- Assignments -->
+    <string name="assignments_title">Assignments</string>
+    <string name="assignments_empty">No assignments yet.</string>
+    <string name="assignment_due">Due %1$s</string>
+    <string name="assignment_overdue">Overdue</string>
+    <string name="assignment_submitted">Submitted</string>
+    <string name="assignment_not_started">Not started</string>
+    <string name="assignment_questions">%1$d questions</string>
+    <string name="assignment_score_hidden">Score after the deadline</string>
+    <string name="mode_practice">Practice</string>
+    <string name="mode_control">Test</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">School calendar</string>
+    <string name="calendar_empty">No upcoming events.</string>
+    <string name="event_holiday">Holiday</string>
+    <string name="event_exam">Exam</string>
+    <string name="event_meeting">Meeting</string>
+    <string name="event_other">Event</string>
+
+    <!-- Announcements -->
+    <string name="announcements_title">Announcements</string>
+    <string name="announcements_empty">No announcements yet.</string>
+
+    <!-- Notifications -->
+    <string name="alerts_title">Notifications</string>
+    <string name="alerts_empty">Nothing here yet — we\'ll tell you the moment your child arrives at school.</string>
+
+    <!-- Rating -->
+    <string name="rating_title">Rating</string>
+    <string name="rating_empty">The rating appears after the first grades of the quarter.</string>
+    <string name="overall_average">Overall average</string>
+    <string name="rank_class">In class</string>
+    <string name="rank_parallel">In parallel</string>
+    <string name="rank_school">In school</string>
+    <string name="rank_of">of %1$d</string>
+    <string name="compare_title">Compared with</string>
+    <string name="compare_class">Class</string>
+    <string name="compare_parallel">Parallel</string>
+    <string name="compare_school">School</string>
+    <string name="subjects_title">By subject</string>
+    <string name="strongest">Strongest</string>
+    <string name="weakest">Needs attention</string>
+    <string name="trend_title">Across quarters</string>
+    <string name="lesson_attendance">Lesson attendance</string>
+    <string name="badge_first">First in school</string>
+    <string name="badge_top3">Top 3 in class</string>
+    <string name="badge_top10">Top 10% of class</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="language">Language</string>
+    <string name="lang_tg" translatable="false">Тоҷикӣ</string>
+    <string name="lang_ru" translatable="false">Русский</string>
+    <string name="lang_en" translatable="false">English</string>
+    <string name="logout">Sign out</string>
+    <string name="logout_confirm">Sign out of SmartFlow?</string>
+
+    <!-- Student -->
+    <string name="role_parent">Parent</string>
+    <string name="role_student">Student</string>
+    <string name="username_label">Username</string>
+    <string name="student_login_hint">Ask your teacher for your username and password.</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="action_achievements">Achievements</string>
+    <string name="ach_title">Achievements</string>
+    <string name="ach_subtitle">%1$d of %2$d earned</string>
+    <string name="ach_empty">Badges appear after the first grades of the quarter.</string>
+    <string name="ach_first_school">First in school</string>
+    <string name="ach_first_school_hint">Rank #1 in the whole school</string>
+    <string name="ach_top3">Top 3 in class</string>
+    <string name="ach_top3_hint">Be among the best three in your class</string>
+    <string name="ach_top10">Top 10%</string>
+    <string name="ach_top10_hint">Be in the best 10% of your parallel</string>
+    <string name="ach_excellent">Excellent student</string>
+    <string name="ach_excellent_hint">Overall average of 9 or higher</string>
+    <string name="ach_attendance">Always there</string>
+    <string name="ach_attendance_hint">Lesson attendance of 95% or more</string>
+    <string name="ach_progress">Best progress</string>
+    <string name="ach_progress_hint">Average up by a full point since last quarter</string>
+    <string name="ach_subject">Master of %1$s</string>
+    <string name="ach_subject_hint">Average of 9 or higher in one subject</string>
+    <string name="ach_earned">Earned</string>
+    <string name="ach_locked">Not yet</string>
+
+    <!-- Player -->
+    <string name="assignment_start">Start</string>
+    <string name="assignment_continue">Continue</string>
+    <string name="assignment_submit">Submit</string>
+    <string name="assignment_next">Next</string>
+    <string name="assignment_prev">Back</string>
+    <string name="assignment_retry">Try again</string>
+    <string name="player_question_n">Question %1$d of %2$d</string>
+    <string name="player_page">Read this first</string>
+    <string name="player_points">%1$d pt</string>
+    <string name="answer_correct">Correct!</string>
+    <string name="answer_wrong">Not quite</string>
+    <string name="fill_hint">Type your answer</string>
+    <string name="match_hint">Tap an item on the left, then its match on the right</string>
+    <string name="order_hint">Use the arrows to put the items in order</string>
+    <string name="tf_true">True</string>
+    <string name="tf_false">False</string>
+    <string name="result_title">Result</string>
+    <string name="result_hidden">Your answers are saved. The score will appear after the deadline.</string>
+    <string name="result_score">%1$d of %2$d points</string>
+    <string name="result_great">Excellent work!</string>
+    <string name="result_good">Well done!</string>
+    <string name="result_keep">Keep practising</string>
+    <string name="attempts_left">%1$d attempts left</string>
+    <string name="attempts_unlimited">Unlimited attempts</string>
+    <string name="no_attempts">No attempts left</string>
+    <string name="overdue_cannot">The deadline has passed</string>
+    <string name="submit_confirm">Submit your answers?</string>
+    <string name="unanswered_n">%1$d unanswered</string>
+    <string name="done">Done</string>
+    <string name="parent_view_only">A parent can look, but only the student can answer.</string>
+
+    <!-- Teacher -->
+    <string name="role_teacher">Teacher</string>
+    <string name="email_label">Email</string>
+    <string name="server_label">School server</string>
+    <string name="server_searching">Looking for the school server…</string>
+    <string name="server_found">School server: %1$s</string>
+    <string name="server_relay">Connected via the internet (outside the school network)</string>
+    <string name="server_not_found">School server not found — neither on this network nor over the internet.</string>
+    <string name="server_manual">Enter the address manually</string>
+    <string name="server_check">Check</string>
+    <string name="server_bad">Nothing answered at that address.</string>
+    <string name="teacher_login_hint">Sign in with the email and password the director gave you.</string>
+    <string name="nav_journal">Journal</string>
+    <string name="nav_materials">Materials</string>
+    <string name="my_classes">My classes</string>
+    <string name="no_classes">No classes assigned yet.</string>
+    <string name="no_classes_body">The director assigns classes and subjects to teachers.</string>
+    <string name="pupils_count">%1$d pupils</string>
+    <string name="action_scan">Scan journal</string>
+    <string name="action_materials">Materials</string>
+    <string name="journal_title">Journal</string>
+    <string name="journal_pick_class">Choose a class</string>
+    <string name="journal_absent_today">Absent today</string>
+    <string name="journal_last_marks">Last marks</string>
+    <string name="give_grade">Give a mark</string>
+    <string name="grade_value">Mark</string>
+    <string name="grade_comment">Comment (optional)</string>
+    <string name="grade_today">Today\'s mark</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="grade_saved">Mark saved</string>
+    <string name="grade_edit_today_only">A mark can be changed only on the day it was given.</string>
+    <string name="diary_my_lesson">My lesson</string>
+    <string name="diary_not_mine">Another teacher\'s lesson</string>
+    <string name="diary_edit_hint">Tap your lesson to write homework or a note.</string>
+    <string name="homework_edit">Homework</string>
+    <string name="comment_edit">Note for parents</string>
+    <string name="scan_title">Scan the journal</string>
+    <string name="scan_intro">Photograph a page of the paper journal. The names and marks are read automatically — you check them before anything is saved.</string>
+    <string name="scan_take_photo">Take a photo</string>
+    <string name="scan_pick_photo">Choose from gallery</string>
+    <string name="scan_reading">Reading the page…</string>
+    <string name="scan_results">Found %1$d rows</string>
+    <string name="scan_unmatched">Not matched</string>
+    <string name="scan_low_confidence">Check this one</string>
+    <string name="scan_read_as">read as “%1$s”</string>
+    <string name="scan_absent">Absent</string>
+    <string name="scan_save_all">Save %1$d marks</string>
+    <string name="scan_saved">Saved %1$d marks to the journal</string>
+    <string name="scan_none">Nothing readable on this photo. Try a closer, straighter shot.</string>
+    <string name="materials_title">Materials</string>
+    <string name="materials_empty">No materials yet. Create them on the desktop for now.</string>
+    <string name="materials_mine">My library</string>
+    <string name="materials_assigned">Handed out</string>
+    <string name="material_meta">%1$d questions · %2$d pt</string>
+    <string name="assigned_to_n">Assigned to %1$d classes</string>
+    <string name="submitted_of">%1$d of %2$d submitted</string>
+    <string name="results_title">Results</string>
+    <string name="results_hidden">Results stay hidden until the deadline passes or everyone submits.</string>
+    <string name="results_not_submitted">Not submitted</string>
+    <string name="results_suggested">Suggested mark</string>
+    <string name="results_transfer">Put %1$d marks in the journal</string>
+    <string name="results_transferred">In the journal</string>
+    <string name="results_transfer_done">Marks transferred</string>
+    <string name="school_calendar">School calendar</string>
+    <string name="school_announcements">Announcements</string>
+    <string name="all_classes">All classes</string>
+
+    <!-- Director -->
+    <string name="role_director">Director</string>
+    <string name="director_login_hint">Sign in with your director email and password.</string>
+    <string name="nav_live">Live</string>
+    <string name="nav_school">School</string>
+    <string name="nav_analytics">Analytics</string>
+    <string name="waiting_short">Waiting</string>
+    <string name="today_at_school">Today at school</string>
+    <string name="of_pupils">of %1$d pupils</string>
+    <string name="cameras_title">Cameras</string>
+    <string name="cam_connected">Connected</string>
+    <string name="cam_offline">Offline</string>
+    <string name="cam_detecting">Recognising</string>
+    <string name="cam_waiting">Waiting · next in %1$s</string>
+    <string name="cam_roll_call">Roll call</string>
+    <string name="cam_idle">No lesson now</string>
+    <string name="cam_off">Switched off</string>
+    <string name="cam_unassigned">No class</string>
+    <string name="action_live_video">Live video</string>
+    <string name="action_classes">Classes</string>
+    <string name="action_students">Pupils</string>
+    <string name="action_teachers">Teachers</string>
+    <string name="action_cameras">Cameras</string>
+    <string name="action_attention">Needs attention</string>
+    <string name="action_ranking">Ranking</string>
+    <string name="action_settings">Settings</string>
+    <string name="live_title">Live attendance</string>
+    <string name="live_all">All</string>
+    <string name="live_updated">Updated %1$s</string>
+    <string name="lesson_running">Lesson in progress</string>
+    <string name="lesson_upcoming">Not started yet</string>
+    <string name="lesson_finished">Finished</string>
+    <string name="video_fullscreen">Full screen</string>
+    <string name="video_title">Live video</string>
+    <string name="video_pick_camera">Choose a camera</string>
+    <string name="video_connecting">Connecting to the camera…</string>
+    <string name="video_disabled">Live video is switched off in settings.</string>
+    <string name="video_lost">The stream stopped. Tap to reconnect.</string>
+    <string name="video_demo">Live video needs the school server — in the demo there is no camera to watch.</string>
+    <string name="school_title">School</string>
+    <string name="classes_title">Classes</string>
+    <string name="add_class">Add a class</string>
+    <string name="class_name">Class name (e.g. 5А)</string>
+    <string name="class_grade">Grade (number)</string>
+    <string name="delete_class_confirm">Delete class %1$s? Pupils are kept, but unassigned.</string>
+    <string name="students_title">Pupils</string>
+    <string name="add_student">Add a pupil</string>
+    <string name="first_name">First name</string>
+    <string name="last_name">Last name</string>
+    <string name="parent_phone">Parent\'s phone</string>
+    <string name="parent_name">Parent\'s name (optional)</string>
+    <string name="student_photo">Face photo</string>
+    <string name="student_photo_hint">A clear, front-facing photo. The camera will recognise the pupil from it.</string>
+    <string name="photo_taken">Photo ready</string>
+    <string name="search">Search</string>
+    <string name="delete_student_confirm">Remove %1$s from the school?</string>
+    <string name="no_students">No pupils yet.</string>
+    <string name="teachers_title">Teachers</string>
+    <string name="add_teacher">Add a teacher</string>
+    <string name="teacher_name">Full name</string>
+    <string name="teacher_subject">Subject</string>
+    <string name="teacher_password_hint">The teacher signs in with this email and password.</string>
+    <string name="assign_class">Assign a class</string>
+    <string name="assigned">Assigned</string>
+    <string name="no_teachers">No teachers yet.</string>
+    <string name="add_camera">Add a camera</string>
+    <string name="edit_camera">Camera</string>
+    <string name="camera_name">Name (e.g. Room 101)</string>
+    <string name="camera_ip">IP address</string>
+    <string name="camera_rtsp">RTSP address</string>
+    <string name="camera_class">Class it watches</string>
+    <string name="camera_active">Active</string>
+    <string name="no_cameras">No cameras yet.</string>
+    <string name="delete_camera_confirm">Delete camera %1$s?</string>
+    <string name="none_option">None</string>
+    <string name="settings_title">Settings</string>
+    <string name="setting_live">Live video</string>
+    <string name="setting_live_hint">Let the app show camera streams.</string>
+    <string name="setting_group">Group mode</string>
+    <string name="setting_group_hint">For academies: cameras watch groups by timetable, not fixed classes.</string>
+    <string name="setting_sms">SMS notifications</string>
+    <string name="setting_sms_hint">Send parents SMS about absences and sign-in details.</string>
+    <string name="setting_active">Attendance recording</string>
+    <string name="setting_active_hint">Pause everything while cameras are not installed yet.</string>
+    <string name="analytics_title">Analytics</string>
+    <string name="ranking_school">Whole school</string>
+    <string name="ranking_class">By class</string>
+    <string name="attention_title">Needs attention</string>
+    <string name="attention_bottom">Lowest averages</string>
+    <string name="attention_decline">Biggest drops</string>
+    <string name="attention_none">Nobody to worry about right now.</string>
+    <string name="was_now">was %1$s → now %2$s</string>
+    <string name="class_subjects_title">Subject averages</string>
+    <string name="new_announcement">New announcement</string>
+    <string name="ann_title">Title</string>
+    <string name="ann_body">Text</string>
+    <string name="ann_for">For</string>
+    <string name="whole_school">Whole school</string>
+    <string name="publish">Publish</string>
+    <string name="delete_confirm">Delete?</string>
+    <string name="new_event">New event</string>
+    <string name="event_title">Title</string>
+    <string name="event_desc">Description (optional)</string>
+    <string name="event_type">Type</string>
+    <string name="event_start">Start date</string>
+    <string name="event_end">End date (optional)</string>
+    <string name="date_format_hint">YYYY-MM-DD</string>
+    <string name="create">Create</string>
+</resources>

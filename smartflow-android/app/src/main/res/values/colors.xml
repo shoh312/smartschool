@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="page">#FFF7F8FC</color>
+    <color name="brand">#FF5B5BD6</color>
+    <color name="brand_deep">#FF3F3FB8</color>
+    <color name="coral">#FFFF7A59</color>
+    <color name="mint">#FF2BB673</color>
+    <color name="amber">#FFF5A524</color>
+    <color name="sky">#FF3B9DF2</color>
+</resources>

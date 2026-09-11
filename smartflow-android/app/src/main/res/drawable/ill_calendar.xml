@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="180dp"
+    android:viewportWidth="240" android:viewportHeight="180">
+    <path android:fillColor="#DCEEFF" android:pathData="M206.68,96 C207.15,115.44 197.71,142.7 179.54,155.73 C161.38,168.76 119.55,179.55 97.69,174.19 C75.83,168.84 58.82,142.07 48.38,123.59 C37.95,105.11 26.58,79.89 35.09,63.29 C43.61,46.69 75.85,28.03 99.46,23.99 C123.06,19.96 158.86,27.08 176.74,39.08 C194.61,51.09 206.21,76.56 206.68,96 z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M74,46 h92 a14,14 0 0 1 14,14 v84 a14,14 0 0 1 -14,14 h-92 a14,14 0 0 1 -14,-14 v-84 a14,14 0 0 1 14,-14 z"/>
+    <path android:fillColor="#5B5BD6" android:pathData="M74,46 h92 a14,14 0 0 1 14,14 v6 a14,14 0 0 1 -14,14 h-92 a14,14 0 0 1 -14,-14 v-6 a14,14 0 0 1 14,-14 z"/>
+    <path android:fillColor="#5B5BD6" android:pathData="M60,66 h120 a0,0 0 0 1 0,0 v14 a0,0 0 0 1 0,0 h-120 a0,0 0 0 1 0,0 v-14 a0,0 0 0 1 0,0 z"/>
+    <path android:fillColor="#3F3FB8" android:pathData="M92,36 h0 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h0 a4,4 0 0 1 -4,-4 v-14 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#3F3FB8" android:pathData="M148,36 h0 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h0 a4,4 0 0 1 -4,-4 v-14 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M80,96 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M102,96 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M124,96 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M146,96 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M168,96 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M80,116 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M102,116 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#FF7A59" android:pathData="M124,116 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M146,116 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M168,116 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M80,136 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M102,136 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M124,136 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M146,136 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#E7E7FB" android:pathData="M168,136 h6 a4,4 0 0 1 4,4 v4 a4,4 0 0 1 -4,4 h-6 a4,4 0 0 1 -4,-4 v-4 a4,4 0 0 1 4,-4 z"/>
+    <path android:fillColor="#F5A524" android:pathData="M196,62 m-14,0 a14,14 0 1 0 28,0 a14,14 0 1 0 -28,0 z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M196,55 L197.85,59.45 L202.66,59.84 L199,62.97 L200.11,67.66 L196,65.15 L191.89,67.66 L193,62.97 L189.34,59.84 L194.15,59.45 z"/>
+    <path android:fillColor="#3B9DF2" android:pathData="M44,71 q0,5 5,5 q5,0 -5,5 q0,5 -5,5 q-5,0 -5,-5 z"/>
+    <path android:fillColor="#FF7A59" android:pathData="M206,126 q0,4 4,4 q4,0 -4,4 q0,4 -4,4 q-4,0 -4,-4 z"/>
+</vector>

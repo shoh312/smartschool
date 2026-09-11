@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- The school server is a plain-HTTP box on the school LAN whose
+         address differs per school, and the public server is plain HTTP
+         for now too. Cleartext stays allowed until both carry TLS. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
