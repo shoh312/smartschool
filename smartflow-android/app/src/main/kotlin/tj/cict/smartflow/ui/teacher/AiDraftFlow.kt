@@ -87,6 +87,12 @@ import tj.cict.smartflow.ui.theme.smart
 
 enum class AiSource { TOPIC, PHOTO, TEXT }
 
+private sealed interface AiStep {
+    data object Pick : AiStep
+    data class Form(val source: AiSource) : AiStep
+    data object Generating : AiStep
+}
+
 /**
  * The whole AI drafting flow, full screen: pick where the material comes
  * from, fill that one thing in, watch it being made. Lives inside the
@@ -101,15 +107,20 @@ fun AiDraftFlow(
     var source by remember { mutableStateOf<AiSource?>(null) }
     BackHandler(enabled = !generating) { if (source == null) onCancel() else source = null }
 
+    // The step carries its own source: during the exit animation the old
+    // page is still drawn after `source` has been reset, and reading the
+    // shared variable there was a null dereference.
+    val step: AiStep = when { generating -> AiStep.Generating; source == null -> AiStep.Pick; else -> AiStep.Form(source!!) }
     AnimatedContent(
-        targetState = when { generating -> 2; source == null -> 0; else -> 1 },
+        targetState = step,
         transitionSpec = { (slideInVertically(tween(320)) { it / 6 } + fadeIn(tween(320))) togetherWith fadeOut(tween(180)) },
+        contentKey = { it::class },
         label = "ai",
-    ) { step ->
-        when (step) {
-            0 -> SourcePicker(onBack = onCancel, onPick = { source = it })
-            1 -> SourceForm(source!!, onBack = { source = null }, onGenerate = onGenerate)
-            else -> GeneratingScreen()
+    ) { current ->
+        when (current) {
+            AiStep.Pick -> SourcePicker(onBack = onCancel, onPick = { source = it })
+            is AiStep.Form -> SourceForm(current.source, onBack = { source = null }, onGenerate = onGenerate)
+            AiStep.Generating -> GeneratingScreen()
         }
     }
 }
