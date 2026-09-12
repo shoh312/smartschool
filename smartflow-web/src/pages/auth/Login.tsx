@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { apiBase, defaultApiBase, probe, saveSession, setApiBase } from '../../api/client'
+import { setDemo } from '../../api/demo'
 import { auth } from '../../api/endpoints'
 import type { Role } from '../../api/types'
 import { LangSwitch, useT } from '../../i18n'
@@ -15,6 +16,12 @@ export function Login() {
   const [error, setError] = useState<string | null>(null)
   const [advanced, setAdvanced] = useState(false)
   const [server, setServer] = useState(() => (apiBase() === defaultApiBase() ? '' : apiBase()))
+
+  function startDemo(r: Role) {
+    setDemo(true)
+    if (r === 'director') saveSession({ token: 'demo', role: 'director', id: 1, fullName: 'Шарипов Шоҳрух', email: 'director@cict.tj', serverUrl: 'demo' })
+    else saveSession({ token: 'demo', role: 'teacher', id: 1, fullName: 'Раҳимова Нигина', email: 'n.rahimova@cict.tj', subject: 'BackEnd #1', serverUrl: 'demo' })
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -78,6 +85,19 @@ export function Login() {
             {error && <div className="error-box">{msg(error)}</div>}
             <button className="btn primary" style={{ height: 46 }} disabled={busy}>{busy ? t('signing_in') : t('sign_in')}</button>
             <button type="button" className="small faint" style={{ alignSelf: 'center' }} onClick={() => setAdvanced((v) => !v)}>{advanced ? t('hide_server') : t('show_server')}</button>
+          </div>
+          <div className="card tight mt24" style={{ background: 'var(--brand-tint)', borderColor: 'var(--brand-soft)', boxShadow: 'none' }}>
+            <div className="row">
+              <span style={{ fontSize: 22 }}>🎬</span>
+              <div className="grow">
+                <div className="bold">{t('demo_title')}</div>
+                <div className="small muted">{t('demo_body')}</div>
+              </div>
+            </div>
+            <div className="row mt12" style={{ gap: 8 }}>
+              <button type="button" className="btn soft grow" style={{ background: 'var(--surface)' }} onClick={() => startDemo('director')}>{t('role_director')}</button>
+              <button type="button" className="btn soft grow" style={{ background: 'var(--surface)' }} onClick={() => startDemo('teacher')}>{t('role_teacher')}</button>
+            </div>
           </div>
         </form>
       </div>

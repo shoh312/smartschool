@@ -30,6 +30,8 @@ export const STRINGS: Record<string, [string, string, string]> = {
   err_server: ['Хатои сервер.', 'Ошибка сервера.', 'Server error.'],
   err_live_disabled: ['Видеои мустақим дар танзимот хомӯш аст.', 'Живое видео выключено в настройках.', 'Live video is switched off in settings.'],
   retry: ['Такрор', 'Повторить', 'Retry'],
+  demo_title: ['Реҷаи намоишӣ', 'Демо-режим', 'Demo mode'],
+  demo_body: ['Бе сервер — бо маълумоти намунавӣ. Ҳама чиз кор мекунад, вале нигоҳ дошта намешавад.', 'Без сервера — на примерных данных. Всё работает, но не сохраняется.', 'No server needed — sample data. Everything works, nothing is kept.'],
 
   // ---- nav
   nav_home: ['Асосӣ', 'Главная', 'Home'],
