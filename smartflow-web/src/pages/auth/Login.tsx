@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { apiBase, defaultApiBase, probe, saveSession, setApiBase } from '../../api/client'
+import { apiBase, saveSession } from '../../api/client'
 import { setDemo } from '../../api/demo'
 import { auth } from '../../api/endpoints'
 import type { Role } from '../../api/types'
@@ -16,8 +16,6 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [advanced, setAdvanced] = useState(false)
-  const [server, setServer] = useState(() => (apiBase() === defaultApiBase() ? '' : apiBase()))
 
   function startDemo(r: Role) {
     setDemo(true)
@@ -29,9 +27,7 @@ export function Login() {
     e.preventDefault()
     if (busy) return
     setBusy(true); setError(null)
-    setApiBase(server.trim() || null)
     try {
-      if (server.trim() && !(await probe(server.trim()))) throw new Error('school_offline')
       if (role === 'director') {
         const r = await auth.directorLogin(email.trim(), password)
         saveSession({ token: r.access_token, role: 'director', id: r.director?.id ?? 0, fullName: r.director?.full_name ?? t('role_director'), email: email.trim(), serverUrl: apiBase() })
@@ -79,15 +75,8 @@ export function Login() {
           <div className="col" style={{ gap: 14 }}>
             <Field label={t('email')}><input className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus /></Field>
             <Field label={t('password')}><input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></Field>
-            {advanced && (
-              <Field label={t('server_address')}>
-                <input className="input" placeholder={defaultApiBase()} value={server} onChange={(e) => setServer(e.target.value)} />
-                <span className="tiny faint">{t('server_hint')}</span>
-              </Field>
-            )}
             {error && <div className="error-box">{msg(error)}</div>}
             <button className="btn primary" style={{ height: 46 }} disabled={busy}>{busy ? t('signing_in') : t('sign_in')}</button>
-            <button type="button" className="small faint" style={{ alignSelf: 'center' }} onClick={() => setAdvanced((v) => !v)}>{advanced ? t('hide_server') : t('show_server')}</button>
           </div>
           <div className="card tight mt24" style={{ background: 'var(--brand-tint)', borderColor: 'var(--brand-soft)', boxShadow: 'none' }}>
             <div className="row">

@@ -30,9 +30,10 @@ export function DirectorHome() {
         if (alive) { setCams(c); setLive(l) }
       } catch {}
     }
-    tick()
-    const id = window.setInterval(tick, 5000)
-    return () => { alive = false; window.clearInterval(id) }
+    let timer = 0
+    const loop = async () => { await tick(); if (alive) timer = window.setTimeout(loop, 5000) }
+    loop()
+    return () => { alive = false; window.clearTimeout(timer) }
   }, [])
 
   const today = new Date()

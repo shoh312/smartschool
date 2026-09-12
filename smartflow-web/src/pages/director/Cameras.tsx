@@ -22,11 +22,14 @@ export function Cameras() {
   const [deleting, setDeleting] = useState<CameraDto | null>(null)
 
   useEffect(() => {
-    let alive = true
-    const tick = async () => { try { const s = await director.cameraStatus(); if (alive) setStatus(new Map(s.map((x) => [x.camera_id, x]))) } catch {} }
+    let alive = true, timer = 0
+    // One request at a time: the next poll is scheduled only after the previous answered.
+    const tick = async () => {
+      try { const s = await director.cameraStatus(); if (alive) setStatus(new Map(s.map((x) => [x.camera_id, x]))) } catch {}
+      if (alive) timer = window.setTimeout(tick, 4000)
+    }
     tick()
-    const id = window.setInterval(tick, 4000)
-    return () => { alive = false; window.clearInterval(id) }
+    return () => { alive = false; window.clearTimeout(timer) }
   }, [])
 
   async function remove() {
@@ -79,11 +82,16 @@ export function Cameras() {
   )
 }
 
-/** JPEG frames over a websocket, painted into an <img>. */
+/**
+ * JPEG frames over a websocket, decoded off the main thread and painted on a
+ * canvas. Only the newest frame is ever decoded: if frames arrive faster than
+ * they can be drawn, the ones in between are dropped instead of queued, so a
+ * slow link or a busy tab never builds up a backlog that freezes the page.
+ */
 export function LiveVideo({ cameraId }: { cameraId: number }) {
   const { t } = useT()
   const msg = useErrorMessage()
-  const img = useRef<HTMLImageElement>(null)
+  const canvas = useRef<HTMLCanvasElement>(null)
   const box = useRef<HTMLDivElement>(null)
   const [state, setState] = useState<'connecting' | 'live' | 'closed'>('connecting')
   const [reason, setReason] = useState<string>('')
@@ -92,30 +100,46 @@ export function LiveVideo({ cameraId }: { cameraId: number }) {
   useEffect(() => {
     const s = loadSession()
     if (!s) return
-    if (isDemo()) return demoFeed(img, () => setState('live'), setFps)
-    let url: string | null = null
+    let alive = true
     let frames = 0
+    const fpsTimer = window.setInterval(() => { setFps(frames); frames = 0 }, 1000)
+    if (isDemo()) {
+      const stop = demoFeed(canvas, () => { frames++ }, () => setState('live'))
+      return () => { alive = false; stop(); window.clearInterval(fpsTimer) }
+    }
+    let pending: Blob | null = null
+    let busy = false
+    let live = false
+    const pump = async () => {
+      if (busy || !pending || !alive) return
+      busy = true
+      const blob = pending
+      pending = null
+      try {
+        const bmp = await createImageBitmap(blob)
+        const c = canvas.current
+        if (c && alive) {
+          if (c.width !== bmp.width || c.height !== bmp.height) { c.width = bmp.width; c.height = bmp.height }
+          c.getContext('2d')!.drawImage(bmp, 0, 0)
+          frames++
+          if (!live) { live = true; setState('live') }
+        }
+        bmp.close()
+      } catch {}
+      busy = false
+      if (pending) pump()
+    }
     const ws = new WebSocket(`${wsBase()}ws/stream?camera_id=${cameraId}&token=${encodeURIComponent(s.token)}`)
     ws.binaryType = 'blob'
-    ws.onopen = () => setState('connecting')
-    ws.onmessage = (ev) => {
-      if (!(ev.data instanceof Blob)) return
-      const next = URL.createObjectURL(ev.data)
-      if (img.current) img.current.src = next
-      if (url) URL.revokeObjectURL(url)
-      url = next
-      frames++
-      setState('live')
-    }
-    ws.onclose = (ev) => { setState('closed'); setReason(ev.reason || '') }
-    ws.onerror = () => setState('closed')
-    const fpsTimer = window.setInterval(() => { setFps(frames); frames = 0 }, 1000)
-    return () => { ws.close(); window.clearInterval(fpsTimer); if (url) URL.revokeObjectURL(url) }
+    ws.onmessage = (ev) => { if (ev.data instanceof Blob) { pending = ev.data; pump() } }
+    ws.onclose = (ev) => { if (alive) { setState('closed'); setReason(ev.reason || '') } }
+    ws.onerror = () => { if (alive) setState('closed') }
+    return () => { alive = false; pending = null; ws.close(); window.clearInterval(fpsTimer) }
   }, [cameraId])
 
   return (
     <div className="video" ref={box}>
-      <img ref={img} alt="" style={{ display: state === 'live' ? 'block' : 'none' }} />
+      <canvas ref={canvas} width={960} height={540} style={{ display: state === 'live' ? 'block' : 'none' }} />
       {state !== 'live' && (
         <div style={{ textAlign: 'center' }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}>{state === 'closed' ? <Ill name="door_check" size={110} /> : <span className="spinner" />}</div>
@@ -130,50 +154,43 @@ export function LiveVideo({ cameraId }: { cameraId: number }) {
 }
 
 /**
- * Demo mode has no camera: draw a classroom-ish scene on a canvas -- desks,
- * a few "pupils" with recognition boxes drifting -- and push frames into the
- * same <img> the real stream uses, so the rest of the screen is untouched.
+ * Demo mode has no camera: draw a classroom-ish scene straight onto the same
+ * canvas -- desks, a few "pupils" with recognition boxes drifting.
  */
-function demoFeed(img: React.RefObject<HTMLImageElement>, onLive: () => void, setFps: (n: number) => void): () => void {
-  const canvas = document.createElement('canvas')
-  canvas.width = 960; canvas.height = 540
-  const ctx = canvas.getContext('2d')!
+function demoFeed(canvasRef: React.RefObject<HTMLCanvasElement>, onFrame: () => void, onLive: () => void): () => void {
   const people = Array.from({ length: 6 }, (_, i) => ({ x: 140 + (i % 3) * 300, y: 250 + Math.floor(i / 3) * 150, phase: i * 1.3, name: ['Абдуллоев', 'Орипов', 'Валиева', 'Қосимов', 'Назарова', 'Раҷабов'][i] }))
-  let frame = 0, alive = true, frames = 0
-  const fpsTimer = window.setInterval(() => { setFps(frames); frames = 0 }, 1000)
+  let frame = 0, alive = true, timer = 0, announced = false
   const draw = () => {
     if (!alive) return
-    frame++
-    const t = frame / 30
-    const g = ctx.createLinearGradient(0, 0, 0, 540); g.addColorStop(0, '#2b2f4a'); g.addColorStop(1, '#171a2b')
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 960, 540)
-    ctx.fillStyle = '#3a3f60'; ctx.fillRect(80, 60, 800, 120)   // board
-    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '600 22px Manrope, sans-serif'; ctx.fillText('def hello():  print("Salom, SmartFlow!")', 110, 130)
-    for (const p of people) {                                     // desks + pupils
-      const bob = Math.sin(t * 1.4 + p.phase) * 4, sway = Math.cos(t * 0.7 + p.phase) * 6
-      ctx.fillStyle = '#4a4f72'; ctx.fillRect(p.x - 90 + sway * 0.2, p.y + 40, 180, 14)
-      ctx.fillStyle = '#7d84b3'; ctx.beginPath(); ctx.ellipse(p.x + sway, p.y + 30 + bob, 46, 30, 0, Math.PI, 0); ctx.fill()
-      ctx.fillStyle = '#d9b99b'; ctx.beginPath(); ctx.arc(p.x + sway, p.y - 8 + bob, 26, 0, Math.PI * 2); ctx.fill()
-      ctx.strokeStyle = '#2bb673'; ctx.lineWidth = 2.5; ctx.strokeRect(p.x - 36 + sway, p.y - 42 + bob, 72, 80)
-      ctx.fillStyle = 'rgba(43,182,115,.9)'; ctx.fillRect(p.x - 36 + sway, p.y - 62 + bob, 110, 20)
-      ctx.fillStyle = '#fff'; ctx.font = '700 12px Manrope, sans-serif'; ctx.fillText(`${p.name} · ${(0.91 + 0.06 * Math.abs(Math.sin(t + p.phase))).toFixed(2)}`, p.x - 30 + sway, p.y - 48 + bob)
+    const c = canvasRef.current
+    if (c) {
+      if (c.width !== 960) { c.width = 960; c.height = 540 }
+      const ctx = c.getContext('2d')!
+      frame++
+      const t = frame / 12
+      const g = ctx.createLinearGradient(0, 0, 0, 540); g.addColorStop(0, '#2b2f4a'); g.addColorStop(1, '#171a2b')
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 960, 540)
+      ctx.fillStyle = '#3a3f60'; ctx.fillRect(80, 60, 800, 120)   // board
+      ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '600 22px Manrope, sans-serif'; ctx.fillText('def hello():  print("Salom, SmartFlow!")', 110, 130)
+      for (const p of people) {                                     // desks + pupils
+        const bob = Math.sin(t * 1.4 + p.phase) * 4, sway = Math.cos(t * 0.7 + p.phase) * 6
+        ctx.fillStyle = '#4a4f72'; ctx.fillRect(p.x - 90 + sway * 0.2, p.y + 40, 180, 14)
+        ctx.fillStyle = '#7d84b3'; ctx.beginPath(); ctx.ellipse(p.x + sway, p.y + 30 + bob, 46, 30, 0, Math.PI, 0); ctx.fill()
+        ctx.fillStyle = '#d9b99b'; ctx.beginPath(); ctx.arc(p.x + sway, p.y - 8 + bob, 26, 0, Math.PI * 2); ctx.fill()
+        ctx.strokeStyle = '#2bb673'; ctx.lineWidth = 2.5; ctx.strokeRect(p.x - 36 + sway, p.y - 42 + bob, 72, 80)
+        ctx.fillStyle = 'rgba(43,182,115,.9)'; ctx.fillRect(p.x - 36 + sway, p.y - 62 + bob, 110, 20)
+        ctx.fillStyle = '#fff'; ctx.font = '700 12px Manrope, sans-serif'; ctx.fillText(`${p.name} · ${(0.91 + 0.06 * Math.abs(Math.sin(t + p.phase))).toFixed(2)}`, p.x - 30 + sway, p.y - 48 + bob)
+      }
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 500, 960, 40)
+      ctx.fillStyle = '#fff'; ctx.font = '600 15px Manrope, sans-serif'
+      ctx.fillText(`DEMO · Room 1 · ${new Date().toLocaleTimeString()} · 6/6 шинохта шуд`, 16, 526)
+      onFrame()
+      if (!announced) { announced = true; onLive() }
     }
-    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 500, 960, 40)
-    ctx.fillStyle = '#fff'; ctx.font = '600 15px Manrope, sans-serif'
-    ctx.fillText(`DEMO · Room 1 · ${new Date().toLocaleTimeString()} · 6/6 шинохта шуд`, 16, 526)
-    canvas.toBlob((b) => {
-      if (!b || !alive || !img.current) return
-      const url = URL.createObjectURL(b)
-      const prev = img.current.src
-      img.current.src = url
-      if (prev.startsWith('blob:')) URL.revokeObjectURL(prev)
-      frames++
-      onLive()
-    }, 'image/jpeg', 0.8)
-    window.setTimeout(draw, 80)
+    timer = window.setTimeout(draw, 83)
   }
   draw()
-  return () => { alive = false; window.clearInterval(fpsTimer) }
+  return () => { alive = false; window.clearTimeout(timer) }
 }
 
 function LiveModal({ camera, status, onClose }: { camera: CameraDto; status?: CameraStatusDto; onClose: () => void }) {
