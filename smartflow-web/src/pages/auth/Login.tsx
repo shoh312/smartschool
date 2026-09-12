@@ -5,6 +5,7 @@ import { auth } from '../../api/endpoints'
 import type { Role } from '../../api/types'
 import { LangSwitch, useT } from '../../i18n'
 import { errorText, Field, useErrorMessage } from '../../ui/kit'
+import { Ill } from '../../ui/illustrations'
 
 export function Login() {
   const { t } = useT()
@@ -57,6 +58,7 @@ export function Login() {
           </div>
           <LangSwitch light />
         </div>
+        <div className="hero-ill"><Ill name="school" size={360} /></div>
         <h1>{t('hero_title')}</h1>
         <p>{t('hero_body')}</p>
         <div className="row wrap" style={{ marginTop: 26, gap: 8 }}>

@@ -32,7 +32,7 @@ export function Diary() {
       <div className="section-title" style={{ marginTop: 0 }}>{f.dateLong(date)}</div>
       <ErrorBox error={diary.error} onRetry={diary.reload} />
       {diary.loading && !diary.data && <Skeleton rows={3} h={90} />}
-      {diary.data?.length === 0 && <Empty icon="📅" title={t('no_lessons_day')} body={t('no_lessons_day_body')} />}
+      {diary.data?.length === 0 && <Empty ill="calendar" title={t('no_lessons_day')} body={t('no_lessons_day_body')} />}
       <div className="col" style={{ gap: 12, maxWidth: 860 }}>
         {diary.data?.map((l) => (
           <div key={l.lesson_id} className="card">

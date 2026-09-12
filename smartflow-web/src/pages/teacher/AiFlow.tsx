@@ -5,6 +5,7 @@ import { useT } from '../../i18n'
 import { IcBack, IcSparkles } from '../../ui/icons'
 import { errorText, Field, useErrorMessage } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
+import { Ill } from '../../ui/illustrations'
 
 type Source = 'topic' | 'photo' | 'text'
 const TYPES = ['single', 'truefalse', 'fill', 'match', 'order'] as const
@@ -53,7 +54,7 @@ export function AiFlow({ onCancel, onDone }: { onCancel: () => void; onDone: (r:
         <div className="grid c3" style={{ maxWidth: 900 }}>
           {(['topic', 'photo', 'text'] as Source[]).map((s, i) => (
             <button key={s} className="option-card" onClick={() => setSource(s)}>
-              <div className="ic" style={{ background: ['var(--brand-soft)', 'var(--amber-soft)', 'var(--mint-soft)'][i] }}>{['💡', '📸', '📄'][i]}</div>
+              <div className="ic-ill"><Ill name={(['book', 'notebook', 'clipboard'] as const)[i]} size={110} /></div>
               <h4>{t('ai_src_' + s)}</h4>
               <div className="small muted">{t('ai_src_' + s + '_hint')}</div>
             </button>

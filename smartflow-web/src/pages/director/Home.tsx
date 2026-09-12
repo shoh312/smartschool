@@ -4,7 +4,8 @@ import { director } from '../../api/endpoints'
 import type { CameraStatusDto, LiveStatusDto } from '../../api/types'
 import { useT } from '../../i18n'
 import { useSession } from '../../App'
-import { IcAlert, IcAward, IcCamera, IcGrid, IcNext, IcUsers } from '../../ui/icons'
+import { IcNext } from '../../ui/icons'
+import { Ill, type IllName } from '../../ui/illustrations'
 import { Avatar, ErrorBox, Grade, Skeleton, useAsync, useFmt } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 
@@ -45,6 +46,7 @@ export function DirectorHome() {
     <>
       <TopBar title={t('greeting', session?.fullName.split(' ')[0] ?? '')} sub={f.dateLong(todayIso)} />
       <div className="hero mb24">
+        <div className="hero-art"><Ill name="school" size={230} /></div>
         <h2>{t('home_hero_title')}</h2>
         <p>{t('home_hero_body')}</p>
         <div className="row wrap mt16" style={{ gap: 8 }}>
@@ -55,15 +57,15 @@ export function DirectorHome() {
       </div>
 
       <div className="grid c4 mb24">
-        <Stat to="/classes" icon={<IcGrid />} tone="brand" v={classes.data?.length} l={t('nav_classes')} />
-        <Stat to="/students" icon={<IcUsers />} tone="mint" v={students.data?.length} l={t('nav_students')} />
-        <Stat to="/teachers" icon={<IcAward />} tone="amber" v={teachers.data?.length} l={t('nav_teachers')} />
-        <Stat to="/cameras" icon={<IcCamera />} tone="sky" v={`${online}/${cams.length}`} l={t('cams_online_l')} />
+        <Stat to="/classes" ill="school" tone="brand" v={classes.data?.length} l={t('nav_classes')} />
+        <Stat to="/students" ill="backpack" tone="mint" v={students.data?.length} l={t('nav_students')} />
+        <Stat to="/teachers" ill="family" tone="amber" v={teachers.data?.length} l={t('nav_teachers')} />
+        <Stat to="/cameras" ill="door_check" tone="sky" v={`${online}/${cams.length}`} l={t('cams_online_l')} />
       </div>
 
       <div className="grid c2">
         <div className="card">
-          <div className="card-title"><IcAlert style={{ width: 18, color: 'var(--rose)' }} /> {t('needs_attention')} <Link to="/analytics" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
+          <div className="card-title"><Ill name="shield" size={34} /> {t('needs_attention')} <Link to="/analytics" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
           <ErrorBox error={attention.error} onRetry={attention.reload} />
           {attention.loading && !attention.data && <Skeleton rows={4} h={48} />}
           {attention.data && (
@@ -93,7 +95,7 @@ export function DirectorHome() {
           )}
         </div>
         <div className="card">
-          <div className="card-title"><IcAward style={{ width: 18, color: 'var(--amber)' }} /> {t('top_pupils')} <Link to="/analytics" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
+          <div className="card-title"><Ill name="trophy" size={34} /> {t('top_pupils')} <Link to="/analytics" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
           <ErrorBox error={ranking.error} onRetry={ranking.reload} />
           {ranking.loading && !ranking.data && <Skeleton rows={4} h={48} />}
           {ranking.data && (
@@ -113,7 +115,7 @@ export function DirectorHome() {
           )}
         </div>
         <div className="card">
-          <div className="card-title">📷 {t('cameras_now')} <Link to="/cameras" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
+          <div className="card-title"><Ill name="door_check" size={34} /> {t('cameras_now')} <Link to="/cameras" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
           {cams.length === 0 && <div className="muted small">{t('no_cameras')}</div>}
           <div className="col" style={{ gap: 8 }}>
             {cams.map((c) => (
@@ -129,7 +131,7 @@ export function DirectorHome() {
           </div>
         </div>
         <div className="card">
-          <div className="card-title">📅 {t('upcoming')} <Link to="/calendar" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
+          <div className="card-title"><Ill name="calendar" size={34} /> {t('upcoming')} <Link to="/calendar" className="btn sm ghost" style={{ marginLeft: 'auto' }}>{t('all')} <IcNext /></Link></div>
           {upcoming.length === 0 && <div className="muted small">{t('no_events')}</div>}
           <div className="col" style={{ gap: 8 }}>
             {upcoming.map((e) => (
@@ -156,16 +158,12 @@ export function phaseText(c: CameraStatusDto, t: (k: string, ...a: (string | num
   return c.phase ?? t('cam_ready')
 }
 
-function Stat({ icon, v, l, tone, to }: { icon: React.ReactNode; v?: number | string; l: string; tone: string; to: string }) {
+function Stat({ ill, v, l, tone, to }: { ill: IllName; v?: number | string; l: string; tone: string; to: string }) {
   return (
-    <Link to={to} className="card tight clickable">
-      <div className="stat">
-        <div className="stat-ic" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>{icon}</div>
-        <div>
-          <div className="stat-v">{v ?? '…'}</div>
-          <div className="stat-l">{l}</div>
-        </div>
-      </div>
+    <Link to={to} className={`tile tile-${tone} clickable`}>
+      <div className="tile-art"><Ill name={ill} size={96} /></div>
+      <div className="stat-v">{v ?? '…'}</div>
+      <div className="stat-l">{l}</div>
     </Link>
   )
 }

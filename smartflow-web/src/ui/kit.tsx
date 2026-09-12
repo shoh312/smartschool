@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { ApiError } from '../api/client'
 import { LOCALE, useT } from '../i18n'
 import { IcX } from './icons'
+import { Ill, type IllName } from './illustrations'
 
 // ------------------------------------------------------------- async data
 
@@ -103,10 +104,10 @@ export function Confirm({ title, body, onYes, onNo, danger }: { title: string; b
 
 // ------------------------------------------------------------- small bits
 
-export function Empty({ icon = '🗂️', title, body }: { icon?: string; title: string; body?: string }) {
+export function Empty({ icon, ill = 'empty_box', title, body }: { icon?: string; ill?: IllName; title: string; body?: string }) {
   return (
     <div className="empty">
-      <div className="ill">{icon}</div>
+      <div className="ill">{icon ?? <Ill name={ill} size={150} />}</div>
       <h3>{title}</h3>
       {body && <p className="small">{body}</p>}
     </div>

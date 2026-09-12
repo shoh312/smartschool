@@ -374,3 +374,26 @@ body { background: var(--page); background-image: radial-gradient(900px 500px at
 .lang-card.active .fl { background: linear-gradient(135deg, var(--brand), var(--brand-deep)); color: #fff; box-shadow: 0 8px 16px -8px var(--brand); }
 .lang-card .nm { font-weight: 800; }
 .lang-card .cd { font-size: 11.5px; color: var(--ink-3); font-weight: 700; letter-spacing: .06em; }
+
+/* ------------------------------------------------------ illustrations */
+.tile { position: relative; overflow: hidden; display: block; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 18px 20px; min-height: 118px; }
+.tile-art { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); opacity: .95; pointer-events: none; filter: drop-shadow(0 8px 14px rgba(63,63,184,.12)); }
+.tile .stat-v { font-size: 30px; }
+.tile .stat-l, .tile .small { position: relative; max-width: 60%; }
+.tile .bold { position: relative; max-width: 60%; }
+.tile-brand { background: linear-gradient(135deg, #fff 55%, var(--brand-tint)); }
+.tile-mint { background: linear-gradient(135deg, #fff 55%, var(--mint-soft)); }
+.tile-amber { background: linear-gradient(135deg, #fff 55%, var(--amber-soft)); }
+.tile-sky { background: linear-gradient(135deg, #fff 55%, var(--sky-soft)); }
+.tile.clickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.tile.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.tile.clickable:hover .tile-art { transform: translateY(-50%) scale(1.04); transition: transform .2s; }
+.hero-art { position: absolute; right: 28px; top: 50%; transform: translateY(-50%); opacity: .95; filter: drop-shadow(0 16px 24px rgba(0,0,0,.25)); }
+.hero { min-height: 170px; }
+.hero h2, .hero p, .hero .row { position: relative; max-width: 70%; }
+.hero-ill { margin: auto 0 10px; }
+.hero-ill svg { filter: drop-shadow(0 24px 40px rgba(0,0,0,.28)); }
+.card-title svg { flex: 0 0 auto; }
+.option-card .ic-ill { margin: -6px 0 6px; }
+.empty .ill { display: flex; justify-content: center; }
+@media (max-width: 900px) { .hero-art { display: none; } .hero h2, .hero p, .hero .row { max-width: 100%; } }

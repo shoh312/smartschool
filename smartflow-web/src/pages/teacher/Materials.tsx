@@ -39,7 +39,7 @@ export function Materials() {
         <>
           <ErrorBox error={materials.error} onRetry={materials.reload} />
           {materials.loading && !materials.data && <Skeleton rows={4} h={96} />}
-          {materials.data?.length === 0 && <Empty icon="✨" title={t('no_materials')} body={t('no_materials_body')} />}
+          {materials.data?.length === 0 && <Empty ill="clipboard" title={t('no_materials')} body={t('no_materials_body')} />}
           <div className="grid c2">
             {materials.data?.map((m) => (
               <div key={m.id} className="card">
@@ -71,7 +71,7 @@ export function Materials() {
         <>
           <ErrorBox error={assignments.error} onRetry={assignments.reload} />
           {assignments.loading && !assignments.data && <Skeleton rows={4} h={80} />}
-          {assignments.data?.length === 0 && <Empty icon="📝" title={t('no_assignments')} />}
+          {assignments.data?.length === 0 && <Empty ill="homework" title={t('no_assignments')} />}
           <div className="card" style={{ padding: 0 }}>
             {sortedA.length > 0 && (
               <table className="table">

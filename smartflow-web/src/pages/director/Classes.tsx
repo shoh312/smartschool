@@ -38,7 +38,7 @@ export function Classes() {
       </TopBar>
       <ErrorBox error={classes.error} onRetry={classes.reload} />
       {classes.loading && !classes.data && <div className="grid c3"><Skeleton rows={1} h={110} /><Skeleton rows={1} h={110} /><Skeleton rows={1} h={110} /></div>}
-      {classes.data && classes.data.length === 0 && <Empty icon="🏫" title={t('no_classes')} body={t('no_classes_body')} />}
+      {classes.data && classes.data.length === 0 && <Empty ill="school" title={t('no_classes')} body={t('no_classes_body')} />}
       <div className="grid c3">
         {classes.data?.map((c) => (
           <Link key={c.id} to={`/classes/${c.id}`} className="card clickable">
@@ -94,7 +94,7 @@ export function ClassDetail() {
         <div className="card">
           <div className="card-title">{t('pupils')}</div>
           {students.loading && !students.data && <Skeleton rows={6} h={48} />}
-          {students.data && pupils.length === 0 && <Empty icon="🎒" title={t('no_pupils')} />}
+          {students.data && pupils.length === 0 && <Empty ill="backpack" title={t('no_pupils')} />}
           <table className="table">
             <tbody>
               {pupils.map((s) => {

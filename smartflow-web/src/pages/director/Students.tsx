@@ -46,7 +46,7 @@ export function Students() {
       </div>
       <ErrorBox error={students.error} onRetry={students.reload} />
       {students.loading && !students.data && <Skeleton rows={8} h={52} />}
-      {students.data && list.length === 0 && <Empty icon="🎒" title={t('no_pupils')} />}
+      {students.data && list.length === 0 && <Empty ill="backpack" title={t('no_pupils')} />}
       {list.length > 0 && (
         <div className="card" style={{ padding: 0 }}>
           <table className="table">

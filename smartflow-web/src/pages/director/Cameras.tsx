@@ -41,7 +41,7 @@ export function Cameras() {
       </TopBar>
       <ErrorBox error={cameras.error} onRetry={cameras.reload} />
       {cameras.loading && !cameras.data && <div className="grid c3"><Skeleton rows={1} h={220} /><Skeleton rows={1} h={220} /></div>}
-      {cameras.data?.length === 0 && <Empty icon="📷" title={t('no_cameras')} body={t('no_cameras_body')} />}
+      {cameras.data?.length === 0 && <Empty ill="door_check" title={t('no_cameras')} body={t('no_cameras_body')} />}
       <div className="grid c3">
         {cameras.data?.map((c) => {
           const s = status.get(c.id)

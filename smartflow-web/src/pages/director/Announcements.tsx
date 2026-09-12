@@ -44,7 +44,7 @@ export function Announcements() {
       </TopBar>
       <ErrorBox error={list.error} onRetry={list.reload} />
       {list.loading && !list.data && <Skeleton rows={4} h={90} />}
-      {list.data?.length === 0 && <Empty icon="📣" title={t('no_announcements')} />}
+      {list.data?.length === 0 && <Empty ill="megaphone" title={t('no_announcements')} />}
       <div className="col" style={{ gap: 12, maxWidth: 820 }}>
         {sorted.map((a) => (
           <div key={a.id} className="card">

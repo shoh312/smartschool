@@ -6,6 +6,7 @@ import { useT } from '../../i18n'
 import { IcDown, IcEdit, IcPlus, IcSparkles, IcTrash, IcUp } from '../../ui/icons'
 import { ErrorBox, errorText, Field, Modal, Skeleton, useErrorMessage, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
+import { Ill } from '../../ui/illustrations'
 import { AiFlow } from './AiFlow'
 
 // -------------------------------------------------------- editable block
@@ -161,7 +162,7 @@ export function MaterialEditor() {
                 <Field label={t('description_optional')}><textarea className="textarea" style={{ minHeight: 60 }} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
               </div>
             </div>
-            {blocks.length === 0 && <div className="card empty"><div className="ill">🧩</div><h3>{t('no_blocks')}</h3><p className="small">{t('no_blocks_body')}</p></div>}
+            {blocks.length === 0 && <div className="card empty"><div className="ill"><Ill name="clipboard" size={150} /></div><h3>{t('no_blocks')}</h3><p className="small">{t('no_blocks_body')}</p></div>}
             {blocks.map((b, i) => (
               <div key={b.key} className="block" style={{ borderColor: isValid(b) ? 'var(--border)' : 'var(--rose)' }}>
                 <div className="row">

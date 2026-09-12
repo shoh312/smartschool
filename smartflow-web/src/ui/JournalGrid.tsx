@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { AbsenceDto, GradeDto, StudentDto } from '../api/types'
 import { useT } from '../i18n'
+import { Ill } from './illustrations'
 import { addDays, Avatar, fmtAvg, gradeClass, todayIso, useFmt } from './kit'
 
 export interface CellInfo { student: StudentDto; date: string; grades: GradeDto[]; absent: boolean }
@@ -38,7 +39,7 @@ export function JournalGrid({ pupils, grades, absences, editable, onCell, onName
   const absent = useMemo(() => new Set(absences.map((a) => `${a.student_id}|${a.date}`)), [absences])
   const cutoff = addDays(today, -14)
 
-  if (dates.length === 0 || pupils.length === 0) return <div className="empty"><div className="ill">📓</div><h3>{t('no_marks_yet')}</h3><p className="small">{t('journal_empty_body')}</p></div>
+  if (dates.length === 0 || pupils.length === 0) return <div className="empty"><div className="ill"><Ill name="notebook" size={150} /></div><h3>{t('no_marks_yet')}</h3><p className="small">{t('journal_empty_body')}</p></div>
 
   return (
     <div className="journal-wrap">

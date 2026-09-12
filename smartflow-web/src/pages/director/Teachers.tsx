@@ -43,7 +43,7 @@ export function Teachers() {
       </TopBar>
       <ErrorBox error={teachers.error} onRetry={teachers.reload} />
       {teachers.loading && !teachers.data && <Skeleton rows={5} h={64} />}
-      {teachers.data?.length === 0 && <Empty icon="👩‍🏫" title={t('no_teachers')} />}
+      {teachers.data?.length === 0 && <Empty ill="family" title={t('no_teachers')} />}
       <div className="grid c3">
         {teachers.data?.map((tc) => (
           <div key={tc.id} className="card">
