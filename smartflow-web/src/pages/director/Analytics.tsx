@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { director } from '../../api/endpoints'
 import { useT } from '../../i18n'
+import { IcAlert, IcAward, IcTrendDown } from '../../ui/icons'
+import { Ill } from '../../ui/illustrations'
 import { Avatar, ErrorBox, Grade, Skeleton, useAsync } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 
@@ -20,8 +22,8 @@ export function Analytics() {
         </div>
       </TopBar>
       <div className="tabs mb16">
-        <button className={'tab' + (tab === 'ranking' ? ' active' : '')} onClick={() => setTab('ranking')}>🏆 {t('school_ranking')}</button>
-        <button className={'tab' + (tab === 'attention' ? ' active' : '')} onClick={() => setTab('attention')}>⚠️ {t('needs_attention')}</button>
+        <button className={'tab' + (tab === 'ranking' ? ' active' : '')} onClick={() => setTab('ranking')}><IcAward /> {t('school_ranking')}</button>
+        <button className={'tab' + (tab === 'attention' ? ' active' : '')} onClick={() => setTab('attention')}><IcAlert /> {t('needs_attention')}</button>
       </div>
       {tab === 'ranking' && (
         <div className="card" style={{ padding: 0 }}>
@@ -32,7 +34,7 @@ export function Analytics() {
             <tbody>
               {ranking.data?.map((s) => (
                 <tr key={s.student_id} className="clickable" onClick={() => nav(`/students/${s.student_id}`)}>
-                  <td className="bold" style={{ fontSize: 16, color: s.position <= 3 ? 'var(--amber)' : 'var(--ink-3)' }}>{s.position <= 3 ? ['🥇', '🥈', '🥉'][s.position - 1] : s.position}</td>
+                  <td className="bold" style={{ fontSize: 16, color: s.position <= 3 ? 'var(--amber)' : 'var(--ink-3)' }}>{s.position <= 3 ? <span className="medal" data-pos={s.position}>{s.position}</span> : s.position}</td>
                   <td style={{ width: 48 }}><Avatar first={s.first_name} last={s.last_name} id={s.student_id} size="sm" /></td>
                   <td className="bold">{s.last_name} {s.first_name}</td>
                   <td><span className="chip">{s.class_name}</span></td>
@@ -46,7 +48,7 @@ export function Analytics() {
       {tab === 'attention' && (
         <div className="grid c2">
           <div className="card">
-            <div className="card-title">📉 {t('bottom_performers')}</div>
+            <div className="card-title"><Ill name="shield" size={34} /> {t('bottom_performers')}</div>
             <ErrorBox error={attention.error} onRetry={attention.reload} />
             {attention.data?.bottom_performers.length === 0 && <div className="muted small">{t('all_good')}</div>}
             <div className="col" style={{ gap: 6 }}>
@@ -60,7 +62,7 @@ export function Analytics() {
             </div>
           </div>
           <div className="card">
-            <div className="card-title">🔻 {t('biggest_decliners')}</div>
+            <div className="card-title"><IcTrendDown style={{ width: 20, color: 'var(--rose)' }} /> {t('biggest_decliners')}</div>
             {attention.data?.biggest_decliners.length === 0 && <div className="muted small">{t('all_good')}</div>}
             <div className="col" style={{ gap: 6 }}>
               {attention.data?.biggest_decliners.map((s) => (

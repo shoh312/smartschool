@@ -7,6 +7,8 @@ import { useT, type Lang } from '../../i18n'
 import { useSession } from '../../App'
 import { ErrorBox, errorText, Field, Skeleton, Toggle, useAsync, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
+import { IcGlobe, IcUser, IcWifi } from '../../ui/icons'
+import { Ill, type IllName } from '../../ui/illustrations'
 
 const LANGS: { code: Lang; name: string; native: string }[] = [
   { code: 'tg', name: 'Тоҷикӣ', native: 'Tajik' },
@@ -39,10 +41,10 @@ export function Settings() {
     setApiBase(v || null); toast(t('saved'))
   }
 
-  const rows: { key: keyof SchoolSettingsDto; title: string; body: string; icon: string }[] = [
-    { key: 'live_video_enabled', title: t('set_live'), body: t('set_live_body'), icon: '📹' },
-    { key: 'group_mode', title: t('set_group'), body: t('set_group_body'), icon: '🎓' },
-    { key: 'sms_enabled', title: t('set_sms'), body: t('set_sms_body'), icon: '💬' },
+  const rows: { key: keyof SchoolSettingsDto; title: string; body: string; ill: IllName }[] = [
+    { key: 'live_video_enabled', title: t('set_live'), body: t('set_live_body'), ill: 'door_check' as IllName },
+    { key: 'group_mode', title: t('set_group'), body: t('set_group_body'), ill: 'school' as IllName },
+    { key: 'sms_enabled', title: t('set_sms'), body: t('set_sms_body'), ill: 'phone_sms' as IllName },
   ]
 
   return (
@@ -51,7 +53,7 @@ export function Settings() {
       <div className="grid c2" style={{ alignItems: 'start' }}>
         <div className="col" style={{ gap: 16 }}>
           <div className="card">
-            <div className="card-title">🌐 {t('language_title')}</div>
+            <div className="card-title"><IcGlobe style={{ width: 20, color: 'var(--brand)' }} /> {t('language_title')}</div>
             <p className="small muted mb12">{t('language_body')}</p>
             <div className="lang-cards">
               {LANGS.map((l) => (
@@ -64,7 +66,7 @@ export function Settings() {
           </div>
           {!isDemo() && (
             <div className="card">
-              <div className="card-title">🔗 {t('connection')}</div>
+              <div className="card-title"><IcWifi style={{ width: 20, color: 'var(--sky)' }} /> {t('connection')}</div>
               <p className="small muted mb12">{t('connection_body')}</p>
               <Field label={t('server_address')}>
                 <input className="input" placeholder={defaultApiBase()} value={server} onChange={(e) => { setServer(e.target.value); setProbing(null) }} />
@@ -80,12 +82,12 @@ export function Settings() {
         <div className="col" style={{ gap: 16 }}>
           {isDirector && (
             <div className="card">
-              <div className="card-title">🏫 {t('school_settings')}</div>
+              <div className="card-title"><Ill name="school" size={34} /> {t('school_settings')}</div>
               <ErrorBox error={s.error} onRetry={s.reload} />
               {!local && s.loading && <Skeleton rows={3} h={56} />}
               {local && rows.map((r, i) => (
                 <div key={r.key} className="row" style={{ padding: '14px 0', borderBottom: i < rows.length - 1 ? '1px solid var(--border)' : 0 }}>
-                  <span className="stat-ic" style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface-soft)', fontSize: 18 }}>{r.icon}</span>
+                  <span className="stat-ic" style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--surface-soft)' }}><Ill name={r.ill} size={40} /></span>
                   <div className="grow"><div className="bold">{r.title}</div><div className="small muted">{r.body}</div></div>
                   <Toggle on={!!local[r.key]} onChange={(v) => flip(r.key, v)} />
                 </div>
@@ -93,7 +95,7 @@ export function Settings() {
             </div>
           )}
           <div className="card">
-            <div className="card-title">👤 {t('account')}</div>
+            <div className="card-title"><IcUser style={{ width: 20, color: 'var(--ink-2)' }} /> {t('account')}</div>
             <div className="row">
               <div className="avatar">{session?.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
               <div className="grow">

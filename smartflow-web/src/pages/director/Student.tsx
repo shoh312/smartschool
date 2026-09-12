@@ -53,7 +53,7 @@ export function StudentPage() {
               <div className="col">
                 {d.subject_breakdown.map((s) => (
                   <div key={s.subject} className="row">
-                    <div className="small bold" style={{ width: 140 }}>{s.subject}{s.subject === d.strongest_subject && ' 🏆'}{s.subject === d.weakest_subject && ' ⚠️'}</div>
+                    <div className="small bold" style={{ width: 140 }}>{s.subject}{s.subject === d.strongest_subject && <span className="chip mint" style={{ height: 18, padding: '0 6px', fontSize: 10, marginLeft: 6 }}>TOP</span>}{s.subject === d.weakest_subject && <span className="chip rose" style={{ height: 18, padding: '0 6px', fontSize: 10, marginLeft: 6 }}>!</span>}</div>
                     <div className="bar grow"><i style={{ width: `${(s.average / 10) * 100}%`, background: s.average >= 8 ? 'var(--mint)' : s.average >= 6 ? 'var(--amber)' : 'var(--rose)' }} /></div>
                     <Grade v={s.average} />
                     <span className="tiny faint" style={{ width: 40 }}>{s.grade_count}×</span>

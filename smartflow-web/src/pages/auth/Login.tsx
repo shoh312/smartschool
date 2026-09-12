@@ -6,6 +6,7 @@ import type { Role } from '../../api/types'
 import { LangSwitch, useT } from '../../i18n'
 import { errorText, Field, useErrorMessage } from '../../ui/kit'
 import { Ill } from '../../ui/illustrations'
+import { IcBook, IcCamera, IcSparkles } from '../../ui/icons'
 
 export function Login() {
   const { t } = useT()
@@ -62,9 +63,9 @@ export function Login() {
         <h1>{t('hero_title')}</h1>
         <p>{t('hero_body')}</p>
         <div className="row wrap" style={{ marginTop: 26, gap: 8 }}>
-          <span className="pill-w">📷 {t('hero_pill_attendance')}</span>
-          <span className="pill-w">📚 {t('hero_pill_journal')}</span>
-          <span className="pill-w">✨ {t('hero_pill_ai')}</span>
+          <span className="pill-w"><IcCamera /> {t('hero_pill_attendance')}</span>
+          <span className="pill-w"><IcBook /> {t('hero_pill_journal')}</span>
+          <span className="pill-w"><IcSparkles /> {t('hero_pill_ai')}</span>
         </div>
       </div>
       <div className="auth-form">
@@ -90,7 +91,7 @@ export function Login() {
           </div>
           <div className="card tight mt24" style={{ background: 'var(--brand-tint)', borderColor: 'var(--brand-soft)', boxShadow: 'none' }}>
             <div className="row">
-              <span style={{ fontSize: 22 }}>🎬</span>
+              <Ill name="phone_sms" size={54} />
               <div className="grow">
                 <div className="bold">{t('demo_title')}</div>
                 <div className="small muted">{t('demo_body')}</div>

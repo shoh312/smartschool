@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadSession, wsBase } from '../../api/client'
 import { isDemo } from '../../api/demo'
+import { Ill } from '../../ui/illustrations'
 import { director } from '../../api/endpoints'
 import type { CameraDto, CameraPositionDto, CameraStatusDto, ClassDto } from '../../api/types'
 import { useT } from '../../i18n'
@@ -117,7 +118,7 @@ export function LiveVideo({ cameraId }: { cameraId: number }) {
       <img ref={img} alt="" style={{ display: state === 'live' ? 'block' : 'none' }} />
       {state !== 'live' && (
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 34, marginBottom: 8 }}>{state === 'closed' ? '📷' : '⏳'}</div>
+          <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}>{state === 'closed' ? <Ill name="door_check" size={110} /> : <span className="spinner" />}</div>
           <div className="bold">{state === 'closed' ? (reason ? msg(reason) : t('cam_no_signal')) : t('connecting')}</div>
           {state === 'closed' && !reason && <div className="small" style={{ opacity: .7 }}>{t('cam_no_signal_hint')}</div>}
         </div>

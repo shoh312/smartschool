@@ -137,10 +137,10 @@ export function JournalStats({ grades, absences, pupils }: { grades: GradeDto[];
   const tone = cls === 'g-hi' ? 'mint' : cls === 'g-mid' ? 'amber' : cls === 'g-lo' ? 'rose' : 'brand'
   return (
     <div className="jstat">
-      <div className="card"><span className="ic" style={{ background: `var(--${tone}-soft)`, color: `var(--${tone})` }}>📊</span><div><div className="v" style={{ color: avg == null ? 'var(--ink-3)' : `var(--${tone})` }}>{fmtAvg(avg)}</div><div className="l">{t('average')}</div></div></div>
-      <div className="card"><span className="ic" style={{ background: 'var(--brand-soft)' }}>📝</span><div><div className="v">{grades.length}</div><div className="l">{t('marks_total')}</div></div></div>
-      <div className="card"><span className="ic" style={{ background: 'var(--rose-soft)' }}>🚫</span><div><div className="v">{absences}</div><div className="l">{t('absences_total')}</div></div></div>
-      <div className="card"><span className="ic" style={{ background: 'var(--amber-soft)' }}>🏆</span><div className="grow ellipsis"><div className="v ellipsis" style={{ fontSize: 15 }}>{best ? `${best.s.last_name} ${best.s.first_name}` : '—'}</div><div className="l">{t('best_pupil')}{best ? ` · ${fmtAvg(best.a)}` : ''}</div></div></div>
+      <div className="card"><span className="ic" style={{ background: `var(--${tone}-soft)` }}><Ill name="homework" size={40} /></span><div><div className="v" style={{ color: avg == null ? 'var(--ink-3)' : `var(--${tone})` }}>{fmtAvg(avg)}</div><div className="l">{t('average')}</div></div></div>
+      <div className="card"><span className="ic" style={{ background: 'var(--brand-soft)' }}><Ill name="notebook" size={40} /></span><div><div className="v">{grades.length}</div><div className="l">{t('marks_total')}</div></div></div>
+      <div className="card"><span className="ic" style={{ background: 'var(--rose-soft)' }}><Ill name="door_check" size={40} /></span><div><div className="v">{absences}</div><div className="l">{t('absences_total')}</div></div></div>
+      <div className="card"><span className="ic" style={{ background: 'var(--amber-soft)' }}><Ill name="trophy" size={40} /></span><div className="grow ellipsis"><div className="v ellipsis" style={{ fontSize: 15 }}>{best ? `${best.s.last_name} ${best.s.first_name}` : '—'}</div><div className="l">{t('best_pupil')}{best ? ` · ${fmtAvg(best.a)}` : ''}</div></div></div>
     </div>
   )
 }

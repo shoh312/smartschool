@@ -397,3 +397,14 @@ body { background: var(--page); background-image: radial-gradient(900px 500px at
 .option-card .ic-ill { margin: -6px 0 6px; }
 .empty .ill { display: flex; justify-content: center; }
 @media (max-width: 900px) { .hero-art { display: none; } .hero h2, .hero p, .hero .row { max-width: 100%; } }
+
+.tab { display: inline-flex; align-items: center; gap: 7px; }
+.tab svg { width: 16px; height: 16px; }
+.pill-w svg { width: 15px; height: 15px; }
+.medal { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 800; box-shadow: 0 4px 10px -4px rgba(0,0,0,.35); }
+.medal[data-pos="1"] { background: linear-gradient(135deg, #ffd66b, #e08a00); }
+.medal[data-pos="2"] { background: linear-gradient(135deg, #d9dce6, #9aa1af); }
+.medal[data-pos="3"] { background: linear-gradient(135deg, #f0b48a, #b8703c); }
+.spinner { display: inline-block; width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.2); border-top-color: #fff; animation: spin 1s linear infinite; }
+.jstat .ic svg, .stat-ic svg { max-width: 100%; max-height: 100%; }
+.jstat .ic { overflow: hidden; }

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { teacher } from '../../api/endpoints'
 import { useT } from '../../i18n'
 import { useSession } from '../../App'
-import { IcUsers } from '../../ui/icons'
+import { IcBook, IcFile, IcUsers } from '../../ui/icons'
 import { Ill } from '../../ui/illustrations'
 import { Empty, ErrorBox, Skeleton, todayIso, useAsync, useFmt } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
@@ -25,9 +25,9 @@ export function TeacherHome() {
         <h2>{t('teacher_hero_title')}</h2>
         <p>{t('teacher_hero_body')}</p>
         <div className="row wrap mt16" style={{ gap: 8 }}>
-          {session?.subject && <span className="pill-w">📚 {session.subject}</span>}
-          <span className="pill-w">🏫 {t('classes_n', classes.data?.length ?? 0)}</span>
-          {open > 0 && <span className="pill-w">📝 {t('open_assignments', open)}</span>}
+          {session?.subject && <span className="pill-w"><IcBook /> {session.subject}</span>}
+          <span className="pill-w"><IcUsers /> {t('classes_n', classes.data?.length ?? 0)}</span>
+          {open > 0 && <span className="pill-w"><IcFile /> {t('open_assignments', open)}</span>}
         </div>
       </div>
       <div className="grid c3 mb24">

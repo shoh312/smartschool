@@ -4,7 +4,7 @@ import { director } from '../../api/endpoints'
 import type { CameraStatusDto, LiveStatusDto } from '../../api/types'
 import { useT } from '../../i18n'
 import { useSession } from '../../App'
-import { IcNext } from '../../ui/icons'
+import { IcBook, IcCheck, IcNext } from '../../ui/icons'
 import { Ill, type IllName } from '../../ui/illustrations'
 import { Avatar, ErrorBox, Grade, Skeleton, useAsync, useFmt } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
@@ -51,8 +51,8 @@ export function DirectorHome() {
         <p>{t('home_hero_body')}</p>
         <div className="row wrap mt16" style={{ gap: 8 }}>
           <span className="pill-w"><span className="live-dot" /> {t('cams_online', online, cams.length)}</span>
-          <span className="pill-w">✅ {t('present_now', present)}</span>
-          {inLesson.length > 0 && <span className="pill-w">📖 {t('in_lesson_now', new Set(inLesson.map((s) => s.class_name)).size)}</span>}
+          <span className="pill-w"><IcCheck /> {t('present_now', present)}</span>
+          {inLesson.length > 0 && <span className="pill-w"><IcBook /> {t('in_lesson_now', new Set(inLesson.map((s) => s.class_name)).size)}</span>}
         </div>
       </div>
 

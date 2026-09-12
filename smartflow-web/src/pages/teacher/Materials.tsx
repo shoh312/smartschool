@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { teacher } from '../../api/endpoints'
 import type { ClassAssignmentDto, MaterialSummaryDto } from '../../api/types'
 import { useT } from '../../i18n'
-import { IcEdit, IcPlus, IcSend, IcTrash } from '../../ui/icons'
+import { IcEdit, IcLayers, IcPlus, IcSend, IcTrash } from '../../ui/icons'
 import { Confirm, Empty, ErrorBox, errorText, Field, Modal, Skeleton, useAsync, useErrorMessage, useFmt, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 
@@ -32,8 +32,8 @@ export function Materials() {
         <button className="btn primary" onClick={() => nav('/materials/new')}><IcPlus /> {t('new_material')}</button>
       </TopBar>
       <div className="tabs mb16">
-        <button className={'tab' + (tab === 'materials' ? ' active' : '')} onClick={() => setTab('materials')}>📚 {t('my_materials')} {materials.data ? `· ${materials.data.length}` : ''}</button>
-        <button className={'tab' + (tab === 'assignments' ? ' active' : '')} onClick={() => setTab('assignments')}>📝 {t('handed_out')} {assignments.data ? `· ${assignments.data.length}` : ''}</button>
+        <button className={'tab' + (tab === 'materials' ? ' active' : '')} onClick={() => setTab('materials')}><IcLayers /> {t('my_materials')} {materials.data ? `· ${materials.data.length}` : ''}</button>
+        <button className={'tab' + (tab === 'assignments' ? ' active' : '')} onClick={() => setTab('assignments')}><IcSend /> {t('handed_out')} {assignments.data ? `· ${assignments.data.length}` : ''}</button>
       </div>
       {tab === 'materials' && (
         <>
