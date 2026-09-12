@@ -72,6 +72,7 @@ function Routed() {
         <Route path="diary" element={<Diary />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="announcements" element={<Announcements />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

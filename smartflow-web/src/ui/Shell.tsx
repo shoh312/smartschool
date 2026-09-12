@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { saveSession } from '../api/client'
 import { isDemo } from '../api/demo'
 import type { Session } from '../api/types'
-import { LangSwitch, useT } from '../i18n'
+import { useT } from '../i18n'
 import { IcBell, IcBook, IcCalendar, IcCamera, IcChart, IcGrid, IcHome, IcLayers, IcLogout, IcSettings, IcUser, IcUsers } from './icons'
 import { Confirm } from './kit'
 
@@ -29,6 +29,7 @@ export function Shell({ session }: { session: Session }) {
         { to: '/diary', icon: IcBook, label: t('nav_diary') },
         { to: '/calendar', icon: IcCalendar, label: t('nav_calendar') },
         { to: '/announcements', icon: IcBell, label: t('nav_announcements') },
+        { to: '/settings', icon: IcSettings, label: t('nav_settings') },
       ]
   return (
     <div className="shell">
@@ -48,7 +49,6 @@ export function Shell({ session }: { session: Session }) {
           ))}
         </nav>
         <div className="sidebar-foot">
-          <div style={{ padding: '0 8px 10px' }}><LangSwitch /></div>
           <div className="me">
             <div className="avatar sm">{session.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
             <div className="grow">

@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { director } from '../../api/endpoints'
 import { useT } from '../../i18n'
-import { JournalGrid } from '../../ui/JournalGrid'
-import { ErrorBox, fmtAvg, gradeClass, Skeleton, useAsync } from '../../ui/kit'
+import { JournalGrid, JournalStats } from '../../ui/JournalGrid'
+import { ErrorBox, Skeleton, useAsync } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 
 export function Journal() {
@@ -27,7 +27,6 @@ export function Journal() {
   const current = subject ?? subjects[0] ?? null
   const g = (grades.data ?? []).filter((x) => x.subject === current)
   const a = (absences.data ?? []).filter((x) => x.subject === current)
-  const avg = g.length ? g.reduce((s, x) => s + x.value, 0) / g.length : null
 
   return (
     <>
@@ -36,18 +35,11 @@ export function Journal() {
       {grades.loading && !grades.data && <Skeleton rows={6} h={48} />}
       {grades.data && (
         <>
-          <div className="row mb16" style={{ alignItems: 'flex-start' }}>
-            <div className="tabs grow">
-              {subjects.map((s) => <button key={s} className={'tab' + (s === current ? ' active' : '')} onClick={() => setSubject(s)}>{s}</button>)}
-            </div>
-            <div className="card tight row" style={{ gap: 14 }}>
-              <span className={'grade ' + gradeClass(avg)} style={{ minWidth: 44, height: 44, fontSize: 16 }}>{fmtAvg(avg)}</span>
-              <div>
-                <div className="small bold">{t('average')}</div>
-                <div className="tiny faint">{t('marks_n', g.length)} · {t('absences_n', a.length)}</div>
-              </div>
-            </div>
+          <div className="tabs mb16">
+            {subjects.map((s) => <button key={s} className={'tab' + (s === current ? ' active' : '')} onClick={() => setSubject(s)}>{s}</button>)}
           </div>
+          <JournalStats grades={g} absences={a.length} pupils={pupils} />
+          <div className="mb16" />
           <JournalGrid pupils={pupils} grades={g} absences={a} onName={(s) => nav(`/students/${s.id}`)} />
         </>
       )}

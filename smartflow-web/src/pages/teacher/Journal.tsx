@@ -4,8 +4,8 @@ import { teacher } from '../../api/endpoints'
 import type { GradeDto } from '../../api/types'
 import { useT } from '../../i18n'
 import { IcTrash } from '../../ui/icons'
-import { JournalGrid, type CellInfo } from '../../ui/JournalGrid'
-import { Avatar, ErrorBox, errorText, Field, fmtAvg, gradeClass, Modal, Skeleton, useAsync, useErrorMessage, useToast } from '../../ui/kit'
+import { JournalGrid, JournalStats, type CellInfo } from '../../ui/JournalGrid'
+import { Avatar, ErrorBox, errorText, Field, gradeClass, Modal, Skeleton, useAsync, useErrorMessage, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 
 export function TeacherJournal() {
@@ -23,20 +23,11 @@ export function TeacherJournal() {
   const cls = classes.data?.find((c) => c.class_id === classId && (c.subject ?? '') === subject)
   const pupils = [...(roster.data ?? [])].sort((a, b) => a.last_name.localeCompare(b.last_name))
   const g = grades.data ?? []
-  const avg = g.length ? g.reduce((s, x) => s + x.value, 0) / g.length : null
 
   return (
     <>
-      <TopBar title={cls?.class_name ?? '…'} sub={subject} back={() => nav('/')}>
-        <div className="card tight row" style={{ gap: 14 }}>
-          <span className={'grade ' + gradeClass(avg)} style={{ minWidth: 44, height: 44, fontSize: 16 }}>{fmtAvg(avg)}</span>
-          <div>
-            <div className="small bold">{t('average')}</div>
-            <div className="tiny faint">{t('marks_n', g.length)} · {t('absences_n', (absences.data ?? []).length)}</div>
-          </div>
-        </div>
-      </TopBar>
-      <p className="small muted mb12">{t('journal_teacher_hint')}</p>
+      <TopBar title={cls?.class_name ?? '…'} sub={`${subject} · ${t('journal_teacher_hint')}`} back={() => nav('/')} />
+      {roster.data && grades.data && <><JournalStats grades={g} absences={(absences.data ?? []).length} pupils={pupils} /><div className="mb16" /></>}
       <ErrorBox error={roster.error ?? grades.error} onRetry={() => { roster.reload(); grades.reload() }} />
       {(roster.loading || grades.loading) && !(roster.data && grades.data) && <Skeleton rows={6} h={48} />}
       {roster.data && grades.data && <JournalGrid pupils={pupils} grades={g} absences={absences.data ?? []} editable onCell={setCell} />}
