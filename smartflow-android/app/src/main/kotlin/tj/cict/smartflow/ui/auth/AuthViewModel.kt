@@ -105,7 +105,7 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
             val r = if (ui.director) directors.login(ui.email, ui.teacherPassword, server) else teachers.login(ui.email, ui.teacherPassword, server)
             when (r) {
                 is ApiResult.Ok -> _login.update { it.copy(busy = false) }
-                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error) }
+                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error.asLoginError()) }
             }
         }
     }
@@ -119,7 +119,7 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
         viewModelScope.launch {
             when (val r = repo.loginStudent(ui.username, ui.studentPassword)) {
                 is ApiResult.Ok -> _login.update { it.copy(busy = false) }
-                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error) }
+                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error.asLoginError()) }
             }
         }
     }
@@ -139,7 +139,7 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
                         is LoginOutcome.NeedsPassword -> onNeedsPassword(o.phone)
                     }
                 }
-                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error) }
+                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error.asLoginError()) }
             }
         }
     }
@@ -217,3 +217,6 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
 
 /** What the server keys parents by: digits only. */
 fun String.digits(): String = filter(Char::isDigit)
+
+/** On a sign-in screen a 401 is a wrong password, not an expired session. */
+private fun ApiError.asLoginError(): ApiError = if (this == ApiError.Unauthorized) ApiError.Detail("wrong_credentials", 401) else this

@@ -57,6 +57,7 @@ fun ApiError.message(): String = when (this) {
         "code_already_used" -> stringResource(R.string.error_code_expired)
         "password_too_short" -> stringResource(R.string.error_password_short)
         "school_not_found" -> stringResource(R.string.server_not_found)
+        "wrong_credentials" -> stringResource(R.string.error_wrong_credentials)
         "school_offline" -> stringResource(R.string.server_not_found)
         // A sentence rather than a code: the server already said it in words
         // ("this time is taken 14:00-15:00"), so show it as is.

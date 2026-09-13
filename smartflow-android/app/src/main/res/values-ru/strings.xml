@@ -456,4 +456,5 @@
     <string name="journal_absences_count">%1$d пропусков</string>
     <string name="journal_absent_short">н</string>
     <string name="journal_legend_absent">не был на уроке</string>
+    <string name="error_wrong_credentials">Неверный логин или пароль. Проверьте и попробуйте снова.</string>
 </resources>

@@ -481,4 +481,5 @@
     <string name="journal_absences_count">%1$d absences</string>
     <string name="journal_absent_short">a</string>
     <string name="journal_legend_absent">absent from the lesson</string>
+    <string name="error_wrong_credentials">Wrong login or password. Check and try again.</string>
 </resources>

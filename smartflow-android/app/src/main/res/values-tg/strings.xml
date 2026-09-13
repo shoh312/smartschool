@@ -456,4 +456,5 @@
     <string name="journal_absences_count">%1$d ғоиб</string>
     <string name="journal_absent_short">ғ</string>
     <string name="journal_legend_absent">дар дарс набуд</string>
+    <string name="error_wrong_credentials">Логин ё парол нодуруст. Санҷед ва бори дигар кӯшиш кунед.</string>
 </resources>
