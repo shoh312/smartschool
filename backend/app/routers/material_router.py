@@ -44,7 +44,7 @@ from app.services.sync_outbox_service import (
     enqueue_material_event,
     enqueue_student_analytics_event,
 )
-from app.utils.academic_calendar import current_quarter, school_year_for_date
+from app.utils.academic_calendar import current_quarter, quarter_for_date, school_year_for_date
 
 router = APIRouter(tags=["materials"])
 
@@ -476,8 +476,11 @@ def transfer_grades(
         )
     material_service.require_teaches_class(db, teacher, assignment.class_id, material.subject)
 
-    today = _school_today()
-    quarter = current_quarter()
+    # The mark lands on the day the test was handed out -- that is the lesson
+    # it belongs to in the register -- not on the day the teacher pressed
+    # "transfer", which may be days later and not a lesson day at all.
+    today = assignment.published_at.date() if assignment.published_at else _school_today()
+    quarter = quarter_for_date(today)
     school_year = school_year_for_date(today)
 
     attempts = {
