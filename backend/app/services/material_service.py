@@ -211,25 +211,25 @@ def results_are_visible(
 # --------------------------------------------------------------------------
 
 def _best_attempts(db: Session, assignment_id: int) -> dict[int, MaterialAttempt]:
-    """The attempt that counts for each pupil: their best submitted score.
+    """The attempt that counts for each pupil: the FIRST one they submitted.
 
-    With several attempts allowed, marking the last one would punish a pupil
-    for practising once more; the best run is what a teacher would take.
+    Later runs are practice. If the first try scored 50% and a retry scored
+    80%, the teacher, the parent and the pupil's own panel all keep seeing
+    50% -- the mark reflects what the pupil knew when they first sat it.
     """
-    best: dict[int, MaterialAttempt] = {}
+    first: dict[int, MaterialAttempt] = {}
     attempts = (
         db.query(MaterialAttempt)
         .filter(
             MaterialAttempt.assignment_id == assignment_id,
             MaterialAttempt.submitted_at.isnot(None),
         )
+        .order_by(MaterialAttempt.submitted_at.asc(), MaterialAttempt.id.asc())
         .all()
     )
     for attempt in attempts:
-        current = best.get(attempt.student_id)
-        if current is None or (attempt.score or 0) > (current.score or 0):
-            best[attempt.student_id] = attempt
-    return best
+        first.setdefault(attempt.student_id, attempt)
+    return first
 
 
 def _attempt_counts(db: Session, assignment_id: int) -> dict[int, int]:

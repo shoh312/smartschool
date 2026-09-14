@@ -120,10 +120,12 @@ def _attempts_of(db: Session, assignment_id: int, student_id: int) -> list[Mater
 
 
 def _best_submitted(attempts: list[MaterialAttempt]) -> MaterialAttempt | None:
+    """The attempt that counts: the first one submitted. Retries are practice
+    and never raise the score the pupil, parent and teacher see."""
     submitted = [a for a in attempts if a.submitted_at is not None]
     if not submitted:
         return None
-    return max(submitted, key=lambda a: (a.score or 0, a.submitted_at))
+    return min(submitted, key=lambda a: (a.submitted_at, a.attempt_no))
 
 
 def _summarise(
