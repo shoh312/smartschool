@@ -9,6 +9,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import tj.cict.smartflow.core.network.ApiError
 import tj.cict.smartflow.core.network.ApiResult
+import tj.cict.smartflow.core.network.SchoolApiClient
 import tj.cict.smartflow.core.network.map
 import tj.cict.smartflow.core.network.safeCall as rawCall
 import tj.cict.smartflow.core.session.Role
@@ -78,11 +79,17 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
         }
     }
 
-    /** The token and server for a websocket, which cannot carry headers. */
+    /**
+     * The token for a websocket, which cannot carry headers. Built on the same
+     * placeholder host as every HTTP call: the school-host interceptor swaps in
+     * the real server (LAN or relay, prefix included) when the socket opens.
+     * Putting the real URL here made the interceptor add the relay prefix a
+     * second time, so live video worked only on the school Wi-Fi.
+     */
     suspend fun streamUrl(cameraId: Int): String? {
         val s = session.current() ?: return null
-        val base = s.serverUrl ?: return null
-        return base.replaceFirst("http", "ws") + "ws/stream?camera_id=$cameraId&token=${s.token}"
+        if (s.serverUrl == null) return null
+        return SchoolApiClient.PLACEHOLDER.replaceFirst("http", "ws") + "ws/stream?camera_id=$cameraId&token=${s.token}"
     }
 
     // ---------------------------------------------------------- live
