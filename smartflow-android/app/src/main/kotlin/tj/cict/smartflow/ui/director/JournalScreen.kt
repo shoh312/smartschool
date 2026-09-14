@@ -58,13 +58,17 @@ import tj.cict.smartflow.ui.components.ScreenHeader
 import tj.cict.smartflow.ui.components.SkeletonList
 import tj.cict.smartflow.ui.components.SoftCard
 import tj.cict.smartflow.ui.components.VSpace
+import tj.cict.smartflow.ui.components.JournalGrid
+import tj.cict.smartflow.ui.components.JournalRowSpec
+import tj.cict.smartflow.ui.components.JournalCell
+import tj.cict.smartflow.ui.components.GradeInfoSheet
+import tj.cict.smartflow.data.dto.GradeDto
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import tj.cict.smartflow.ui.grades.gradeColors
 import tj.cict.smartflow.ui.theme.Radius
 import tj.cict.smartflow.ui.theme.smart
-
-private val NAME_COL = 132.dp
-private val CELL = 42.dp
-private val ROW_H = 46.dp
 
 /** The gold "open the journal" button in a class header. */
 @Composable
@@ -93,6 +97,9 @@ fun DirectorJournalScreen(classId: Int, className: String, schoolVm: SchoolViewM
     val school by schoolVm.ui.collectAsStateWithLifecycle()
     val c = MaterialTheme.smart
     val pupils = (school.students as? UiState.Ready)?.data.orEmpty().filter { it.classId == classId }.sortedBy { it.lastName }
+    var info by remember { mutableStateOf<Pair<List<GradeDto>, String>?>(null) }
+
+    info?.let { (grades, name) -> GradeInfoSheet(grades, fallback = className, title = name, onDismiss = { info = null }) }
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
@@ -126,7 +133,15 @@ fun DirectorJournalScreen(classId: Int, className: String, schoolVm: SchoolViewM
                         if (dates.isEmpty() || pupils.isEmpty()) {
                             EmptyState(R.drawable.ill_notebook, stringResource(R.string.journal_empty), stringResource(R.string.journal_empty_body))
                         } else {
-                            Grid(pupils, dates, grades.groupBy { it.studentId }, absences.groupBy { it.studentId }, onOpenStudent)
+                            val byStudent = grades.groupBy { it.studentId }
+                            val absentBy = absences.groupBy { it.studentId }
+                            JournalGrid(
+                                rows = pupils.map { p -> JournalRowSpec(p.id, p.lastName, p.firstName) { ChildAvatar(Child(p.id, p.firstName, p.lastName, p.className), 28.dp) } },
+                                dates = dates,
+                                cellOf = { id, d -> JournalCell(byStudent[id].orEmpty().filter { it.date == d }, absentBy[id].orEmpty().any { it.date == d }) },
+                                onCell = { id, _, cell -> if (cell.grades.isNotEmpty()) info = cell.grades to pupils.first { it.id == id }.let { "${it.lastName} ${it.firstName}" } },
+                                onRow = { id -> pupils.first { it.id == id }.let { onOpenStudent(it.id, "${it.lastName} ${it.firstName}") } },
+                            )
                         }
                     }
                 }
@@ -154,95 +169,5 @@ private fun SummaryCard(values: List<Int>, absences: Int) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun Grid(
-    pupils: List<StudentDto>,
-    dates: List<LocalDate>,
-    gradesBy: Map<Int, List<tj.cict.smartflow.data.dto.GradeDto>>,
-    absencesBy: Map<Int, List<tj.cict.smartflow.data.dto.AbsenceDto>>,
-    onOpenStudent: (Int, String) -> Unit,
-) {
-    val c = MaterialTheme.smart
-    val locale = currentLocale()
-    val today = LocalDate.now()
-    val fmt = DateTimeFormatter.ofPattern("dd.MM")
-    SoftCard(contentPadding = PaddingValues(0.dp), elevation = 6.dp) {
-        Row {
-            // Frozen name column
-            Column(Modifier.width(NAME_COL)) {
-                Box(Modifier.height(ROW_H).fillMaxWidth().padding(start = 12.dp), contentAlignment = Alignment.CenterStart) {
-                    Text(stringResource(R.string.students_title), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
-                }
-                pupils.forEach { p ->
-                    val own = gradesBy[p.id].orEmpty()
-                    val avg = own.takeIf { it.isNotEmpty() }?.map { it.value }?.average()
-                    Row(
-                        Modifier.height(ROW_H).fillMaxWidth().clickable { onOpenStudent(p.id, "${p.lastName} ${p.firstName}") }.padding(start = 8.dp, end = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        ChildAvatar(Child(p.id, p.firstName, p.lastName, p.className), 28.dp)
-                        HSpace(8.dp)
-                        Column(Modifier.weight(1f)) {
-                            Text(p.lastName, style = MaterialTheme.typography.labelMedium, color = c.ink, maxLines = 1)
-                            Text(
-                                if (avg != null) formatAverage(avg) else p.firstName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (avg != null) gradeColors(avg).first else c.inkTertiary, maxLines = 1,
-                            )
-                        }
-                    }
-                }
-            }
-            // Dates scroll sideways
-            Column(Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
-                Row {
-                    dates.forEach { d ->
-                        val isToday = d == today
-                        Column(Modifier.width(CELL).height(ROW_H), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Text(d.format(fmt), style = MaterialTheme.typography.labelSmall, color = if (isToday) c.brand else c.inkSecondary, fontWeight = if (isToday) FontWeight.Bold else null)
-                            Text(d.weekdayLong(locale).take(2), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
-                        }
-                    }
-                }
-                pupils.forEach { p ->
-                    val byDate = gradesBy[p.id].orEmpty().groupBy { it.date }
-                    val absentDates = absencesBy[p.id].orEmpty().map { it.date }.toSet()
-                    Row {
-                        dates.forEach { d ->
-                            val marks = byDate[d].orEmpty()
-                            val absent = d in absentDates
-                            Box(Modifier.width(CELL).height(ROW_H).padding(3.dp), contentAlignment = Alignment.Center) {
-                                when {
-                                    marks.isNotEmpty() -> {
-                                        val (gc, gs) = gradeColors(marks.first().value.toDouble())
-                                        Box(
-                                            Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).background(gs)
-                                                .then(if (absent) Modifier.border(1.5.dp, c.rose, RoundedCornerShape(8.dp)) else Modifier),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Text(marks.joinToString("/") { "${it.value}" }, style = MaterialTheme.typography.labelMedium, color = gc, fontWeight = FontWeight.Bold, maxLines = 1, textAlign = TextAlign.Center)
-                                        }
-                                    }
-                                    absent -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).background(c.roseSoft), contentAlignment = Alignment.Center) {
-                                        Text(stringResource(R.string.journal_absent_short), style = MaterialTheme.typography.labelMedium, color = c.rose, fontWeight = FontWeight.Bold)
-                                    }
-                                    else -> Box(Modifier.size(4.dp).clip(CircleShape).background(c.border))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    VSpace(10.dp)
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.size(14.dp).clip(RoundedCornerShape(4.dp)).background(c.roseSoft), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.journal_absent_short), style = MaterialTheme.typography.labelSmall, color = c.rose)
-        }
-        Text(stringResource(R.string.journal_legend_absent), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
     }
 }

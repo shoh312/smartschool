@@ -457,4 +457,12 @@
     <string name="journal_absent_short">н</string>
     <string name="journal_legend_absent">не был на уроке</string>
     <string name="error_wrong_credentials">Неверный логин или пароль. Проверьте и попробуйте снова.</string>
+    <string name="journal_rows">Ученики</string>
+    <string name="journal_legend_comment">есть комментарий</string>
+    <string name="journal_teacher_hint">Нажмите на сегодняшнюю клетку, чтобы поставить оценку</string>
+    <string name="grade_given_by">Поставил(а): %1$s</string>
+    <string name="grade_given_by_unknown">Учитель не указан</string>
+    <string name="grade_no_comment">Без комментария</string>
+    <string name="grade_comment_required">Комментарий (обязателен для оценок ниже 6)</string>
+    <string name="grade_comment_required_hint">Для оценки ниже 6 нужен комментарий — родитель должен понимать причину.</string>
 </resources>

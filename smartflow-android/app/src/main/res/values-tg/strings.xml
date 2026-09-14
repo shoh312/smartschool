@@ -457,4 +457,12 @@
     <string name="journal_absent_short">ғ</string>
     <string name="journal_legend_absent">дар дарс набуд</string>
     <string name="error_wrong_credentials">Логин ё парол нодуруст. Санҷед ва бори дигар кӯшиш кунед.</string>
+    <string name="journal_rows">Хонандагон</string>
+    <string name="journal_legend_comment">шарҳ дорад</string>
+    <string name="journal_teacher_hint">Барои баҳо гузоштан катакчаи имрӯзро пахш кунед</string>
+    <string name="grade_given_by">Гузошт: %1$s</string>
+    <string name="grade_given_by_unknown">Муаллим қайд нашудааст</string>
+    <string name="grade_no_comment">Бе шарҳ</string>
+    <string name="grade_comment_required">Шарҳ (барои баҳои аз 6 паст ҳатмӣ)</string>
+    <string name="grade_comment_required_hint">Барои баҳои аз 6 паст шарҳ лозим аст — волид бояд сабабро фаҳмад.</string>
 </resources>

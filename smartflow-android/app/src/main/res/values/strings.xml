@@ -482,4 +482,12 @@
     <string name="journal_absent_short">a</string>
     <string name="journal_legend_absent">absent from the lesson</string>
     <string name="error_wrong_credentials">Wrong login or password. Check and try again.</string>
+    <string name="journal_rows">Pupils</string>
+    <string name="journal_legend_comment">has a comment</string>
+    <string name="journal_teacher_hint">Tap today\'s cell to give a mark</string>
+    <string name="grade_given_by">Given by %1$s</string>
+    <string name="grade_given_by_unknown">Teacher not recorded</string>
+    <string name="grade_no_comment">No comment</string>
+    <string name="grade_comment_required">Comment (required for marks below 6)</string>
+    <string name="grade_comment_required_hint">A mark below 6 needs a comment so the parent understands why.</string>
 </resources>

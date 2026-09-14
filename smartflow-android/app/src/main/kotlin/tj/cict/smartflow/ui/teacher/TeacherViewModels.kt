@@ -22,6 +22,7 @@ import tj.cict.smartflow.data.dto.AssignmentResultsDto
 import tj.cict.smartflow.data.dto.CalendarEventDto
 import tj.cict.smartflow.data.dto.ClassAssignmentDto
 import tj.cict.smartflow.data.dto.GradeDto
+import tj.cict.smartflow.data.dto.AbsenceDto
 import tj.cict.smartflow.data.dto.MaterialSummaryDto
 import tj.cict.smartflow.data.dto.ScanRowDto
 import tj.cict.smartflow.data.dto.SchoolAnnouncementDto
@@ -59,6 +60,7 @@ data class JournalRow(val student: StudentDto, val grades: List<GradeDto>, val a
 
 data class JournalUi(
     val rows: UiState<List<JournalRow>> = UiState.Loading,
+    val absences: List<AbsenceDto> = emptyList(),
     val saving: Boolean = false,
     val error: ApiError? = null,
     val toast: Int? = null,
@@ -89,7 +91,7 @@ class ClassJournalViewModel(private val repo: TeacherRepository) : ViewModel() {
             val rows = (r as ApiResult.Ok).value.map { s ->
                 JournalRow(s, byStudent[s.id].orEmpty().sortedByDescending { it.date }, s.id in absentToday)
             }
-            _ui.update { it.copy(rows = UiState.Ready(rows)) }
+            _ui.update { it.copy(rows = UiState.Ready(rows), absences = (a as? ApiResult.Ok)?.value.orEmpty()) }
         }
     }
 

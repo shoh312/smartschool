@@ -31,6 +31,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import tj.cict.smartflow.ui.components.GradeInfoSheet
+import tj.cict.smartflow.ui.components.JournalCell
+import tj.cict.smartflow.ui.components.JournalRowSpec
+import tj.cict.smartflow.ui.components.JournalGrid
 import tj.cict.smartflow.core.network.ApiResult
 import tj.cict.smartflow.core.util.currentLocale
 import tj.cict.smartflow.core.util.dayMonth
@@ -92,79 +98,36 @@ fun GradesScreen(childId: Int, childrenVm: ChildrenViewModel, onBack: () -> Unit
             EmptyState(R.drawable.ill_notebook, stringResource(R.string.grades_empty))
             return@DetailScaffold
         }
-        val bySubject = remember(grades) {
-            grades.groupBy { it.subject }.map { (subject, list) -> SubjectGroup(subject, list.sortedByDescending { it.date }) }
-                .sortedByDescending { it.average }
-        }
+        val subjects = remember(grades) { grades.groupBy { it.subject }.keys.sortedBy { it } }
+        val dates = remember(grades) { grades.map { it.date }.distinct().sorted() }
         val overall = grades.map { it.value }.average()
+        var info by remember { mutableStateOf<Pair<List<GradeDto>, String>?>(null) }
+        info?.let { (list, subject) -> GradeInfoSheet(list, fallback = subject, title = child?.fullName ?: "", onDismiss = { info = null }) }
 
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp),
         ) {
-            item {
-                val (color, soft) = gradeColors(overall)
-                SoftCard(contentPadding = PaddingValues(18.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.average), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.smart.inkSecondary)
-                            Text(formatAverage(overall), style = MaterialTheme.typography.displayMedium, color = color)
-                            Text(stringResource(R.string.grades_count, grades.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.smart.inkTertiary)
-                        }
-                        Box(Modifier.size(64.dp).clip(RoundedCornerShape(Radius.md)).background(soft), contentAlignment = Alignment.Center) {
-                            Text("${grades.maxOf { it.value }}", style = MaterialTheme.typography.headlineMedium, color = color)
-                        }
+            val (color, soft) = gradeColors(overall)
+            SoftCard(contentPadding = PaddingValues(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.average), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.smart.inkSecondary)
+                        Text(formatAverage(overall), style = MaterialTheme.typography.displayMedium, color = color)
+                        Text(stringResource(R.string.grades_count, grades.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.smart.inkTertiary)
+                    }
+                    Box(Modifier.size(64.dp).clip(RoundedCornerShape(Radius.md)).background(soft), contentAlignment = Alignment.Center) {
+                        Text("${grades.maxOf { it.value }}", style = MaterialTheme.typography.headlineMedium, color = color)
                     }
                 }
             }
-            items(bySubject, key = { it.subject }) { group -> SubjectCard(group, locale) }
-        }
-    }
-}
-
-private data class SubjectGroup(val subject: String, val grades: List<GradeDto>) {
-    val average: Double get() = grades.map { it.value }.average()
-}
-
-@Composable
-private fun SubjectCard(group: SubjectGroup, locale: java.util.Locale) {
-    val c = MaterialTheme.smart
-    val (color, soft) = gradeColors(group.average)
-    SoftCard(contentPadding = PaddingValues(16.dp), elevation = 6.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(group.subject, style = MaterialTheme.typography.titleMedium, color = c.ink)
-                Text(stringResource(R.string.grades_count, group.grades.size), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary)
-            }
-            Box(Modifier.clip(RoundedCornerShape(999.dp)).background(soft).padding(horizontal = 12.dp, vertical = 6.dp)) {
-                Text(formatAverage(group.average), style = MaterialTheme.typography.titleMedium, color = color)
-            }
-        }
-        VSpace(12.dp)
-        // Recent marks as chips, newest first. A comment rides along under
-        // the chip it belongs to, only when there is one.
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            group.grades.take(8).forEach { g ->
-                val (gc, gs) = gradeColors(g.value.toDouble())
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(gs), contentAlignment = Alignment.Center) {
-                        Text("${g.value}", style = MaterialTheme.typography.titleMedium, color = gc)
-                    }
-                    Text(g.date.dayMonth(locale).take(6), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary, maxLines = 1)
-                }
-            }
-        }
-        val latestComment = group.grades.firstOrNull { !it.comment.isNullOrBlank() }
-        if (latestComment != null) {
-            VSpace(10.dp)
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).background(c.surfaceSoft).padding(10.dp)) {
-                Text("“${latestComment.comment}”", style = MaterialTheme.typography.bodySmall, color = c.inkSecondary)
-                if (!latestComment.teacherName.isNullOrBlank()) {
-                    HSpace(6.dp)
-                    Text("— ${latestComment.teacherName}", style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
-                }
-            }
+            VSpace(12.dp)
+            // Subjects down the side, lesson dates across: tap a mark to see who gave it and why.
+            JournalGrid(
+                rows = subjects.map { sub -> JournalRowSpec(sub, sub, stringResource(R.string.grades_count, grades.count { it.subject == sub })) },
+                dates = dates,
+                cellOf = { sub, d -> JournalCell(grades.filter { it.subject == sub && it.date == d }) },
+                onCell = { sub, _, cell -> if (cell.grades.isNotEmpty()) info = cell.grades to sub },
+            )
         }
     }
 }

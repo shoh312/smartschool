@@ -42,6 +42,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import tj.cict.smartflow.ui.components.GradeInfoSheet
+import tj.cict.smartflow.ui.components.JournalCell
+import tj.cict.smartflow.ui.components.JournalRowSpec
+import tj.cict.smartflow.ui.components.JournalGrid
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.currentLocale
 import tj.cict.smartflow.core.util.dayMonth
@@ -91,13 +97,17 @@ fun JournalClassesScreen(classesVm: TeacherClassesViewModel, bottomPadding: Dp, 
     }
 }
 
-/** One class, one subject: every pupil, their recent marks, and a tap to give one. */
+/**
+ * One class, one subject as a register grid. Today's column takes a tap to
+ * give (or change) a mark; any other mark opens who-gave-it-and-why.
+ */
 @Composable
 fun ClassJournalScreen(classId: Int, subject: String, className: String, onBack: () -> Unit, onScan: () -> Unit, vm: ClassJournalViewModel = koinViewModel()) {
     LaunchedEffect(classId, subject) { vm.open(classId, subject) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val locale = currentLocale()
     var editing by remember { mutableStateOf<JournalRow?>(null) }
+    var info by remember { mutableStateOf<Pair<List<GradeDto>, String>?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val savedText = stringResource(R.string.grade_saved)
     LaunchedEffect(ui.toast) { if (ui.toast != null) { snackbar.showSnackbar(savedText); vm.clearToast() } }
@@ -108,24 +118,37 @@ fun ClassJournalScreen(classId: Int, subject: String, className: String, onBack:
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 ScreenHeader(
-                    "$className · $subject", onBack = onBack,
+                    "$className · $subject", subtitle = stringResource(R.string.journal_teacher_hint), onBack = onBack,
                     trailing = { GhostButton(stringResource(R.string.action_scan), onClick = onScan) },
                 )
                 when (val s = ui.rows) {
-                    UiState.Loading -> SkeletonList(rows = 6, rowHeight = 76.dp)
+                    UiState.Loading -> SkeletonList(rows = 6, rowHeight = 46.dp)
                     is UiState.Failed -> ErrorState(s.error.message(), onRetry = vm::load)
-                    is UiState.Ready -> LazyColumn(
-                        Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 32.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        items(s.data, key = { it.student.id }) { row -> PupilRow(row, onClick = { editing = row }) }
+                    is UiState.Ready -> {
+                        val rows = s.data.sortedBy { it.student.lastName }
+                        val dates = (rows.flatMap { r -> r.grades.map { it.date } } + ui.absences.map { it.date }).distinct().sorted()
+                        val absentBy = ui.absences.groupBy { it.studentId }
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 6.dp, bottom = 32.dp)) {
+                            JournalGrid(
+                                rows = rows.map { r -> JournalRowSpec(r.student.id, r.student.lastName, r.student.firstName) { ChildAvatar(Child(r.student.id, r.student.firstName, r.student.lastName, r.student.className), 28.dp) } },
+                                dates = dates,
+                                cellOf = { id, d -> JournalCell(rows.first { it.student.id == id }.grades.filter { it.date == d }, absentBy[id].orEmpty().any { it.date == d }) },
+                                todayEditable = true,
+                                onCell = { id, d, cell ->
+                                    val row = rows.first { it.student.id == id }
+                                    if (d == java.time.LocalDate.now()) editing = row
+                                    else if (cell.grades.isNotEmpty()) info = cell.grades to "${row.student.lastName} ${row.student.firstName}"
+                                },
+                            )
+                        }
                     }
                 }
             }
             SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(16.dp))
         }
     }
+
+    info?.let { (grades, name) -> GradeInfoSheet(grades, fallback = className, title = name, onDismiss = { info = null }) }
 
     editing?.let { row ->
         GradeSheet(
@@ -136,36 +159,6 @@ fun ClassJournalScreen(classId: Int, subject: String, className: String, onBack:
             onDelete = { g -> vm.delete(g); editing = null },
             locale = locale,
         )
-    }
-}
-
-@Composable
-private fun PupilRow(row: JournalRow, onClick: () -> Unit) {
-    val c = MaterialTheme.smart
-    val child = Child(row.student.id, row.student.firstName, row.student.lastName, row.student.className)
-    SoftCard(contentPadding = PaddingValues(12.dp), elevation = 5.dp, onClick = onClick) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ChildAvatar(child, 42.dp)
-            HSpace(12.dp)
-            Column(Modifier.weight(1f)) {
-                Text("${row.student.lastName} ${row.student.firstName}", style = MaterialTheme.typography.titleSmall, color = c.ink, maxLines = 1)
-                if (row.absentToday) {
-                    Text(stringResource(R.string.journal_absent_today), style = MaterialTheme.typography.labelSmall, color = c.rose)
-                } else {
-                    row.average?.let { Text("${stringResource(R.string.average)} ${formatAverage(it)}", style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                row.grades.take(4).reversed().forEach { g ->
-                    val (gc, gs) = gradeColors(g.value.toDouble())
-                    val today = g.date == java.time.LocalDate.now()
-                    Box(
-                        Modifier.size(30.dp).clip(RoundedCornerShape(8.dp)).background(gs).then(if (today) Modifier.border(1.5.dp, gc, RoundedCornerShape(8.dp)) else Modifier),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("${g.value}", style = MaterialTheme.typography.labelMedium, color = gc, fontWeight = FontWeight.Bold) }
-                }
-            }
-        }
     }
 }
 
@@ -216,7 +209,12 @@ private fun GradeSheet(row: JournalRow, saving: Boolean, onDismiss: () -> Unit, 
                 }
             }
             VSpace(4.dp)
-            AppTextField(value = comment, onValueChange = { comment = it }, label = stringResource(R.string.grade_comment), singleLine = false)
+            val needsComment = (value ?: 10) < 6
+            AppTextField(value = comment, onValueChange = { comment = it }, label = stringResource(if (needsComment) R.string.grade_comment_required else R.string.grade_comment), singleLine = false)
+            if (needsComment && comment.isBlank()) {
+                VSpace(6.dp)
+                Text(stringResource(R.string.grade_comment_required_hint), style = MaterialTheme.typography.labelSmall, color = c.rose)
+            }
             if (row.grades.isNotEmpty()) {
                 VSpace(14.dp)
                 Text(stringResource(R.string.journal_last_marks), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
@@ -232,7 +230,7 @@ private fun GradeSheet(row: JournalRow, saving: Boolean, onDismiss: () -> Unit, 
                 }
             }
             VSpace(18.dp)
-            PrimaryButton(stringResource(R.string.save), onClick = { value?.let { onSave(it, comment.takeIf { c -> c.isNotBlank() }) } }, enabled = value != null, loading = saving)
+            PrimaryButton(stringResource(R.string.save), onClick = { value?.let { onSave(it, comment.takeIf { c -> c.isNotBlank() }) } }, enabled = value != null && (value!! >= 6 || comment.isNotBlank()), loading = saving)
         }
     }
 }
