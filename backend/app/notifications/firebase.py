@@ -59,6 +59,17 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
         db.commit()
         return event
 
+    # The director's "notifications to parents" switch (School.sms_enabled)
+    # is the master switch: off means nothing leaves this server for a
+    # parent -- no push, no SMS -- so a test run never reaches a family.
+    parent_row = db.query(Parent).filter(Parent.id == event.parent_id).first()
+    school_row = db.query(School).filter(School.id == parent_row.school_id).first() if parent_row and parent_row.school_id else db.query(School).first()
+    if school_row is None or not school_row.sms_enabled:
+        event.status = "skipped"
+        event.error = "Parent notifications are switched off"
+        db.commit()
+        return event
+
     # A device's Firebase token is registered against whichever Parent row
     # was active at login time, but a parent with children at two schools
     # has a sibling Parent row (same phone, different school) that this

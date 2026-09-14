@@ -38,6 +38,7 @@ services:
         # would otherwise crash-loop through the first few seconds.
         condition: service_healthy
     environment:
+      NOTIFICATIONS_ENABLED: ${NOTIFICATIONS_ENABLED:-true}
       DATABASE_URL: postgresql://smartschool:${POSTGRES_PASSWORD}@db:5432/smartschool_public
       SMARTSCHOOL_PUBLIC_AUTH_SECRET: ${SMARTSCHOOL_PUBLIC_AUTH_SECRET:?openssl rand -hex 32 bilan yarating}
       # Push notifications stay off unless a credentials file is mounted

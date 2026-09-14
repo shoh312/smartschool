@@ -7,6 +7,10 @@ load_dotenv()
 
 class Settings:
     auth_secret = os.getenv("SMARTSCHOOL_PUBLIC_AUTH_SECRET", "change-this-secret")
+    # Master switch for push notifications to parents and pupils (attendance,
+    # announcements, homework reminders). "false" during a pilot means no
+    # family gets a message because someone pressed a button in a test.
+    notifications_enabled = os.getenv("NOTIFICATIONS_ENABLED", "true").strip().lower() not in ("0", "false", "no", "off")
     firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")
 
     # See sms_service for the shape of these. Empty URL means "log the code

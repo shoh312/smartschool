@@ -34,6 +34,13 @@ def create_and_send_notification(db: Session, event: NotificationEvent) -> Notif
     # Addressed to a parent, or -- for schoolwork reminders -- straight to
     # the pupil on their own phone. A parent event with no parent is still
     # a mistake worth recording rather than silently dropping.
+    from app.utils.config import settings as _settings
+    if not _settings.notifications_enabled:
+        event.status = "skipped"
+        event.error = "Notifications are switched off (NOTIFICATIONS_ENABLED=false)"
+        db.commit()
+        return event
+
     if event.parent_id:
         owner = DeviceToken.parent_id == event.parent_id
     elif event.student_id:
