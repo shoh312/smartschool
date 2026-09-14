@@ -83,7 +83,9 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
         # (see School.sms_enabled), which a director does when a schedule
         # is entered but no camera is watching it yet.
         school = db.query(School).filter(School.id == parent.school_id).first() if parent else None
-        if settings.sms_provider == "robita" and parent and parent.phone and (school is None or school.sms_enabled):
+        # Strict: no school row, or SMS switched off, means no text. A parent
+        # whose school link is missing must not become a paid message.
+        if settings.sms_provider == "robita" and parent and parent.phone and school is not None and school.sms_enabled:
             ok, detail = robita_client.send(
                 to_local_number(parent.phone),
                 f"{event.title}. {event.body}",

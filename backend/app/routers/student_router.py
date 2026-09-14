@@ -332,7 +332,7 @@ def director_create_student(
     # attendance fallback in notifications/firebase.py) except for the
     # school's own SMS kill switch (School.sms_enabled).
     school = db.query(School).filter(School.id == director.school_id).first()
-    if parent_plaintext_password and settings.sms_provider == "robita" and (school is None or school.sms_enabled):
+    if parent_plaintext_password and settings.sms_provider == "robita" and school is not None and school.sms_enabled:
         school_name = school.name if school else "SmartFlow"
         message = (
             "SmartFlow: фарзандатон %s %s ба мактаби «%s» сабти ном шуд.\n"
