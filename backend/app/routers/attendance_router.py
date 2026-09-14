@@ -281,3 +281,52 @@ def check_absent(db: Session = Depends(get_db)):
 )
 def check_left_school(db: Session = Depends(get_db)):
     return mark_left_school_students(db)
+
+
+# --------------------------------------------------------------------------
+# Manual marking -- the director ticks a pupil off by hand when a camera is
+# not in place yet (or missed someone). "present" goes through the same path
+# a camera detection takes, so the parent gets the same notification and the
+# public server the same sync row; "absent" overwrites today's row.
+# --------------------------------------------------------------------------
+
+from pydantic import BaseModel
+from datetime import datetime as _dt
+
+from app.models.school_model import School
+from app.realtime import broadcast_attendance_update
+from app.services.attendance_service import record_detection, ABSENT
+from app.services.sync_outbox_service import enqueue_attendance_event
+
+
+class ManualAttendanceRequest(BaseModel):
+    student_id: int
+    status: str = "present"  # present | absent
+
+
+@router.post("/manual", response_model=AttendanceResponse)
+def mark_manually(
+    payload: ManualAttendanceRequest,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    student = db.query(Student).filter(Student.id == payload.student_id, Student.school_id == director.school_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    if payload.status == "present":
+        return record_detection(db, student.id, camera_id=None, confidence=1.0)
+    if payload.status != "absent":
+        raise HTTPException(status_code=422, detail="status must be present or absent")
+    now = _dt.now()
+    row = db.query(Attendance).filter(Attendance.student_id == student.id, Attendance.attendance_date == now.date()).first()
+    if row is None:
+        row = Attendance(student_id=student.id, attendance_date=now.date())
+        db.add(row)
+    row.status = ABSENT
+    row.updated_at = now
+    db.flush()
+    enqueue_attendance_event(db, row, operation="upsert")
+    db.commit()
+    db.refresh(row)
+    broadcast_attendance_update()
+    return row

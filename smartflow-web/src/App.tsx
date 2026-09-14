@@ -17,6 +17,7 @@ import { StudentPage } from './pages/director/Student'
 import { Announcements } from './pages/director/Announcements'
 import { Calendar } from './pages/director/Calendar'
 import { Settings } from './pages/director/Settings'
+import { ManualAttendance } from './pages/director/ManualAttendance'
 import { TeacherHome } from './pages/teacher/Home'
 import { TeacherJournal } from './pages/teacher/Journal'
 import { Materials } from './pages/teacher/Materials'
@@ -55,6 +56,8 @@ function Routed() {
           <Route path="announcements" element={<Announcements />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="test" element={<ManualAttendance />} />
+          <Route path="test/:id" element={<ManualAttendance />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

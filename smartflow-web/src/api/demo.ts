@@ -159,13 +159,15 @@ function cameraStatus(): CameraStatusDto[] {
     return { camera_id: c.id, camera_name: c.name, class_name: slot?.class_name ?? classes.find((k) => k.id === c.class_id)?.name ?? null, connected: c.id !== 2 || now.getSeconds() % 50 > 5, detecting: !!slot, phase: slot ? 'detecting' : 'dars vaqti emas', roll_call: false }
   })
 }
+const manual = new Map<number, string>()
 function liveStatus(): LiveStatusDto[] {
   const now = new Date(); const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
   return students.map((s) => {
     const cls = classes.find((c) => c.id === s.class_id)!
     const state = hm < cls.start_time! ? 'upcoming' : hm < cls.end_time! ? 'running' : 'finished'
     const seen = state !== 'upcoming' && s.id % 7 !== 0
-    return { student_id: s.id, first_name: s.first_name, last_name: s.last_name, class_id: s.class_id, class_name: s.class_name, class_lesson_state: state, status: seen ? (s.id % 5 === 0 ? 'late' : 'present') : state === 'finished' ? 'absent' : 'not_detected', time_in: seen ? `${today}T${cls.start_time}:0${s.id % 10}` : null }
+    const m = manual.get(s.id)
+    return { student_id: s.id, first_name: s.first_name, last_name: s.last_name, class_id: s.class_id, class_name: s.class_name, class_lesson_state: state, status: m ?? (seen ? (s.id % 5 === 0 ? 'late' : 'present') : state === 'finished' ? 'absent' : 'not_detected'), time_in: m === 'present' ? new Date().toISOString() : seen ? `${today}T${cls.start_time}:0${s.id % 10}` : null }
   })
 }
 
@@ -197,6 +199,7 @@ on('GET', /^cameras\/(\d+)\/positions$/, (m) => positions.filter((p) => p.camera
 on('POST', /^cameras\/(\d+)\/positions$/, (m, _q, b) => { const p: CameraPositionDto = { id: nextId++, camera_id: +m[1], class_id: b.class_id, class_name: classes.find((c) => c.id === b.class_id)?.name, subject: b.subject ?? null, day_of_week: b.day_of_week ?? null, start_time: b.start_time, end_time: b.end_time }; positions.push(p); return p })
 on('DELETE', /^cameras\/\d+\/positions\/(\d+)$/, (m) => { const i = positions.findIndex((p) => p.id === +m[1]); if (i >= 0) positions.splice(i, 1); return null })
 on('GET', /^attendance\/live-status$/, () => liveStatus())
+on('POST', /^attendance\/manual$/, (_m, _q, b) => { manual.set(b.student_id, b.status); return liveStatus().find((x) => x.student_id === b.student_id) })
 on('GET', /^school\/settings$/, () => settings)
 on('PUT', /^school\/settings$/, (_m, _q, b) => { settings = { ...settings, ...b }; return settings })
 on('GET', /^announcements$/, () => announcements)
