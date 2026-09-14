@@ -81,7 +81,7 @@ export function ManualAttendance() {
                 return (
                   <tr key={s.id}>
                     <td><Avatar first={s.first_name} last={s.last_name} id={s.id} /></td>
-                    <td className="bold">{s.last_name} {s.first_name}<div className="tiny faint" style={{ fontWeight: 500 }}>{live.get(s.id)?.time_in ? f.time(live.get(s.id)!.time_in) : ''}</div></td>
+                    <td className="bold">{s.last_name} {s.first_name}<div className="tiny faint" style={{ fontWeight: 500 }}>{came && live.get(s.id)?.time_in ? f.time(live.get(s.id)!.time_in) : ''}</div></td>
                     <td><span className={'chip ' + tone}>{t('st_' + st)}</span></td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button className={'btn sm ' + (came ? 'ghost' : 'primary')} disabled={busy === s.id || came} onClick={() => mark(s.id, 'present')}><IcCheck /> {t('came')}</button>{' '}
