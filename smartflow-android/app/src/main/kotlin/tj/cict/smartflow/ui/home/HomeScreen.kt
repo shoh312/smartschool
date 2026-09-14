@@ -70,6 +70,7 @@ fun HomeScreen(
     bottomPadding: Dp,
     onSignOut: () -> Unit,
     onAttendance: (Int) -> Unit,
+    onLive: (Int) -> Unit = {},
     onGrades: (Int) -> Unit,
     onHomework: (Int) -> Unit,
     onAssignments: (Int) -> Unit,
@@ -144,6 +145,7 @@ fun HomeScreen(
                                     Triple(R.drawable.ill_clipboard, R.string.action_assignments) { onAssignments(focus.id) },
                                     Triple(R.drawable.ill_calendar, R.string.action_calendar) { onCalendar(focus.id) },
                                     Triple(R.drawable.ill_megaphone, R.string.action_announcements) { onAnnouncements(focus.id) },
+                                    Triple(R.drawable.ill_school, R.string.action_live) { onLive(focus.id) },
                                 ),
                             )
                         }

@@ -411,7 +411,7 @@ fun LiveVideoScreen(onBack: () -> Unit, vm: LiveVideoViewModel = koinViewModel()
 
 /** The frame, or whatever stands in for it while there is none. */
 @Composable
-private fun VideoSurface(state: VideoState, onReconnect: () -> Unit, modifier: Modifier = Modifier, emptyHint: String = "") {
+fun VideoSurface(state: VideoState, onReconnect: () -> Unit, modifier: Modifier = Modifier, emptyHint: String = "") {
     Box(modifier, contentAlignment = Alignment.Center) {
         when (state) {
             is VideoState.Streaming -> Image(state.frame.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)

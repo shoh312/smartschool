@@ -28,6 +28,7 @@ import tj.cict.smartflow.ui.announcements.AnnouncementsScreen
 import tj.cict.smartflow.ui.assignments.AssignmentPlayerScreen
 import tj.cict.smartflow.ui.assignments.AssignmentsScreen
 import tj.cict.smartflow.ui.attendance.AttendanceScreen
+import tj.cict.smartflow.ui.live.ParentLiveScreen
 import tj.cict.smartflow.ui.auth.LoginScreen
 import tj.cict.smartflow.ui.auth.SetPasswordScreen
 import tj.cict.smartflow.ui.auth.VerifyScreen
@@ -130,6 +131,7 @@ private fun AuthGraph() {
 /** The detail pages both roles share; a pupil is just a family of one. */
 private fun NavGraphBuilder.childDetails(nav: NavHostController, childrenVm: ChildrenViewModel, canAnswer: Boolean) {
     composable<AttendanceRoute> { e -> AttendanceScreen(e.toRoute<AttendanceRoute>().childId, childrenVm, onBack = { nav.popBackStack() }) }
+    composable<ParentLiveRoute> { e -> ParentLiveScreen(e.toRoute<ParentLiveRoute>().childId, childrenVm, onBack = { nav.popBackStack() }) }
     composable<GradesRoute> { e -> GradesScreen(e.toRoute<GradesRoute>().childId, childrenVm, onBack = { nav.popBackStack() }) }
     composable<HomeworkRoute> { e -> HomeworkScreen(e.toRoute<HomeworkRoute>().childId, childrenVm, onBack = { nav.popBackStack() }) }
     composable<CalendarRoute> { e -> CalendarScreen(e.toRoute<CalendarRoute>().childId, childrenVm, onBack = { nav.popBackStack() }) }
@@ -165,6 +167,7 @@ private fun ParentGraph(parentId: Int, parentName: String, onSignOut: () -> Unit
                     bottomPadding = padding,
                     onSignOut = onSignOut,
                     onAttendance = { nav.navigate(AttendanceRoute(it)) },
+                    onLive = { nav.navigate(ParentLiveRoute(it)) },
                     onGrades = { nav.navigate(GradesRoute(it)) },
                     onHomework = { nav.navigate(HomeworkRoute(it)) },
                     onAssignments = { nav.navigate(AssignmentsRoute(it)) },

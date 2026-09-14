@@ -465,4 +465,10 @@
     <string name="grade_no_comment">Без комментария</string>
     <string name="grade_comment_required">Комментарий (обязателен для оценок ниже 6)</string>
     <string name="grade_comment_required_hint">Для оценки ниже 6 нужен комментарий — родитель должен понимать причину.</string>
+    <string name="action_live">Урок онлайн</string>
+    <string name="live_lesson_title">Урок онлайн</string>
+    <string name="live_no_lesson">Сейчас урока нет. Видео доступно только во время занятия группы вашего ребёнка.</string>
+    <string name="live_school_offline">Школьный сервер сейчас недоступен.</string>
+    <string name="live_forbidden">Видео недоступно для этого ученика.</string>
+    <string name="live_parent_hint">Вы видите класс только во время урока вашего ребёнка. Видео не записывается.</string>
 </resources>

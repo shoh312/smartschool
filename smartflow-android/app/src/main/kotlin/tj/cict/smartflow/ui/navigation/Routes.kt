@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 @Serializable object AlertsRoute
 
 @Serializable data class AttendanceRoute(val childId: Int)
+@Serializable data class ParentLiveRoute(val childId: Int)
 @Serializable data class GradesRoute(val childId: Int)
 @Serializable data class HomeworkRoute(val childId: Int)
 @Serializable data class AssignmentsRoute(val childId: Int)

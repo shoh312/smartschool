@@ -58,10 +58,13 @@ HOP_HEADERS = {"host", "connection", "content-length", "transfer-encoding", "kee
 class Tunnel:
     """One connected school server."""
 
-    def __init__(self, school_id: int, name: str, ws: WebSocket):
+    def __init__(self, school_id: int, name: str, ws: WebSocket, relay_secret: str | None = None):
         self.school_id = school_id
         self.name = name
         self.ws = ws
+        # Per-connection secret the school announced in its hello; lets us
+        # open parent live streams on its /ws/parent-stream.
+        self.relay_secret = relay_secret
         self.pending: dict[str, asyncio.Future] = {}
         # stream id -> queue of frames coming back from the school side
         self.streams: dict[str, asyncio.Queue] = {}
@@ -132,7 +135,7 @@ async def tunnel_socket(websocket: WebSocket):
         except Exception:
             pass
 
-    tunnel = Tunnel(school.id, school.name, websocket)
+    tunnel = Tunnel(school.id, school.name, websocket, hello.get("relay_secret"))
     tunnels[school.id] = tunnel
     logger.info("relay: school %s (%s) connected", school.id, school.name)
     await tunnel.send_json({"type": "welcome", "school_id": school.id})
@@ -219,24 +222,13 @@ async def relay_http(path: str, request: Request, x_school_id: int | None = Head
     return Response(content=content, status_code=int(reply.get("status", 502)), headers=reply_headers)
 
 
-@router.websocket("/relay/{path:path}")
-async def relay_websocket(websocket: WebSocket, path: str):
-    school_id = websocket.query_params.get("school")
-    try:
-        tunnel = _pick(int(school_id) if school_id else None)
-    except HTTPException as exc:
-        await websocket.accept()
-        await websocket.close(code=1013, reason=str(exc.detail))
-        return
-
-    await websocket.accept()
+async def _pump(websocket: WebSocket, tunnel: Tunnel, path: str, query: str) -> None:
+    """Open `path` on the school side and pump frames both ways until either end closes."""
     stream_id = str(uuid.uuid4())
     queue: asyncio.Queue = asyncio.Queue()
     tunnel.streams[stream_id] = queue
-    query = "&".join(part for part in websocket.url.query.split("&") if part and not part.startswith("school="))
-
     try:
-        await tunnel.send_json({"type": "ws_open", "id": stream_id, "path": "/" + path, "query": query})
+        await tunnel.send_json({"type": "ws_open", "id": stream_id, "path": path, "query": query})
         opened = await asyncio.wait_for(queue.get(), timeout=15)
         if not isinstance(opened, dict) or opened.get("type") != "ws_opened":
             await websocket.close(code=1011, reason="school_refused")
@@ -252,10 +244,13 @@ async def relay_websocket(websocket: WebSocket, path: str):
                 elif message.get("text") is not None:
                     await tunnel.send_frame(stream_id, b"t", message["text"].encode("utf-8"))
 
+        close_reason: list[str | None] = [None]
+
         async def school_to_client():
             while True:
                 item = await queue.get()
                 if isinstance(item, dict):
+                    close_reason[0] = item.get("reason")
                     return  # ws_close / ws_error
                 kind, data = item[:1], item[1:]
                 if kind == b"t":
@@ -280,6 +275,74 @@ async def relay_websocket(websocket: WebSocket, path: str):
         except Exception:
             pass
         try:
-            await websocket.close()
+            reason = close_reason[0] if "close_reason" in locals() else None
+            if reason:
+                await websocket.close(code=1008, reason=str(reason))
+            else:
+                await websocket.close()
         except Exception:
             pass
+
+
+@router.websocket("/relay/{path:path}")
+async def relay_websocket(websocket: WebSocket, path: str):
+    school_id = websocket.query_params.get("school")
+    try:
+        tunnel = _pick(int(school_id) if school_id else None)
+    except HTTPException as exc:
+        await websocket.accept()
+        await websocket.close(code=1013, reason=str(exc.detail))
+        return
+
+    await websocket.accept()
+    query = "&".join(part for part in websocket.url.query.split("&") if part and not part.startswith("school="))
+    await _pump(websocket, tunnel, "/" + path, query)
+
+
+# --------------------------------------------------------------------------
+# A parent watching their child's lesson: ws /parent/live?token=..&student_id=..
+# The parent token is checked here, the child must be theirs, and the school
+# side only ever shows the camera of the class that has a lesson right now.
+# --------------------------------------------------------------------------
+
+@router.websocket("/parent/live")
+async def parent_live(websocket: WebSocket):
+    from app.models.parent_model import Parent
+    from app.models.student_model import Student
+    from app.utils.security import verify_parent_access_token
+
+    await websocket.accept()
+    token = websocket.query_params.get("token") or ""
+    try:
+        student_id = int(websocket.query_params.get("student_id") or 0)
+    except ValueError:
+        student_id = 0
+    db = SessionLocal()
+    try:
+        try:
+            parent_id = verify_parent_access_token(token)
+        except HTTPException:
+            await websocket.close(code=1008, reason="forbidden")
+            return
+        parent = db.query(Parent).filter(Parent.id == parent_id).first()
+        student = db.query(Student).filter(Student.id == student_id).first()
+        if parent is None or student is None:
+            await websocket.close(code=1008, reason="forbidden")
+            return
+        # Every Parent row with this phone is the same person (one row per school).
+        family = {p.id for p in db.query(Parent).filter(Parent.phone == parent.phone).all()}
+        if student.parent_id not in family:
+            await websocket.close(code=1008, reason="forbidden")
+            return
+        school_id, class_id = student.school_id, student.local_class_id
+    finally:
+        db.close()
+
+    tunnel = tunnels.get(school_id)
+    if tunnel is None or not tunnel.relay_secret:
+        await websocket.close(code=1013, reason="school_offline")
+        return
+    if not class_id:
+        await websocket.close(code=1008, reason="no_lesson")
+        return
+    await _pump(websocket, tunnel, "/ws/parent-stream", f"class_id={class_id}&secret={tunnel.relay_secret}")

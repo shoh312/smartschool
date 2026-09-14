@@ -465,4 +465,10 @@
     <string name="grade_no_comment">Бе шарҳ</string>
     <string name="grade_comment_required">Шарҳ (барои баҳои аз 6 паст ҳатмӣ)</string>
     <string name="grade_comment_required_hint">Барои баҳои аз 6 паст шарҳ лозим аст — волид бояд сабабро фаҳмад.</string>
+    <string name="action_live">Дарси зинда</string>
+    <string name="live_lesson_title">Дарси зинда</string>
+    <string name="live_no_lesson">Ҳозир дарс нест. Видео танҳо ҳангоми дарси гурӯҳи фарзандатон дастрас аст.</string>
+    <string name="live_school_offline">Сервери мактаб ҳозир дастнорас аст.</string>
+    <string name="live_forbidden">Видео барои ин хонанда дастрас нест.</string>
+    <string name="live_parent_hint">Шумо синфро танҳо ҳангоми дарси фарзандатон мебинед. Видео сабт намешавад.</string>
 </resources>

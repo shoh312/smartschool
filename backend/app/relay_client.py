@@ -20,6 +20,7 @@ import base64
 import json
 import logging
 import random
+import secrets
 
 import httpx
 import websockets
@@ -30,6 +31,11 @@ logger = logging.getLogger(__name__)
 
 RECONNECT_MIN = 3
 RECONNECT_MAX = 60
+
+# A fresh secret per tunnel connection. The public server gets it in the
+# hello and uses it to open parent live streams (see websocket_router
+# /ws/parent-stream); nothing else on the network knows it.
+current_relay_secret: str | None = None
 
 
 def _tunnel_url() -> str:
@@ -64,7 +70,9 @@ async def _serve_once() -> None:
 
     url = _tunnel_url()
     async with websockets.connect(url, max_size=16 * 1024 * 1024, ping_interval=20, ping_timeout=20) as ws:
-        await ws.send(json.dumps({"type": "hello", "school_key": settings.public_server_api_key}))
+        global current_relay_secret
+        current_relay_secret = secrets.token_urlsafe(32)
+        await ws.send(json.dumps({"type": "hello", "school_key": settings.public_server_api_key, "relay_secret": current_relay_secret}))
         welcome = json.loads(await asyncio.wait_for(ws.recv(), timeout=15))
         if welcome.get("type") != "welcome":
             raise RuntimeError("relay: unexpected welcome %r" % (welcome,))
@@ -144,6 +152,7 @@ class _Stream:
 
     async def run(self, on_done) -> None:
         url = "ws://127.0.0.1:%d%s%s" % (settings.school_server_port, self.path, "?" + self.query if self.query else "")
+        reason = None
         try:
             async with websockets.connect(url, max_size=16 * 1024 * 1024) as local:
                 self.local = local
@@ -153,13 +162,17 @@ class _Stream:
                         await self.send_frame(self.id, b"b", bytes(message))
                     else:
                         await self.send_frame(self.id, b"t", message.encode("utf-8"))
+                # The close reason ("no_lesson", "live_video_disabled") travels
+                # back so the phone can say why instead of "connection lost".
+                reason = getattr(local, "close_reason", None)
         except Exception as exc:  # noqa: BLE001
+            reason = getattr(getattr(exc, "rcvd", None), "reason", None) or reason
             logger.debug("relay: stream %s ended: %s", self.id, exc)
         finally:
             self.local = None
             on_done()
             try:
-                await self.send_json({"type": "ws_close", "id": self.id})
+                await self.send_json({"type": "ws_close", "id": self.id, "reason": reason})
             except Exception:
                 pass
 

@@ -17,6 +17,7 @@ import tj.cict.smartflow.ui.director.DirectorJournalViewModel
 import tj.cict.smartflow.ui.director.DirectorAnalyticsViewModel
 import tj.cict.smartflow.ui.director.DirectorNoticesViewModel
 import tj.cict.smartflow.ui.director.LiveVideoViewModel
+import tj.cict.smartflow.ui.live.ParentLiveViewModel
 import tj.cict.smartflow.ui.director.LiveViewModel
 import tj.cict.smartflow.ui.director.PositionsViewModel
 import tj.cict.smartflow.ui.director.StudentRatingViewModel
@@ -80,6 +81,7 @@ val appModule = module {
     viewModelOf(::SchoolInfoViewModel)
     viewModelOf(::LiveViewModel)
     viewModel { LiveVideoViewModel(get(), get(named("school"))) }
+    viewModel { ParentLiveViewModel(get(), get()) }
     viewModelOf(::SchoolViewModel)
     viewModelOf(::ClassDetailViewModel)
     viewModelOf(::DirectorJournalViewModel)

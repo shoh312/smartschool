@@ -490,4 +490,10 @@
     <string name="grade_no_comment">No comment</string>
     <string name="grade_comment_required">Comment (required for marks below 6)</string>
     <string name="grade_comment_required_hint">A mark below 6 needs a comment so the parent understands why.</string>
+    <string name="action_live">Live lesson</string>
+    <string name="live_lesson_title">Live lesson</string>
+    <string name="live_no_lesson">There is no lesson right now. The video is available only while your child\'s group is in class.</string>
+    <string name="live_school_offline">The school server is offline right now.</string>
+    <string name="live_forbidden">Live video is not available for this pupil.</string>
+    <string name="live_parent_hint">You see the classroom only during your child\'s lesson. The video is not recorded.</string>
 </resources>
