@@ -47,6 +47,10 @@ services:
     network_mode: host
 
     environment:
+      # Maktab vaqti. Konteyner o'zi UTC da yuradi; bu bo'lmasa kamera
+      # jadvali (15:00 dars) server nazarida 10:00 bo'lib, dars hech qachon
+      # "boshlanmaydi" -- kamera "dars vaqti emas" deb turaveradi.
+      TZ: ${TZ:-Asia/Dushanbe}
       # Uvicorn shu portni tinglaydi, va qidiruv javobida telefonlarga ham
       # aynan shu port e'lon qilinadi -- ikkalasi bitta qiymatdan oladi.
       SCHOOL_SERVER_PORT: ${SCHOOL_SERVER_PORT:-8000}
