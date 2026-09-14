@@ -59,6 +59,7 @@ WORKDIR /app
 # onnxruntime ishga tushganda kerak bo'ladi.
 RUN apt-get update -o Acquire::Retries=10 \
     && apt-get install -y --no-install-recommends \
+        tzdata \
         libgl1 \
         libglib2.0-0 \
         libgomp1 \
