@@ -269,17 +269,6 @@ private fun Playing(a: AssignmentDetailDto, ui: PlayerUi, index: Int, vm: Player
                 VSpace(14.dp)
                 val current = ui.answers[block.id]
                 AnswerWidget(block, current, onAnswer = { vm.answer(block, it) })
-                val fb = ui.feedback[block.id]
-                AnimatedVisibility(practice && fb != null, enter = fadeIn(), exit = fadeOut()) {
-                    val ok = fb == true
-                    TintPanel(if (ok) c.mintSoft else c.roseSoft, Modifier.padding(top = 12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(if (ok) Icons.Rounded.Check else Icons.Rounded.Close, null, tint = if (ok) c.mint else c.rose)
-                            HSpace(8.dp)
-                            Text(if (ok) stringResource(R.string.answer_correct) else stringResource(R.string.answer_wrong), style = MaterialTheme.typography.titleSmall, color = if (ok) c.mint else c.rose)
-                        }
-                    }
-                }
             }
             VSpace(16.dp)
         }
