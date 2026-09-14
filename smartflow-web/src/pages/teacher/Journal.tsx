@@ -49,7 +49,7 @@ function GradeModal({ cell, classId, subject, onClose, onSaved, allGrades }: { c
   const history = allGrades.filter((x) => x.student_id === cell.student.id).sort((a, b) => b.grade_date.localeCompare(a.grade_date)).slice(0, 10)
 
   async function save() {
-    if (value == null || busy) return
+    if (value == null || busy || (value < 6 && !comment.trim())) return
     setBusy(true); setError(null)
     try {
       if (existing) await teacher.updateGrade(existing.id, { value, comment: comment.trim() || null })
@@ -67,7 +67,7 @@ function GradeModal({ cell, classId, subject, onClose, onSaved, allGrades }: { c
     <Modal onClose={onClose} actions={<>
       {existing && <button className="btn danger" onClick={remove} disabled={busy} style={{ marginRight: 'auto' }}><IcTrash /> {t('delete')}</button>}
       <button className="btn ghost" onClick={onClose}>{t('cancel')}</button>
-      <button className="btn primary" disabled={value == null || busy} onClick={save}>{busy ? t('saving') : t('save')}</button>
+      <button className="btn primary" disabled={value == null || busy || (value < 6 && !comment.trim())} onClick={save}>{busy ? t('saving') : t('save')}</button>
     </>}>
       <div className="row mb16">
         <Avatar first={cell.student.first_name} last={cell.student.last_name} id={cell.student.id} size="lg" />
@@ -86,7 +86,12 @@ function GradeModal({ cell, classId, subject, onClose, onSaved, allGrades }: { c
           return <button key={v} onClick={() => setValue(v)} style={{ height: 54, borderRadius: 12, fontSize: 20, fontWeight: 800, background: on ? color : soft, color: on ? '#fff' : color, boxShadow: on ? `0 8px 18px -8px ${color}` : 'none', transition: 'all .12s' }}>{v}</button>
         })}
       </div>
-      <div className="mt16"><Field label={t('comment_optional')}><textarea className="textarea" style={{ minHeight: 64 }} value={comment} onChange={(e) => setComment(e.target.value)} /></Field></div>
+      <div className="mt16">
+        <Field label={value != null && value < 6 ? t('comment_required') : t('comment_optional')}>
+          <textarea className="textarea" style={{ minHeight: 64, borderColor: value != null && value < 6 && !comment.trim() ? 'var(--rose)' : undefined }} value={comment} onChange={(e) => setComment(e.target.value)} />
+          {value != null && value < 6 && !comment.trim() && <span className="tiny" style={{ color: 'var(--rose)', fontWeight: 600 }}>{t('comment_required_hint')}</span>}
+        </Field>
+      </div>
       {history.length > 0 && (
         <div className="mt16">
           <div className="tiny bold faint mb8" style={{ textTransform: 'uppercase', letterSpacing: '.06em' }}>{t('last_marks')}</div>

@@ -245,6 +245,8 @@ export const STRINGS: Record<string, [string, string, string]> = {
   absent_today: ['имрӯз ғоиб', 'сегодня отсутствует', 'absent today'],
   grade_value: ['Баҳо', 'Оценка', 'Mark'],
   comment_optional: ['Шарҳ (ихтиёрӣ)', 'Комментарий (необязательно)', 'Comment (optional)'],
+  comment_required: ['Шарҳ (барои баҳои аз 6 паст ҳатмӣ)', 'Комментарий (обязателен для оценок ниже 6)', 'Comment (required for marks below 6)'],
+  comment_required_hint: ['Барои баҳои аз 6 паст шарҳ лозим аст — волид бояд сабабро фаҳмад.', 'Для оценки ниже 6 нужен комментарий — родитель должен понимать причину.', 'A mark below 6 needs a comment so the parent understands why.'],
   last_marks: ['Баҳоҳои охирин', 'Последние оценки', 'Last marks'],
 
   // ---- materials
