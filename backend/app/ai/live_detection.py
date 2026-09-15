@@ -82,32 +82,11 @@ from app.models.notification_model import (
 
 from app.stream.stream_manager import stream_manager
 
-# SETTINGS
 
 CAMERA_SOURCE = "rtsp://169.254.233.44:554/stream1?udp"
 
-# Cosine similarity threshold: 0.0-1.0, yuqoriroq = qattiqroq
-#
-# Lowered from 0.42 to 0.40 for the beta, deliberately and with the cost
-# understood: a lower bar recognises pupils further from the lens and in
-# worse light, and it also lets two similar faces clear it. What stops that
-# turning into "marked the wrong child present" is MIN_MATCH_MARGIN below --
-# a match still has to beat the runner-up by a clear margin, so a borderline
-# face that resembles two pupils equally is rejected rather than guessed.
-#
-# Raise it back towards 0.45 once the school reports a wrong name; that is
-# the failure this trades against, and it is worse than a missed detection
-# because a parent is told their child arrived when they did not.
 SIMILARITY_THRESHOLD = 0.40
 
-# Tuned for rosters of up to ~25 known faces per class. A flat threshold
-# alone gets less reliable as the roster grows -- two different students can
-# both plausibly clear SIMILARITY_THRESHOLD, and without this check the
-# highest-scoring one wins even when the runner-up was a near-tie (i.e. the
-# match wasn't actually confident, just relatively best). Requiring the
-# winner to beat the runner-up by this much cosine-similarity rejects those
-# too-close-to-call frames instead of guessing -- the next detection cycle
-# a few seconds later gets another chance.
 MIN_MATCH_MARGIN = 0.08
 
 # How many completed detect windows before an unseen student counts as
@@ -129,11 +108,28 @@ _camera_status: dict[int, dict] = {}
 _camera_status_lock = threading.Lock()
 
 
+# class_id -> date the camera last actually streamed for that class. The
+# absence job consults this: a class nobody watched today is never marked
+# absent by the clock alone (see attendance_service.mark_absent_students).
+_watched_classes: dict[int, "date"] = {}
+
+
 def set_camera_status(camera_id: int, **fields) -> None:
     with _camera_status_lock:
         current = _camera_status.setdefault(camera_id, {"camera_id": camera_id})
         current.update(fields)
         current["updated_at"] = time.time()
+        if fields.get("connected"):
+            current["last_connected_at"] = time.time()
+            class_id = current.get("class_id")
+            if class_id is not None:
+                _watched_classes[int(class_id)] = datetime.now().date()
+
+
+def classes_watched_on(day: "date") -> set[int]:
+    """Classes whose camera really streamed at some point on `day`."""
+    with _camera_status_lock:
+        return {cid for cid, d in _watched_classes.items() if d == day}
 
 
 def camera_statuses() -> list[dict]:

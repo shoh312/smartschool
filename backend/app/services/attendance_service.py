@@ -9,7 +9,7 @@ from app.models.lesson_model import Lesson
 from app.models.student import Student
 from app.notifications.firebase import create_notification_event
 from app.realtime import broadcast_attendance_update
-from app.services.camera_position_service import Slot, classes_with_started_slot
+from app.services.camera_position_service import ABSENCE_GRACE_MINUTES, Slot, classes_with_started_slot
 from app.services.lesson_service import finished_lessons_today
 from app.services.sync_outbox_service import enqueue_attendance_event
 from app.utils.config import settings
@@ -190,7 +190,7 @@ def record_detection(
     return attendance
 
 
-def classes_in_session_on(lessons, weekday: int, clock: str | None = None) -> set[int]:
+def classes_in_session_on(lessons, weekday: int, clock: str | None = None, grace_minutes: int = 0) -> set[int]:
     """Which classes are expected in by `clock` on this weekday.
 
     A timetable slot is the only evidence the app has that a class was
@@ -207,11 +207,15 @@ def classes_in_session_on(lessons, weekday: int, clock: str | None = None) -> se
     lesson starts before the cutoff -- but an afternoon group is not late at
     breakfast.
     """
+    def _m(hhmm: str) -> int:
+        h, m = (hhmm or "00:00")[:5].split(":")
+        return int(h) * 60 + int(m)
+
     return {
         lesson.class_id
         for lesson in lessons
         if lesson.day_of_week == weekday
-        and (clock is None or (lesson.start_time or "00:00") <= clock)
+        and (clock is None or _m(lesson.start_time or "00:00") + grace_minutes <= _m(clock))
     }
 
 
@@ -231,7 +235,7 @@ def mark_absent_students(
     # per-lesson job next door has always worked this way (it iterates
     # finished_lessons_today); this one did not, and that was the bug.
     clock = now.strftime("%H:%M") if day == now.date() else "23:59"
-    in_session = classes_in_session_on(db.query(Lesson).all(), day.weekday(), clock)
+    in_session = classes_in_session_on(db.query(Lesson).all(), day.weekday(), clock, grace_minutes=ABSENCE_GRACE_MINUTES)
 
     # An academy keeps no lesson timetable -- its schedule is the camera's
     # own list of groups, and without this every group would be exempt from
@@ -247,6 +251,16 @@ def mark_absent_students(
         clock,
     )
 
+    if not in_session:
+        return []
+
+    # Only classes a camera actually watched today. A dead camera, or a
+    # group with no camera at all, must not turn into a room full of
+    # "absent" and a text to every parent -- the director marks those by
+    # hand. Imported lazily: live_detection imports this module.
+    from app.ai.live_detection import classes_watched_on
+
+    in_session &= classes_watched_on(day)
     if not in_session:
         return []
 
