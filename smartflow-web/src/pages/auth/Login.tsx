@@ -27,6 +27,7 @@ export function Login() {
     e.preventDefault()
     if (busy) return
     setBusy(true); setError(null)
+    setDemo(false)   // a real sign-in always leaves the demo, whatever was tried before
     try {
       if (role === 'director') {
         const r = await auth.directorLogin(email.trim(), password)
