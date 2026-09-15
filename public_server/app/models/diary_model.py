@@ -5,13 +5,6 @@ from app.database import Base
 
 
 class DiaryEntry(Base):
-    """One resolved lesson-occurrence for a class/day, synced from the local
-    server. Not per-student: the content is identical for every student in
-    `local_class_id`, so it's stored once per (school, lesson, date) even
-    though the local server fans the sync event out once per student --
-    this upserts by that natural key instead of duplicating a row per
-    student. Parent reads join through their own synced Student.local_class_id.
-    """
 
     __tablename__ = "diary_entries"
     __table_args__ = (

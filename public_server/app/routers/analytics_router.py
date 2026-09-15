@@ -21,11 +21,6 @@ def student_analytics(
     query = db.query(StudentAnalytics).filter(StudentAnalytics.student_id == student_id)
     if quarter is not None:
         query = query.filter(StudentAnalytics.quarter == quarter)
-    # Always take the most recently synced matching snapshot, even with a
-    # quarter filter applied: (student_id, quarter) alone isn't unique once
-    # more than one school year exists (quarter 1 recurs every year) -- the
-    # newest row for that quarter number is the one meant by "quarter 1"
-    # with no year picker in the UI to disambiguate further.
     analytics = query.order_by(StudentAnalytics.updated_at.desc()).first()
 
     if not analytics:

@@ -1,13 +1,3 @@
-"""Answer checking and paste-import parsing for learning materials.
-
-Kept free of SQLAlchemy and FastAPI imports on purpose: this is a verbatim
-copy of the school server's ``app/services/material_grading.py``. The two
-servers share no package, and the same rules must apply on both -- same
-arrangement as ``utils/security.py``'s token helpers.
-
-Any change here must be made in both copies, or a pupil's answer would score
-differently depending on which server checked it.
-"""
 
 import re
 import unicodedata
@@ -19,19 +9,7 @@ Q_MATCH = "match"
 Q_ORDER = "order"
 
 
-# --------------------------------------------------------------------------
-# Grading
-# --------------------------------------------------------------------------
-
 def _normalise_text(value: str) -> str:
-    """Fold a typed answer down to what we actually want to compare.
-
-    Pupils type on phone keyboards: stray spaces, a trailing full stop, a
-    capital letter, and -- in this school -- the Cyrillic 'о' where the Latin
-    'o' was meant. None of that should cost them a mark, so strip case,
-    punctuation and repeated whitespace before comparing. Accents are left
-    alone: 'ӣ' and 'и' are different letters in Tajik, not decorations.
-    """
     text = unicodedata.normalize("NFKC", value).strip().casefold()
     text = re.sub(r"[.,!?;:\"'`´’()\[\]{}]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
@@ -63,11 +41,6 @@ def _grade_fill(correct: dict, answer: dict) -> bool:
 
 
 def _grade_match(correct: dict, answer: dict) -> bool:
-    """All pairs must be right -- a half-matched question scores nothing.
-
-    Compared as sets so the order the pupil made the connections in doesn't
-    matter, only which items they joined.
-    """
     if not isinstance(answer, dict):
         return False
     try:
@@ -99,12 +72,6 @@ _GRADERS = {
 
 
 def is_answer_correct(question_type: str, correct, answer) -> bool:
-    """True if `answer` fully satisfies `correct` for this question type.
-
-    Unknown types and malformed payloads grade as wrong rather than raising:
-    a pupil mid-test shouldn't hit a 500 because one question was authored
-    with a type this server doesn't know about.
-    """
     grader = _GRADERS.get(question_type or "")
     if grader is None or not isinstance(correct, dict):
         return False
@@ -112,16 +79,6 @@ def is_answer_correct(question_type: str, correct, answer) -> bool:
 
 
 def score_attempt(blocks, answers) -> tuple[int, int]:
-    """Score one run through a material.
-
-    `blocks` is the ordered list of question blocks (each needing
-    ``.id``, ``.question_type``, ``.correct`` and ``.points``); `answers`
-    maps block id -> the pupil's answer. Returns ``(score, max_score)``.
-
-    Marking is all-or-nothing per question: partial credit on a matching
-    question would need a rule the school hasn't asked for, and guessing
-    half a pair shouldn't pay.
-    """
     score = 0
     max_score = 0
     lookup = {str(key): value for key, value in (answers or {}).items()}
@@ -134,12 +91,6 @@ def score_attempt(blocks, answers) -> tuple[int, int]:
 
 
 def suggest_grade(percent: int | None) -> int | None:
-    """Turn a percentage into the mark a teacher would probably give.
-
-    Only ever a suggestion -- the teacher sees it pre-filled and can change
-    any pupil's mark before the transfer to the journal is committed. The
-    cut-offs follow the 5-point scale the school's journal already uses.
-    """
     if percent is None:
         return None
     if percent >= 90:
@@ -151,10 +102,6 @@ def suggest_grade(percent: int | None) -> int | None:
     return 2
 
 
-# --------------------------------------------------------------------------
-# Paste import
-# --------------------------------------------------------------------------
-
 _QUESTION_START = re.compile(r"^\s*(\d+)\s*[.)]\s*(.*)$")
 _PAGE_START = re.compile(r"^\s*#\s*(.*)$")
 _CORRECT_OPTION = re.compile(r"^\s*\*\s*(.+)$")
@@ -163,36 +110,10 @@ _FILL_ANSWER = re.compile(r"^\s*=\s*(.+)$")
 
 
 class PasteImportError(ValueError):
-    """The pasted text couldn't be read as questions -- message is shown
-    to the teacher as-is, so it names the offending line number."""
+    pass
 
 
 def parse_pasted_blocks(text: str) -> list[dict]:
-    """Turn a teacher's pasted text into material blocks.
-
-    Typing fifteen questions into a phone form is what stops this feature
-    being used at all, so the same text a teacher already has in a notebook
-    or a Word file can be pasted in one go:
-
-        # Bugungi mavzu: Tojikiston poytaxti.
-        Dushanbe 1924-yildan poytaxt hisoblanadi.
-
-        1. Tojikiston poytaxti qayerda?
-        * Dushanbe
-        - Xujand
-        - Kulob
-
-        2. 5 + 7 = ?
-        = 12
-
-    ``#`` starts an explanation page (following plain lines join it), a
-    numbered line starts a question, ``*`` marks the correct option, ``-``
-    a wrong one, and ``=`` makes it a type-the-answer question (repeat it
-    to accept spelling variants).
-
-    Matching and ordering questions aren't expressible here -- they're
-    fiddly enough that authoring them in the form is clearer.
-    """
     blocks: list[dict] = []
     current: dict | None = None
 
@@ -267,8 +188,6 @@ def parse_pasted_blocks(text: str) -> list[dict]:
             flush()
             continue
 
-        # An unmarked, non-blank line right after a question is the question
-        # text wrapping onto a second line.
         current["body"] = f"{current['body']} {line.strip()}".strip()
 
     flush()

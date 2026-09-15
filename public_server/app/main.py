@@ -74,12 +74,6 @@ def root():
     return {"message": "SmartSchool Public Server Running"}
 
 
-# --------------------------------------------------------------------------
-# The web app for directors and teachers (smartflow-web, built with Vite)
-# lives in public_server/web/ and is served from /web/. Any path under it
-# that is not a real file falls back to index.html so the browser router
-# can take over; a missing build simply leaves /web/ answering 404.
-# --------------------------------------------------------------------------
 from pathlib import Path
 
 from fastapi.responses import FileResponse

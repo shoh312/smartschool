@@ -26,14 +26,6 @@ def initialize_firebase():
 
 
 def create_and_send_notification(db: Session, event: NotificationEvent) -> NotificationEvent:
-    """Send immediately (the Public Server is the sole owner of parent push
-    notifications now -- unlike the local server's version of this function,
-    there's no cross-school Parent-row family to fan out across, since a
-    Public Server parent is one global row per phone).
-    """
-    # Addressed to a parent, or -- for schoolwork reminders -- straight to
-    # the pupil on their own phone. A parent event with no parent is still
-    # a mistake worth recording rather than silently dropping.
     from app.utils.config import settings as _settings
     if not _settings.notifications_enabled:
         event.status = "skipped"

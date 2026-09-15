@@ -1,12 +1,3 @@
-"""Telling pupils about work: once when it arrives, once before it's due.
-
-Both notifications go to the pupil's own device rather than their parent's.
-That's the point of them -- a reminder that lands on the phone the homework
-will actually be done on.
-
-Sent from this server because it is the only one the pupil's phone can
-reach, and because it already knows who has submitted and who hasn't.
-"""
 
 from datetime import datetime, timedelta
 
@@ -17,7 +8,6 @@ from app.models.notification_model import NotificationEvent
 from app.models.student_model import Student
 from app.notifications.firebase import create_and_send_notification
 
-# How long before the deadline the "you haven't done this" nudge goes out.
 REMINDER_LEAD = timedelta(days=1)
 
 EVENT_NEW = "material_assigned"
@@ -30,19 +20,13 @@ def _students_in_class(db: Session, assignment: MaterialAssignment) -> list[Stud
         .filter(
             Student.school_id == assignment.school_id,
             Student.local_class_id == assignment.local_class_id,
-            Student.is_active == True,  # noqa: E712 -- SQLAlchemy column comparison
+            Student.is_active == True,
         )
         .all()
     )
 
 
 def _already_sent(db: Session, event_type: str, student_id: int, assignment_id: int) -> bool:
-    """Guard against repeats.
-
-    The published event is re-sent by the school server whenever a teacher
-    edits the deadline, and the reminder loop runs every hour -- without
-    this, a pupil's phone would buzz on every pass.
-    """
     return (
         db.query(NotificationEvent)
         .filter(
@@ -64,15 +48,10 @@ def _send(
     body: str,
 ) -> None:
     event = NotificationEvent(
-        # No parent_id: this is the pupil's own reminder. Both ids exist on
-        # the model, and firebase.create_and_send_notification picks the
-        # device list from whichever is set.
         student_id=student.id,
         school_id=assignment.school_id,
         event_type=event_type,
         title=title,
-        # The assignment id is carried in the text so _already_sent can
-        # recognise this exact reminder later without a new column.
         body=f"{body} #{assignment.id}",
     )
     db.add(event)
@@ -81,7 +60,6 @@ def _send(
 
 
 def notify_assignment_published(db: Session, assignment: MaterialAssignment) -> int:
-    """One message per pupil in the class when work is handed out."""
     if assignment.published_at is None:
         return 0
 
@@ -94,9 +72,6 @@ def notify_assignment_published(db: Session, assignment: MaterialAssignment) -> 
         .first()
     )
     if material is None:
-        # The material's own sync event hasn't landed yet. Skipping is safe:
-        # the assignment event is re-sent whenever the teacher touches it,
-        # and the pupil sees the work in their list either way.
         return 0
 
     sent = 0
@@ -116,11 +91,6 @@ def notify_assignment_published(db: Session, assignment: MaterialAssignment) -> 
 
 
 def send_due_reminders(db: Session, now: datetime | None = None) -> int:
-    """Nudge pupils who still haven't submitted, a day before the deadline.
-
-    Deliberately only for those who haven't finished: a pupil who did the
-    work on the first evening should not be chased about it.
-    """
     now = now or datetime.utcnow()
     window_end = now + REMINDER_LEAD
 

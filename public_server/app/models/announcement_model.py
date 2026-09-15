@@ -5,10 +5,6 @@ from app.database import Base
 
 
 class Announcement(Base):
-    """A director's post, synced from the local server. Not per-student --
-    upserted by (school_id, local_announcement_id), same dedup reasoning as
-    DiaryEntry/CalendarEvent.
-    """
 
     __tablename__ = "announcements"
     __table_args__ = (

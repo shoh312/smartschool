@@ -29,9 +29,6 @@ class Grade(Base):
     comment = Column(Text)
     grade_date = Column(Date, nullable=False)
     teacher_name = Column(String)
-    # Opaque, no FK -- the Public Server has no Class/Teacher tables. Carried
-    # only so GradeResponse stays shape-compatible with the Flutter model,
-    # which reads class_id/teacher_id as non-nullable ints.
     local_class_id = Column(Integer, nullable=False)
     local_teacher_id = Column(Integer, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())

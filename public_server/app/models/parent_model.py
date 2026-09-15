@@ -9,16 +9,9 @@ class Parent(Base):
     __tablename__ = "parents"
 
     id = Column(Integer, primary_key=True, index=True)
-    # One global row per phone -- unlike the local (per-school) backend, the
-    # Public Server has no reason to scope parents per school: a stat's school
-    # is already known from the synced student it belongs to.
     phone = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String)
 
-    # Set by the parent themself, after an SMS code proved the number is
-    # theirs -- see auth_router. Null for every parent registered before
-    # passwords existed; those are sent through the same set-password flow
-    # on their next sign-in rather than being locked out.
     password_hash = Column(String)
     password_salt = Column(String)
 

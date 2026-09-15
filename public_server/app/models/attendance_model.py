@@ -24,7 +24,6 @@ class AttendanceStatus(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     local_attendance_id = Column(Integer, nullable=False)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False, index=True)
-    # No camera_id, no confidence, no photo -- only the status a parent needs.
     status = Column(String, nullable=False)
     attendance_date = Column(Date, nullable=False)
     time_in = Column(TIMESTAMP)

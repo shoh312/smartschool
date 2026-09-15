@@ -30,17 +30,6 @@ def student_diary(
         DiaryEntry.log_date == on,
     ).order_by(DiaryEntry.start_time.asc()).all()
 
-    # The lesson entries above are shared by the whole class (same subject/
-    # homework for everyone) -- the grade is the one part of "today's
-    # ruznoma" that's actually personal to this student, so it's looked up
-    # separately and matched onto the day's lessons.
-    #
-    # Grades carry no lesson reference (they're recorded per student/subject/
-    # date), so the match has to go through the subject name. Each grade is
-    # handed to at most ONE lesson, in chronological order: a class with two
-    # Math periods in a day used to show the same single grade on both cards,
-    # and a student with two Math grades that day had one of them silently
-    # dropped by the old dict-keyed-by-subject lookup.
     grades = db.query(Grade).filter(
         Grade.student_id == student.id,
         Grade.grade_date == on,
@@ -77,11 +66,6 @@ def student_homework(
     db: Session = Depends(get_db),
     actor: PublicAuthActor = Depends(get_current_actor),
 ):
-    """Homework across several days (not just one), for a "Uy vazifalari"
-    list view -- reads the same already-synced DiaryEntry rows the single-day
-    diary reads, just filtered to entries that have homework set and spread
-    across a date range instead of one exact date.
-    """
     student = get_owned_student(student_id, db, actor)
 
     today = date.today()

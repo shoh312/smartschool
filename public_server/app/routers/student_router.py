@@ -18,13 +18,9 @@ def get_my_students(
         students = [actor.student]
         parent = actor.student.parent
     else:
-        # Only children still at the school. A pupil removed on the school
-        # server arrives here as a deactivation rather than a delete, so
-        # their history survives -- but leaving them in the parent's list
-        # showed a child who has left as though they were still enrolled.
         students = db.query(Student).filter(
             Student.parent_id == actor.parent.id,
-            Student.is_active == True,  # noqa: E712 -- SQLAlchemy column comparison
+            Student.is_active == True,
         ).order_by(Student.id.desc()).all()
         parent = actor.parent
 

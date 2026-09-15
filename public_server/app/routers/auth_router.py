@@ -30,26 +30,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    """Phone plus password.
-
-    The password is what makes this a login. Before it existed, typing any
-    registered number was enough to read that family's marks and attendance
-    -- which is why `needs_password` below is a state the app has to handle
-    rather than an error: 61 parents were registered under the old rule and
-    none of them can be locked out for it.
-    """
     normalized = normalize_phone(payload.phone)
     parent = db.query(Parent).filter(Parent.phone == normalized).first()
 
     if not parent:
-        # No self-registration here (unlike the local server): a parent
-        # identity can only originate from a director creating a student
-        # locally, which then syncs in. An unknown phone means no school has
-        # registered it yet.
         raise HTTPException(status_code=404, detail="phone_not_registered")
 
     if not parent.password_hash:
-        # Not an error: the app sends them to request a code and choose one.
         return {"status": "needs_password", "phone": parent.phone}
 
     if not payload.password or not verification.verify_password(
@@ -68,12 +55,6 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/request-code")
 def request_code(payload: RequestCodeRequest, db: Session = Depends(get_db)):
-    """Sends an SMS code to a number the school already knows.
-
-    Only to a number the school already knows: an open endpoint that texts
-    anyone is a way for a stranger to spend the school's SMS balance, and
-    there is no legitimate caller here who is not already in the database.
-    """
     normalized = normalize_phone(payload.phone)
     parent = db.query(Parent).filter(Parent.phone == normalized).first()
     if not parent:
@@ -109,10 +90,6 @@ def request_code(payload: RequestCodeRequest, db: Session = Depends(get_db)):
         "status": "code_sent",
         "phone_masked": verification.mask_phone(normalized),
         "expires_in_seconds": int(verification.CODE_TTL.total_seconds()),
-        # False while the school has no gateway contract -- the flow still
-        # works, the code is in the server log. The app tells the parent to
-        # ask the school rather than to watch for a message that is not
-        # coming.
         "delivered": result.sent,
     }
 
@@ -143,8 +120,6 @@ def verify_code(payload: VerifyCodeRequest, db: Session = Depends(get_db)):
         now=datetime.utcnow(),
     )
     if not check.ok:
-        # Counted even when the code had already expired: otherwise an
-        # attacker gets unlimited guesses simply by waiting.
         record.attempts += 1
         db.commit()
         raise HTTPException(status_code=400, detail=check.reason)
@@ -171,8 +146,6 @@ def set_password(payload: SetPasswordRequest, db: Session = Depends(get_db)):
 
     name = payload.full_name.strip()
     if name:
-        # The director typed a name when creating the child; the parent gets
-        # to correct their own.
         parent.full_name = name
 
     salt, digest = verification.hash_password(payload.password)
@@ -193,9 +166,6 @@ def set_password(payload: SetPasswordRequest, db: Session = Depends(get_db)):
 def student_login(payload: StudentLoginRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.username == payload.username).first()
 
-    # Same generic message whether the username doesn't exist, has no
-    # password set, or the password is wrong -- don't let a caller probe
-    # which usernames exist.
     invalid = HTTPException(status_code=401, detail="invalid_credentials")
     if not student or not student.password_hash or not student.password_salt:
         raise invalid

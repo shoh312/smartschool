@@ -30,10 +30,6 @@ def get_db():
 
 
 def ensure_database_schema() -> None:
-    """This server uses metadata.create_all instead of Alembic, same as the
-    local backend -- create_all only creates missing tables, so a column
-    added to an existing table's model needs this additive statement too.
-    """
     statements = [
         "ALTER TABLE grades ADD COLUMN IF NOT EXISTS quarter INTEGER",
         "ALTER TABLE students ALTER COLUMN parent_id DROP NOT NULL",
@@ -44,11 +40,6 @@ def ensure_database_schema() -> None:
         "ALTER TABLE student_analytics ADD COLUMN IF NOT EXISTS school_average DOUBLE PRECISION",
         "ALTER TABLE student_analytics ADD COLUMN IF NOT EXISTS trend JSON DEFAULT '[]'",
         "ALTER TABLE student_analytics ADD COLUMN IF NOT EXISTS school_year INTEGER",
-        # Widens the old (student_id, quarter) uniqueness to also include
-        # school_year -- without it, a new school year's Q1 snapshot would
-        # silently overwrite last year's Q1 row on upsert instead of
-        # creating a separate one. Guarded because Postgres has no
-        # "ADD CONSTRAINT IF NOT EXISTS".
         "ALTER TABLE student_analytics DROP CONSTRAINT IF EXISTS uq_student_analytics_student_quarter",
         """
         DO $$

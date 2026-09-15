@@ -1,37 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Reaching a school server from outside its LAN.
-
-The school server sits behind a home router with no inbound route. Instead
-of asking every school to open a port, the school server opens *one*
-outbound websocket to here and keeps it open (see the school server's
-``app/relay_client.py``). Anything a director's or teacher's phone sends to
-``/relay/...`` is wrapped up, pushed down that socket, answered by the
-school server against its own API, and unwrapped here.
-
-Websockets (the live camera stream, the live attendance feed) travel the
-same way: a client socket on ``/relay/ws/...`` becomes a matching socket on
-the school side, and frames are pumped through in both directions.
-
-Wire format on the tunnel
--------------------------
-Text frames are JSON control messages::
-
-    {"type": "hello", "school_key": "..."}                 school -> here, once
-    {"type": "http", "id", "method", "path", "query",
-     "headers", "body_b64"}                                 here -> school
-    {"type": "http_response", "id", "status", "headers",
-     "body_b64"}                                            school -> here
-    {"type": "ws_open", "id", "path", "query"}              here -> school
-    {"type": "ws_opened", "id"} / {"type": "ws_close", "id"}   either way
-
-Binary frames carry websocket data: 36 bytes of the stream id, one byte
-``b``/``t`` for the frame kind, then the payload. Kept binary so a JPEG
-frame is not base64-inflated forty times a second.
-
-Security: the tunnel is authenticated with the same per-school key the sync
-uses. Everything forwarded is then subject to the school server's own
-login -- the relay adds no access, only a route.
-"""
 
 import asyncio
 import base64
@@ -51,22 +17,18 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["relay"])
 
-HTTP_TIMEOUT = 400  # drafting a material through Gemini can take minutes
+HTTP_TIMEOUT = 400
 HOP_HEADERS = {"host", "connection", "content-length", "transfer-encoding", "keep-alive", "upgrade"}
 
 
 class Tunnel:
-    """One connected school server."""
 
     def __init__(self, school_id: int, name: str, ws: WebSocket, relay_secret: str | None = None):
         self.school_id = school_id
         self.name = name
         self.ws = ws
-        # Per-connection secret the school announced in its hello; lets us
-        # open parent live streams on its /ws/parent-stream.
         self.relay_secret = relay_secret
         self.pending: dict[str, asyncio.Future] = {}
-        # stream id -> queue of frames coming back from the school side
         self.streams: dict[str, asyncio.Queue] = {}
         self.send_lock = asyncio.Lock()
 
@@ -85,7 +47,7 @@ tunnels: dict[int, Tunnel] = {}
 def _authenticate(db: Session, key: str | None) -> School | None:
     if not key:
         return None
-    for school in db.query(School).filter(School.is_active == True).all():  # noqa: E712
+    for school in db.query(School).filter(School.is_active == True).all():
         if verify_school_key(key, school.api_key_hash):
             return school
     return None
@@ -103,10 +65,6 @@ def _pick(school_id: int | None) -> Tunnel:
         raise HTTPException(status_code=400, detail="school_ambiguous")
     return next(iter(tunnels.values()))
 
-
-# --------------------------------------------------------------------------
-# The school server's side of the tunnel
-# --------------------------------------------------------------------------
 
 @router.websocket("/relay/tunnel")
 async def tunnel_socket(websocket: WebSocket):
@@ -128,8 +86,6 @@ async def tunnel_socket(websocket: WebSocket):
 
     old = tunnels.get(school.id)
     if old is not None:
-        # A reconnect after a dropped link: the stale socket is replaced,
-        # never left to shadow the live one.
         try:
             await old.ws.close(code=1012, reason="replaced")
         except Exception:
@@ -167,7 +123,7 @@ async def tunnel_socket(websocket: WebSocket):
                     queue.put_nowait(payload)
     except WebSocketDisconnect:
         pass
-    except Exception as exc:  # noqa: BLE001 -- the tunnel must not take the server down
+    except Exception as exc:
         logger.warning("relay: tunnel for school %s ended: %s", school.id, exc)
     finally:
         if tunnels.get(school.id) is tunnel:
@@ -182,13 +138,8 @@ async def tunnel_socket(websocket: WebSocket):
 
 @router.get("/relay-status")
 def relay_status():
-    """Which schools are reachable right now -- for a director wondering why."""
     return [{"school_id": t.school_id, "name": t.name} for t in tunnels.values()]
 
-
-# --------------------------------------------------------------------------
-# What the phones call
-# --------------------------------------------------------------------------
 
 @router.api_route("/relay/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def relay_http(path: str, request: Request, x_school_id: int | None = Header(default=None)):
@@ -223,7 +174,6 @@ async def relay_http(path: str, request: Request, x_school_id: int | None = Head
 
 
 async def _pump(websocket: WebSocket, tunnel: Tunnel, path: str, query: str) -> None:
-    """Open `path` on the school side and pump frames both ways until either end closes."""
     stream_id = str(uuid.uuid4())
     queue: asyncio.Queue = asyncio.Queue()
     tunnel.streams[stream_id] = queue
@@ -251,7 +201,7 @@ async def _pump(websocket: WebSocket, tunnel: Tunnel, path: str, query: str) -> 
                 item = await queue.get()
                 if isinstance(item, dict):
                     close_reason[0] = item.get("reason")
-                    return  # ws_close / ws_error
+                    return
                 kind, data = item[:1], item[1:]
                 if kind == b"t":
                     await websocket.send_text(data.decode("utf-8", "replace"))
@@ -266,7 +216,7 @@ async def _pump(websocket: WebSocket, tunnel: Tunnel, path: str, query: str) -> 
             task.cancel()
     except (WebSocketDisconnect, asyncio.TimeoutError):
         pass
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug("relay: stream %s ended: %s", stream_id, exc)
     finally:
         tunnel.streams.pop(stream_id, None)
@@ -299,12 +249,6 @@ async def relay_websocket(websocket: WebSocket, path: str):
     await _pump(websocket, tunnel, "/" + path, query)
 
 
-# --------------------------------------------------------------------------
-# A parent watching their child's lesson: ws /parent/live?token=..&student_id=..
-# The parent token is checked here, the child must be theirs, and the school
-# side only ever shows the camera of the class that has a lesson right now.
-# --------------------------------------------------------------------------
-
 @router.websocket("/parent/live")
 async def parent_live(websocket: WebSocket):
     from app.models.parent_model import Parent
@@ -329,7 +273,6 @@ async def parent_live(websocket: WebSocket):
         if parent is None or student is None:
             await websocket.close(code=1008, reason="forbidden")
             return
-        # Every Parent row with this phone is the same person (one row per school).
         family = {p.id for p in db.query(Parent).filter(Parent.phone == parent.phone).all()}
         if student.parent_id not in family:
             await websocket.close(code=1008, reason="forbidden")

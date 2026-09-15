@@ -5,20 +5,9 @@ from app.database import Base
 
 
 class StudentAnalytics(Base):
-    """A snapshot of one student's ranking/analytics for one quarter, pushed
-    by the local server (see local app/services/sync_outbox_service.py ->
-    enqueue_student_analytics_event). Computed there, not here: ranking needs
-    the whole class/parallel/school roster, which this server never has a
-    complete copy of (it only ever receives one child's own data per sync
-    event) -- so unlike grades/attendance, this can't be derived locally.
-    """
 
     __tablename__ = "student_analytics"
     __table_args__ = (
-        # school_year disambiguates "quarter 1" across different years --
-        # without it here, a new school year's Q1 snapshot would silently
-        # overwrite last year's Q1 row instead of creating a new one (same
-        # bug the local server's Grade.school_year column exists to avoid).
         UniqueConstraint("student_id", "quarter", "school_year", name="uq_student_analytics_student_quarter_year"),
     )
 

@@ -24,13 +24,6 @@ def save_device_token(
     db: Session = Depends(get_db),
     actor: PublicAuthActor = Depends(get_current_actor),
 ):
-    """Register this device against whoever is signed in on it.
-
-    Pupils get their own login now and their own work to be reminded about,
-    so a device can belong to a pupil as well as to a parent. Both fields
-    are rewritten on every call: the same handset is often handed between
-    them, and the last person to sign in is the one the push should reach.
-    """
     is_student = actor.role == "student" and actor.student is not None
     parent_id = actor.parent.id if actor.role == "parent" and actor.parent else None
     student_id = actor.student.id if is_student else None
@@ -60,16 +53,6 @@ def school_message(
     db: Session = Depends(get_db),
     school: School = Depends(get_current_school),
 ):
-    """Lets a school's own server put a message in a parent's app.
-
-    Called directly rather than through the sync outbox on purpose: the
-    body carries a pupil's password, and outbox rows are kept after they are
-    sent. This way the plaintext exists in one place -- the notification the
-    parent is meant to read -- instead of two.
-
-    The parent must already have a child at *this* school, so a leaked
-    school key cannot be used to message the whole country.
-    """
     normalized = normalize_phone(payload.parent_phone)
     parent = db.query(Parent).filter(Parent.phone == normalized).first()
     if not parent:

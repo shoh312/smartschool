@@ -44,14 +44,6 @@ def verify_parent_access_token(token: str) -> int:
 
 
 def create_setup_token(parent_id: int, ttl: timedelta) -> str:
-    """Proof that this phone answered its SMS, and nothing more.
-
-    Deliberately a different payload key from the access token: a token
-    minted for choosing a password must not open the child's marks, and a
-    30-day access token must not be usable to overwrite the password. Each
-    verifier reads only its own key, so neither is accepted in the other's
-    place.
-    """
     payload = {
         "setup_parent_id": parent_id,
         "exp": (datetime.utcnow() + ttl).isoformat(),
@@ -103,10 +95,6 @@ def verify_student_access_token(token: str) -> int:
         ) from exc
 
 
-# Same dependency-light salted-sha256 scheme as the local server's
-# hash_student_password (see backend/app/utils/security.py) -- this server
-# only ever verifies against the synced hash, it never hashes a plaintext
-# password itself (that only happens locally, when a director sets one).
 def verify_student_password(password: str, salt: str, expected_hash: str) -> bool:
     digest = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
     return hmac.compare_digest(digest, expected_hash)

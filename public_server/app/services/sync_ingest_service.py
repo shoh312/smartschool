@@ -18,16 +18,6 @@ from app.services.material_notification_service import notify_assignment_publish
 from app.schemas.sync_schema import SyncEvent
 from app.utils.phone import normalize_phone
 
-# Tajik: this is the one message a parent actually receives, and it should
-# arrive in the language the rest of their app is in.
-#
-# The time matters as much as the fact. "Your child came to school" leaves a
-# parent wondering when; "came at 08:12" is the whole answer, and for a late
-# arrival it is the difference between a shrug and a conversation.
-#
-# `absent` carries no time on purpose -- the child was never seen, so any
-# clock reading would be the moment the system gave up, not anything about
-# the child.
 ATTENDANCE_MESSAGES = {
     "present": {
         "title": "Фарзандатон ба мактаб омад",
@@ -57,13 +47,6 @@ ATTENDANCE_MESSAGES = {
 
 
 def _clock(value) -> str | None:
-    """`HH:MM` from whatever the sync delivered, or None if it is unusable.
-
-    Times arrive as the school's own local clock -- the school server writes
-    `datetime.now()` and the sync passes it through untouched -- so they are
-    printed as they are, with no timezone maths that would shift a parent's
-    notification by hours.
-    """
     if value is None:
         return None
     if isinstance(value, str):
@@ -104,11 +87,6 @@ def _upsert_parent(
     if parent:
         if full_name and parent.full_name != full_name:
             parent.full_name = full_name
-        # Only ever fills a gap, never overwrites. The school issues a
-        # password once, but a parent can change it here afterwards, and the
-        # school's copy of the old hash arrives again with every grade and
-        # every absence -- writing it back would undo their change on the
-        # next mark their child got.
         if password_hash and not parent.password_hash:
             parent.password_hash = password_hash
             parent.password_salt = password_salt
@@ -123,11 +101,6 @@ def _upsert_parent(
     db.add(parent)
     db.flush()
 
-    # No SMS from here any more. Registering is something the parent starts
-    # themselves, from the Register button on the sign-in screen, and a code
-    # they did not ask for arriving alongside one they did was half of what
-    # made the sign-in confusing. scripts/invite_parents.py still exists for
-    # the families who were registered before any of this and need a nudge.
     return parent
 
 
@@ -149,8 +122,6 @@ def _upsert_student(db: Session, school: School, event, parent: Parent | None) -
     student.last_name = event.student.last_name
     student.class_name = event.student.class_name
     student.local_class_id = event.student.local_class_id
-    # Only when one was sent: a later parentless event must not unlink a
-    # pupil from the parent an earlier one established.
     if parent is not None:
         student.parent_id = parent.id
     student.is_active = event.student.is_active
@@ -167,9 +138,6 @@ def _upsert_student(db: Session, school: School, event, parent: Parent | None) -
 
 
 def apply_sync_event(db: Session, school: School, event: SyncEvent) -> None:
-    # Materials belong to a class, not a family, and arrive without a
-    # parent/student block -- handled before the identity upsert, which has
-    # nothing to work with for them.
     if event.type == "material" and event.material is not None:
         _apply_material(db, school, event)
         db.commit()
@@ -178,8 +146,6 @@ def apply_sync_event(db: Session, school: School, event: SyncEvent) -> None:
         assignment = _apply_material_assignment(db, school, event)
         db.commit()
         if assignment is not None:
-            # After the commit: the pupils' list has to be able to show the
-            # work by the time their phone buzzes about it.
             notify_assignment_published(db, assignment)
         return
 
@@ -349,13 +315,6 @@ def _apply_announcement(db: Session, school: School, student: Student, event: Sy
     announcement.body = data.body
     announcement.created_at_local = data.created_at
 
-    # The local server fans this same announcement out once per affected
-    # student (see enqueue_announcement_event), but the Announcement row
-    # itself is deduped to one shared row above -- so "is this row new"
-    # can't gate the notification (only the very first of N students would
-    # ever be notified). Instead, dedupe per PARENT: skip only if this exact
-    # parent has already been notified for this exact announcement (an
-    # idempotent retry), so every distinct parent still gets notified once.
     if student.parent_id:
         already_notified = db.query(NotificationEvent).filter(
             NotificationEvent.parent_id == student.parent_id,
@@ -383,9 +342,6 @@ def _apply_attendance(db: Session, school: School, student: Student, event: Sync
         AttendanceStatus.local_attendance_id == event.attendance.local_id,
     ).first()
 
-    # A record the school has withdrawn -- an absence marked on a day that
-    # turned out to have no lessons, say. Nothing to notify: the parent was
-    # already told, and the correction is the row going away.
     if event.operation == "delete":
         if attendance:
             db.delete(attendance)
@@ -407,9 +363,6 @@ def _apply_attendance(db: Session, school: School, student: Student, event: Sync
     attendance.time_out = event.attendance.time_out
     attendance.last_seen = event.attendance.last_seen
 
-    # Only notify on an actual status change (new row, or status differs from
-    # what's already stored) -- an idempotent retry of the same event must
-    # re-apply the same status without re-notifying the parent every time.
     status_changed = is_new or previous_status != attendance.status
     message = (
         _attendance_message(
@@ -437,13 +390,6 @@ def _apply_attendance(db: Session, school: School, student: Student, event: Sync
 
 
 def _apply_material(db: Session, school: School, event: SyncEvent) -> None:
-    """Mirror a material and its blocks, keyed by the school server's ids.
-
-    Blocks are replaced wholesale rather than diffed: the local server
-    already refuses to edit the questions of a material that has been handed
-    out, so a changed block list only ever arrives for something nobody has
-    started answering yet.
-    """
     data = event.material
     material = db.query(Material).filter(
         Material.school_id == school.id,

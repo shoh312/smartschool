@@ -7,10 +7,6 @@ from pydantic import BaseModel, model_validator
 class SyncParent(BaseModel):
     phone: str
     full_name: Optional[str] = None
-    # Issued by the school when the first child is registered, and carried
-    # here because this is where the parent signs in. Optional: schools
-    # running an older backend send neither, and parents who set their own
-    # password through the app have one this side only.
     password_hash: Optional[str] = None
     password_salt: Optional[str] = None
 
@@ -60,10 +56,6 @@ class SyncQuarterPoint(BaseModel):
 
 class SyncStudentAnalytics(BaseModel):
     quarter: int
-    # Disambiguates "quarter 1" across different years (the year a school
-    # year STARTS in -- see local app/utils/academic_calendar.py). Optional
-    # only so an in-flight outbox entry queued before this field existed
-    # doesn't fail validation; new entries always set it.
     school_year: Optional[int] = None
     overall_average: Optional[float] = None
     class_rank_position: Optional[int] = None
@@ -120,8 +112,6 @@ class SyncMaterialBlock(BaseModel):
     body: str = ""
     question_type: Optional[str] = None
     options: Optional[Any] = None
-    # The answer key. Needed here because this server marks the work; it is
-    # never included in anything sent to a pupil's device.
     correct: Optional[Any] = None
     points: int = 1
 
@@ -149,18 +139,6 @@ class SyncMaterialAssignment(BaseModel):
 
 
 class SyncEvent(BaseModel):
-    """One outbox entry from a local server. Every event is a self-contained
-    snapshot -- it always carries the parent + student identity inline, so
-    the Public Server can upsert parent -> student -> grade/attendance/
-    analytics in one transaction regardless of what order events actually
-    arrive in. `diary`/`calendar_event`/`announcement` are fanned out once
-    per affected student by the local server but upsert to a single shared
-    row here (not per-student) -- see each model's docstring.
-
-    Materials are the exception that has no parent/student block at all:
-    they belong to a class, not a family, and pupils sign in for themselves
-    now -- so a pupil with no parent on file must still get their homework.
-    """
 
     type: Literal[
         "student", "grade", "attendance", "student_analytics",
@@ -181,18 +159,10 @@ class SyncEvent(BaseModel):
 
     @model_validator(mode="after")
     def _identity_required_for_family_events(self):
-        # parent/student only became optional so material events could omit
-        # them. Every older event type still depends on that identity to
-        # resolve which family the row belongs to, and silently dropping one
-        # that arrived without it would lose a grade -- so demand it here,
-        # where the failure is a loud 422 the outbox will retry.
         if self.type in _CLASS_SCOPED_TYPES:
             return self
         if self.student is None:
             raise ValueError(f"'{self.type}' events must carry a student")
-        # A pupil is allowed to have no parent on file -- they sign in for
-        # themselves. Everything else still needs the family identity to
-        # know whose data it is.
         if self.parent is None and self.type != "student":
             raise ValueError(f"'{self.type}' events must carry a parent")
         return self

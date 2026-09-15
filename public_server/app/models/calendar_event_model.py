@@ -5,11 +5,6 @@ from app.database import Base
 
 
 class CalendarEvent(Base):
-    """A holiday/exam/test/event entry synced from the local server. Not
-    per-student -- upserted by (school_id, local_event_id) even though the
-    local server fans the sync event out once per affected student, same
-    dedup reasoning as DiaryEntry.
-    """
 
     __tablename__ = "calendar_events"
     __table_args__ = (

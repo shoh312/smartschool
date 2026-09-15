@@ -1,16 +1,3 @@
-"""Pupil-facing learning materials, plus the parent's read-only view.
-
-This is the only part of the feature a pupil at home can reach, so it is
-also the only place the rules have to be *enforced* rather than merely
-displayed:
-
-* the answer key never leaves the server -- ``correct`` is stripped from
-  every response and answers are marked here;
-* a control test tells the pupil nothing about right/wrong, and hides even
-  their own score, until the deadline has passed;
-* attempt limits and deadlines are checked server-side, not trusted from
-  the app.
-"""
 
 from datetime import datetime
 
@@ -41,13 +28,7 @@ router = APIRouter(prefix="/materials", tags=["materials"])
 MODE_CONTROL = "control"
 
 
-# --------------------------------------------------------------------------
-# Helpers
-# --------------------------------------------------------------------------
-
 def _require_self(actor: PublicAuthActor, student: Student) -> None:
-    """Only the pupil themself may answer. A parent can watch, but must not
-    be able to sit the test for their child."""
     if actor.role != "student" or actor.student is None or actor.student.id != student.id:
         raise HTTPException(status_code=403, detail="Only the student can do this work")
 
@@ -76,7 +57,7 @@ def _class_all_submitted(db: Session, assignment: MaterialAssignment) -> bool:
         .filter(
             Student.school_id == assignment.school_id,
             Student.local_class_id == assignment.local_class_id,
-            Student.is_active == True,  # noqa: E712 -- SQLAlchemy column comparison
+            Student.is_active == True,
         )
         .count()
     )
@@ -95,11 +76,6 @@ def _class_all_submitted(db: Session, assignment: MaterialAssignment) -> bool:
 
 
 def _score_visible(db: Session, assignment: MaterialAssignment) -> bool:
-    """Mirrors the school server's rule, for the same reason: the first
-    pupil to finish a control test must not learn their mark (and by
-    extension how they did on each question) while the rest are still
-    working.
-    """
     if assignment.mode != MODE_CONTROL:
         return True
     if _is_overdue(assignment):
@@ -120,8 +96,6 @@ def _attempts_of(db: Session, assignment_id: int, student_id: int) -> list[Mater
 
 
 def _best_submitted(attempts: list[MaterialAttempt]) -> MaterialAttempt | None:
-    """The attempt that counts: the first one submitted. Retries are practice
-    and never raise the score the pupil, parent and teacher see."""
     submitted = [a for a in attempts if a.submitted_at is not None]
     if not submitted:
         return None
@@ -167,19 +141,12 @@ def _summarise(
     )
 
 
-# --------------------------------------------------------------------------
-# Reading
-# --------------------------------------------------------------------------
-
 @router.get("/assignments", response_model=list[StudentAssignmentOut])
 def list_assignments(
     student_id: int,
     db: Session = Depends(get_db),
     actor: PublicAuthActor = Depends(get_current_actor),
 ):
-    """Everything handed to this pupil's class. Serves the pupil and, with
-    the same payload, their parent -- a parent sees status and (once
-    revealed) the score, but has no way to start or answer anything."""
     student = get_owned_student(student_id, db, actor)
     if student.local_class_id is None:
         return []
@@ -198,8 +165,6 @@ def list_assignments(
     out: list[StudentAssignmentOut] = []
     for assignment in assignments:
         material = _material_for(db, assignment)
-        # A published assignment whose material hasn't landed yet (outbox
-        # ordering) is skipped rather than shown as an empty broken card.
         if material is None:
             continue
         out.append(_summarise(db, assignment, material, student))
@@ -259,10 +224,6 @@ def _require_assignment(db: Session, assignment_id: int, student: Student) -> Ma
     return assignment
 
 
-# --------------------------------------------------------------------------
-# Doing the work
-# --------------------------------------------------------------------------
-
 @router.post("/assignments/{assignment_id}/start", response_model=StudentAssignmentDetailOut)
 def start_attempt(
     assignment_id: int,
@@ -283,8 +244,6 @@ def start_attempt(
     attempts = _attempts_of(db, assignment.id, student.id)
     open_attempt = next((a for a in attempts if a.submitted_at is None), None)
     if open_attempt is None:
-        # Only finished runs count against the limit -- an unfinished one is
-        # resumed above, so closing the app can't burn an attempt.
         if assignment.max_attempts is not None and len(attempts) >= assignment.max_attempts:
             raise HTTPException(status_code=409, detail="No attempts left")
         open_attempt = MaterialAttempt(
@@ -308,11 +267,6 @@ def record_answer(
     db: Session = Depends(get_db),
     actor: PublicAuthActor = Depends(get_current_actor),
 ):
-    """Save one answer, and in practice mode say whether it was right.
-
-    Saving as the pupil goes (rather than posting everything at the end)
-    means a dropped connection or a closed app costs them nothing.
-    """
     attempt = _require_open_attempt(db, attempt_id, actor)
     assignment = attempt.assignment
 
@@ -327,9 +281,6 @@ def record_answer(
     if block.block_type != "question":
         raise HTTPException(status_code=400, detail="That block is not a question")
 
-    # JSON object keys are strings once this has been through Postgres, so
-    # store them as strings from the start -- otherwise a resumed attempt
-    # looks up "12" and misses the int key 12 it saved earlier.
     answers = dict(attempt.answers or {})
     answers[str(payload.block_id)] = payload.answer
     attempt.answers = answers
@@ -355,10 +306,6 @@ def submit_attempt(
     if material is None:
         raise HTTPException(status_code=404, detail="Material not available yet")
 
-    # A late submit is still accepted and marked: the pupil answered inside
-    # the window and only pressed the button after it closed (or their
-    # connection stalled). Refusing here would throw the work away. What the
-    # deadline does stop is *starting* a new attempt.
     questions = [b for b in material.blocks if b.block_type == "question"]
     score, max_score = score_attempt(questions, attempt.answers or {})
 
