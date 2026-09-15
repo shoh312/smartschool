@@ -471,4 +471,5 @@
     <string name="live_school_offline">Школьный сервер сейчас недоступен.</string>
     <string name="live_forbidden">Видео недоступно для этого ученика.</string>
     <string name="live_parent_hint">Вы видите класс только во время урока вашего ребёнка. Видео не записывается.</string>
+    <string name="live_now_count">Присутствуют %1$d из %2$d</string>
 </resources>

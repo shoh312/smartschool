@@ -128,12 +128,33 @@ class LiveVideoViewModel(private val repo: DirectorRepository, private val clien
     private var socket: WebSocket? = null
     private var silence: Job? = null
 
+    /** Who is in front of the camera right now: the camera status + live attendance + the roster. */
+    data class LessonNow(val status: CameraStatusDto?, val pupils: List<StudentDto>, val live: Map<Int, LiveStatusDto>)
+    private val _lesson = MutableStateFlow<Map<Int, LessonNow>>(emptyMap())
+    val lesson: StateFlow<Map<Int, LessonNow>> = _lesson.asStateFlow()
+    private var poll: Job? = null
+
     fun load() {
         viewModelScope.launch {
             val r = repo.cameras()
             _cameras.value = r.toUiState()
             val first = (r as? ApiResult.Ok)?.value?.firstOrNull { it.isActive }?.id
             if (_selected.value == null && first != null) select(first)
+        }
+        // Refresh the lesson panel every few seconds while the screen is open;
+        // one request at a time so a slow relay never piles them up.
+        poll?.cancel()
+        poll = viewModelScope.launch {
+            var students: List<StudentDto> = emptyList()
+            while (true) {
+                if (students.isEmpty()) students = (repo.students() as? ApiResult.Ok)?.value.orEmpty()
+                val statuses = (repo.cameraStatus() as? ApiResult.Ok)?.value.orEmpty()
+                val live = (repo.liveStatus() as? ApiResult.Ok)?.value.orEmpty().associateBy { it.studentId }
+                _lesson.value = statuses.associate { st ->
+                    st.cameraId to LessonNow(st, students.filter { it.classId != null && it.classId == st.classId }.sortedBy { it.lastName }, live)
+                }
+                delay(5_000)
+            }
         }
     }
 
@@ -187,7 +208,7 @@ class LiveVideoViewModel(private val repo: DirectorRepository, private val clien
         if (_state.value !is VideoState.Failed) _state.value = VideoState.Idle
     }
 
-    override fun onCleared() { disconnect() }
+    override fun onCleared() { poll?.cancel(); disconnect() }
 }
 
 // ------------------------------------------------------------- school

@@ -344,6 +344,7 @@ fun LiveVideoScreen(onBack: () -> Unit, vm: LiveVideoViewModel = koinViewModel()
     val state by vm.state.collectAsStateWithLifecycle()
     val cameras by vm.cameras.collectAsStateWithLifecycle()
     val selected by vm.selected.collectAsStateWithLifecycle()
+    val lesson by vm.lesson.collectAsStateWithLifecycle()
     val c = MaterialTheme.smart
     var fullscreen by remember { mutableStateOf(false) }
     val activity = LocalContext.current as? Activity
@@ -404,6 +405,53 @@ fun LiveVideoScreen(onBack: () -> Unit, vm: LiveVideoViewModel = koinViewModel()
                     Text(cam.name, style = MaterialTheme.typography.titleMedium, color = c.ink)
                     Text(listOfNotNull(cam.ipAddress, cam.rtspUrl).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary)
                 }
+            }
+            VSpace(12.dp)
+            LessonNowPanel(lesson[selected])
+        }
+    }
+}
+
+/** Under the video: the group in front of the camera right now and who has been seen. */
+@Composable
+private fun LessonNowPanel(now: LiveVideoViewModel.LessonNow?) {
+    val c = MaterialTheme.smart
+    val st = now?.status
+    val inLesson = st?.className != null && st.phase != "dars vaqti emas"
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (!inLesson || now == null) {
+            item { Text(stringResource(R.string.cam_idle), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary) }
+            return@LazyColumn
+        }
+        val came = now.pupils.count { AttendanceStatus.fromApi(now.live[it.id]?.status).arrived }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(st!!.className!!, style = MaterialTheme.typography.titleMedium, color = c.ink)
+                    Text(stringResource(R.string.live_now_count, came, now.pupils.size), style = MaterialTheme.typography.bodySmall, color = c.inkSecondary)
+                }
+                val (col, soft) = if (came == now.pupils.size && came > 0) c.mint to c.mintSoft else c.brand to c.brandSoft
+                Chip("$came/${now.pupils.size}", col, soft)
+            }
+        }
+        items(now.pupils, key = { it.id }) { p ->
+            val status = AttendanceStatus.fromApi(now.live[p.id]?.status)
+            val ok = status.arrived
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if (ok) c.mintSoft else c.surface).padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ChildAvatar(Child(p.id, p.firstName, p.lastName, p.className), 28.dp); HSpace(10.dp)
+                Text("${p.lastName} ${p.firstName}", style = MaterialTheme.typography.labelMedium, color = c.ink, modifier = Modifier.weight(1f), maxLines = 1)
+                val label = when (status) {
+                    AttendanceStatus.PRESENT -> stringResource(R.string.status_present)
+                    AttendanceStatus.LATE -> stringResource(R.string.status_late)
+                    AttendanceStatus.ABSENT -> stringResource(R.string.status_absent)
+                    AttendanceStatus.LEFT_SCHOOL -> stringResource(R.string.status_left)
+                    AttendanceStatus.UNKNOWN -> stringResource(R.string.status_unknown)
+                }
+                val (col, soft) = when (status) { AttendanceStatus.PRESENT, AttendanceStatus.LATE -> c.mint to c.mintSoft; AttendanceStatus.ABSENT -> c.rose to c.roseSoft; else -> c.inkTertiary to c.surfaceSoft }
+                Chip(label, col, soft)
             }
         }
     }

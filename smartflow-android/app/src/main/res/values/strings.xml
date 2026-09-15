@@ -496,4 +496,5 @@
     <string name="live_school_offline">The school server is offline right now.</string>
     <string name="live_forbidden">Live video is not available for this pupil.</string>
     <string name="live_parent_hint">You see the classroom only during your child\'s lesson. The video is not recorded.</string>
+    <string name="live_now_count">%1$d of %2$d present</string>
 </resources>

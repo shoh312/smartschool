@@ -60,6 +60,7 @@ data class CameraCreateRequest(
 @Serializable
 data class CameraStatusDto(
     @SerialName("camera_id") val cameraId: Int,
+    @SerialName("class_id") val classId: Int? = null,
     @SerialName("camera_name") val cameraName: String? = null,
     @SerialName("class_name") val className: String? = null,
     val connected: Boolean = false,

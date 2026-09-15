@@ -471,4 +471,5 @@
     <string name="live_school_offline">Сервери мактаб ҳозир дастнорас аст.</string>
     <string name="live_forbidden">Видео барои ин хонанда дастрас нест.</string>
     <string name="live_parent_hint">Шумо синфро танҳо ҳангоми дарси фарзандатон мебинед. Видео сабт намешавад.</string>
+    <string name="live_now_count">%1$d аз %2$d ҳозир</string>
 </resources>
