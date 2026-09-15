@@ -43,9 +43,6 @@ def parent_notifications(
     if actor.role == "parent" and parent_id not in actor.parent_ids:
         raise HTTPException(status_code=403, detail="Not your notifications")
 
-    # A parent with children at multiple schools has a sibling Parent row per
-    # school sharing the same phone -- return notifications for all of them,
-    # not just the one row `parent_id` happens to name.
     parent_ids = actor.parent_ids if actor.role == "parent" else [parent_id]
 
     return db.query(NotificationEvent).filter(

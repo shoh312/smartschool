@@ -16,10 +16,6 @@ from app.utils.academic_calendar import current_quarter, current_school_year
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
-# No UI anywhere lets a caller pick a school year -- every request implicitly
-# means "the current one". Once the app grows a year picker, thread an
-# explicit school_year query param through these endpoints the same way
-# quarter already is, instead of hardcoding current_school_year() here.
 QuarterParam = Query(default=None, ge=1, le=4)
 
 
@@ -80,12 +76,6 @@ def class_subject_breakdown(
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    """Which subjects this class is strong and weak in.
-
-    Staff only, and scoped to the caller's own school like every other
-    class-level endpoint here -- a class id from another school reads as
-    404, not 403, so the endpoint can't be used to probe what exists.
-    """
     _require_director_or_teacher(actor)
     school_class = db.query(Class).filter(Class.id == class_id).first()
     if not school_class or school_class.school_id != _actor_school_id(actor):

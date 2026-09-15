@@ -20,13 +20,6 @@ from app.utils.security import (
     verify_password,
 )
 
-# The first director's login, on an install that has none yet.
-#
-# Configurable because it is a fact about one school, not about the system:
-# an academy called CICT wants director@cict.tj and would rather not explain
-# to its own director why they sign in as somebody else's school. The
-# fallback keeps every existing install working -- their director already
-# exists under this address and nothing here touches it.
 DEFAULT_DIRECTOR_EMAIL = (
     os.getenv("SMARTSCHOOL_ADMIN_EMAIL", "").strip().lower()
     or "director@smartschool.com"
@@ -69,28 +62,11 @@ def verify_access_token(token: str) -> int:
 
 
 def get_parent_family_ids(db: Session, parent: Parent) -> list[int]:
-    """All Parent rows sharing this parent's phone number, across every school.
-
-    A parent's phone is the only login credential, and Parent rows are scoped
-    one-per-school (see student_router.py's director_create_student), so a
-    parent with children at two different schools ends up with two separate
-    Parent rows sharing the same phone. Anywhere that authorizes or fetches
-    "this parent's own data" (students, grades, attendance, notifications)
-    should check/query against this whole set, not a single parent.id, or a
-    multi-school parent only ever sees one school's worth of data.
-    """
     rows = db.query(Parent.id).filter(Parent.phone == parent.phone).all()
     return [row[0] for row in rows]
 
 
 def login_parent(db: Session, phone: str, firebase_token: str | None, platform: str | None):
-    # NOTE: parent login is phone-only with no school selection step, and
-    # Parent.phone is now scoped per-school at creation time (see
-    # student_router.py), so a parent with children in two different schools
-    # ends up with two separate Parent rows sharing the same phone. This
-    # `.first()` only surfaces one of them -- a known limitation, not a
-    # cross-school data leak (each row still only sees its own school's
-    # students). A real fix needs a school-selection step in the login flow.
     parent = db.query(Parent).filter(Parent.phone == normalize_phone(phone)).first()
     if not parent:
         raise HTTPException(status_code=404, detail="Parent not found")
@@ -178,21 +154,6 @@ def create_director_token(director: Director) -> str:
 
 
 def _initial_director_password() -> tuple[str, bool]:
-    """Password for the first director of a fresh install, and whether it was
-    invented here.
-
-    DEFAULT_DIRECTOR_PASSWORD sits in a public repository, which means every
-    fresh install's superadmin password would be readable on the internet.
-    The school server only listens on the school's own network, but that is
-    not enough to shrug at: anyone on that wifi could become superadmin, and
-    a superadmin can create a director for any school in the system.
-
-    So the password comes from the environment, and when nothing is set one
-    is generated and printed once. Either way it is not in the repository.
-
-    Installations that already have a director never reach this -- their
-    password is whatever they set, and nothing here touches it.
-    """
     from_env = os.getenv("SMARTSCHOOL_ADMIN_PASSWORD", "").strip()
     if from_env:
         return from_env, False
@@ -217,8 +178,6 @@ def ensure_default_director(db: Session, default_school_id: int | None = None) -
         db.commit()
         db.refresh(director)
         if generated:
-            # Printed once and never stored anywhere else. Under Docker this
-            # is what `docker compose logs app` shows on the first run.
             print("")
             print("=== BIRINCHI DIREKTOR YARATILDI ===")
             print("  login : " + DEFAULT_DIRECTOR_EMAIL)
@@ -234,8 +193,6 @@ def ensure_default_director(db: Session, default_school_id: int | None = None) -
 
     still_default = verify_password(DEFAULT_DIRECTOR_PASSWORD, director.hashed_password)
     if director.must_change_password != still_default:
-        # Recomputed on every start rather than set once: an account whose
-        # password was reset back to the default has to be caught again.
         director.must_change_password = still_default
         db.commit()
 
@@ -260,8 +217,6 @@ def change_director_password(db: Session, director: Director, current_password: 
     if len(new_password) < MIN_PASSWORD_LENGTH:
         raise HTTPException(status_code=400, detail="password_too_short")
     if new_password == DEFAULT_DIRECTOR_PASSWORD:
-        # Otherwise the forced-change screen can be satisfied by typing the
-        # very password it exists to get rid of.
         raise HTTPException(status_code=400, detail="password_is_default")
     director.hashed_password = hash_password(new_password)
     director.must_change_password = False

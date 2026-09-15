@@ -6,12 +6,6 @@ from app.database import Base
 
 
 class LessonAttendance(Base):
-    """Per-lesson attendance, additive alongside the existing day-level
-    `Attendance` table -- that table and everything reading it (live-status,
-    class-analytics, monthly-report, parent history) stays untouched. This
-    table exists so a student's attendance can be judged per subject/period
-    (e.g. absent from Math 3rd period) instead of only once per day.
-    """
 
     __tablename__ = "lesson_attendance"
     __table_args__ = (

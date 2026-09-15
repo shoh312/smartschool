@@ -87,10 +87,6 @@ app = FastAPI(title="SmartSchool Backend")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    # No cookies are used (auth is a Bearer token in the Authorization header), so
-    # allow_credentials must stay False -- browsers reject "*" origins combined with
-    # allow_credentials=True, and there's no fixed origin since this runs on varying
-    # school-local-network IPs.
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -118,18 +114,6 @@ app.include_router(material_router)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError):
-    """Turns a rejected form back into a message the app can show.
-
-    FastAPI's own handler echoes the offending input back in the error, and
-    on a multipart request that input is the uploaded photo -- megabytes of
-    JPEG. Encoding it as JSON calls bytes.decode(), which dies on the first
-    byte that is not UTF-8, and the clean 422 ("parent_phone is required")
-    becomes an opaque 500 the director sees as "error" with nothing to act
-    on. Registering a student is the one form in the app that sends a file,
-    which is why this only ever bit there.
-
-    So the input is dropped and only the location and the reason are kept.
-    """
     safe = [
         {"loc": [str(part) for part in error.get("loc", [])],
          "msg": error.get("msg", ""),
@@ -148,20 +132,13 @@ def root():
 async def start_background_tasks():
     from app.realtime import set_main_loop
 
-    # Lets the sync camera-detection thread and FastAPI's sync-endpoint
-    # threadpool schedule work (websocket broadcasts, waking the sync
-    # worker) onto this loop -- see app/realtime.py.
     set_main_loop(asyncio.get_running_loop())
 
     asyncio.create_task(attendance_background_loop())
     asyncio.create_task(analytics_sync_loop())
     asyncio.create_task(diary_sync_loop())
     asyncio.create_task(sync_background_loop())
-    # The one loop that reads FROM the Public Server: pupils' finished test
-    # work, which is written there because that's where the pupil is.
     asyncio.create_task(attempt_pull_loop())
     asyncio.create_task(start_discovery_responder(settings.school_server_port))
-    # Dials out to the Public Server and stays connected, so phones off the
-    # school Wi-Fi can still reach this box (see app/relay_client.py).
     asyncio.create_task(relay_loop())
     threading.Thread(target=start_detection_background, daemon=True).start()

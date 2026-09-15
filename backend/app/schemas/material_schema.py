@@ -3,24 +3,13 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-# Tajikistan, UTC+5, no DST -- the same constant the journal router uses to
-# decide what "today" means in a classroom.
 SCHOOL_TZ = timezone(timedelta(hours=5))
 
 
 def to_utc_naive(value: datetime | None) -> datetime | None:
-    """Normalise an incoming deadline to naive UTC.
-
-    Deadlines are compared against ``datetime.utcnow()`` on both servers, so
-    they have to be *stored* in UTC. A phone sends either an offset-aware
-    time or a bare local one; taking a bare "17:00" at face value would put
-    the deadline five hours late in Dushanbe, quietly giving a class an
-    extra evening on every control test.
-    """
     if value is None:
         return None
     if value.tzinfo is None:
-        # No offset: the teacher typed a wall-clock time, which is school time.
         value = value.replace(tzinfo=SCHOOL_TZ)
     return value.astimezone(timezone.utc).replace(tzinfo=None)
 
@@ -39,9 +28,6 @@ class MaterialBlockIn(BaseModel):
 
     @model_validator(mode="after")
     def _check_shape(self):
-        # A question with no `correct` can never be answered right, and the
-        # pupil only finds out at the end -- reject it at authoring time
-        # instead, while the teacher is still looking at it.
         if self.block_type == "question":
             if not self.question_type:
                 raise ValueError("A question block needs a question_type")
@@ -63,7 +49,6 @@ class MaterialBlockOut(MaterialBlockIn):
 class MaterialCreate(BaseModel):
     title: str = Field(min_length=1)
     description: Optional[str] = None
-    # Optional: a teacher who has only one subject gets it filled in for them.
     subject: Optional[str] = None
     blocks: list[MaterialBlockIn] = []
 
@@ -71,13 +56,10 @@ class MaterialCreate(BaseModel):
 class MaterialUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    # Replaces the whole run when present -- the editor always sends the
-    # full ordered list, which keeps positions dense without a reorder API.
     blocks: Optional[list[MaterialBlockIn]] = None
 
 
 class MaterialSummaryOut(BaseModel):
-    """List row: everything the library screen shows, no block payload."""
 
     id: int
     title: str
@@ -132,8 +114,6 @@ class AssignmentOut(BaseModel):
     max_score: int
     student_count: int
     submitted_count: int
-    # False until the deadline passes (or everyone has submitted) on a
-    # control assignment -- see material_service.results_are_visible.
     results_visible: bool
 
 
@@ -142,8 +122,6 @@ class AssignmentResultRow(BaseModel):
     student_name: str
     submitted_at: Optional[datetime] = None
     attempt_count: int = 0
-    # All of these stay None until results_visible, so a locked assignment
-    # can reuse the same response shape.
     score: Optional[int] = None
     max_score: Optional[int] = None
     percent: Optional[int] = None
@@ -167,19 +145,11 @@ class GradeTransferRequest(BaseModel):
 
 
 class AiBlockOut(MaterialBlockIn):
-    """A drafted block. Deliberately not MaterialBlockOut: nothing has been
-    saved, so there is no id to report -- and inheriting MaterialBlockIn
-    means the model's output is held to the same shape rules as anything a
-    teacher types by hand before it is ever shown to them."""
 
     position: int = 0
 
 
 class AiGenerateResponse(BaseModel):
-    """A drafted material on its way to the teacher for review -- never
-    straight into the library. `dropped_count` is how many blocks the model
-    produced that couldn't be made answerable, so the app can say why there
-    are eight questions when ten were asked for."""
 
     title: str = ""
     description: Optional[str] = None

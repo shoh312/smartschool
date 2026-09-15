@@ -43,20 +43,10 @@ class CameraResponse(CameraCreate):
 
 
 class SchoolSettings(BaseModel):
-    """The switches a director owns for their whole school."""
 
     live_video_enabled: bool
     group_mode: bool
-    # Master stop for Robita SMS (credential texts, attendance-SMS fallback)
-    # -- for a school whose schedule is entered but has no camera watching
-    # it yet, so absence texts can be silenced without disabling the
-    # schedule itself.
     sms_enabled: bool
-    # Pauses attendance recording (both "present" from a camera and
-    # "absent" from the day-end sweep) for the whole school -- for the same
-    # gap between "schedule is entered" and "a camera is actually watching
-    # it" that sms_enabled covers, but for the underlying data rather than
-    # just the notification.
     is_active: bool
 
     class Config:
@@ -74,10 +64,7 @@ class CameraPositionCreate(BaseModel):
     class_id: int
     start_time: str
     end_time: str
-    # Defaults to the group's own name, which for an academy is
-    # usually the subject anyway ("PYTHON 4").
     subject: Optional[str] = None
-    # None means "every day", which is how most academy timetables run.
     day_of_week: Optional[int] = None
 
 

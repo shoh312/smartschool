@@ -248,10 +248,6 @@ def director_delete_teacher(
 
     db.query(Grade).filter(Grade.teacher_id == teacher_id).delete(synchronize_session=False)
     db.query(TeacherClass).filter(TeacherClass.teacher_id == teacher_id).delete(synchronize_session=False)
-    # "homework" has no ORM model (the feature was removed from the app) but
-    # the table -- and its FK to teachers -- is still in the database on
-    # installations that had it. A fresh database never creates it, so guard
-    # with to_regclass the same way database.py does for room_positions.
     if db.execute(text("SELECT to_regclass('public.homework')")).scalar():
         db.execute(text("DELETE FROM homework WHERE teacher_id = :teacher_id"), {"teacher_id": teacher_id})
     db.delete(teacher)

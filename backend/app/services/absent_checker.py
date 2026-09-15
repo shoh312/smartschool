@@ -2,9 +2,6 @@ from app.database import SessionLocal
 
 from app.services.attendance_service import mark_absent_students
 
-# =====================================================
-# CHECK ABSENT
-# =====================================================
 
 def check_absent_students():
 

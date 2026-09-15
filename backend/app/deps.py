@@ -90,16 +90,11 @@ def get_current_superadmin(
 
 @dataclass
 class AuthActor:
-    """A logged-in director, teacher, or parent, whichever the bearer token maps to."""
 
     role: str
     director: Director | None = None
     parent: Parent | None = None
     teacher: Teacher | None = None
-    # For role="parent": every Parent row sharing this parent's phone number
-    # (one row per school they have children in). Always includes at least
-    # `parent.id`. Endpoints authorizing/fetching "this parent's own data"
-    # should check membership here, not a single `parent.id`.
     parent_ids: list[int] = field(default_factory=list)
 
 
@@ -107,11 +102,6 @@ def get_current_actor(
     authorization: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> AuthActor:
-    """Accepts a director JWT or a parent HMAC token and returns whichever matched.
-
-    Used by endpoints that both roles legitimately call (e.g. attendance history),
-    where authorization to specific rows is enforced by the endpoint itself.
-    """
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -153,14 +143,6 @@ def get_current_actor(
 
 
 async def get_current_director_ws(websocket: WebSocket, db: Session = Depends(get_db)) -> Director:
-    """Websocket clients can't send custom headers as easily as HTTP clients, so the
-    director JWT is passed as a `token` query parameter instead of an Authorization header.
-
-    The handshake is always accepted before any rejection close(): closing a websocket
-    that was never accepted doesn't produce a clean handshake failure on every client
-    (some just see the raw TCP connection abort), whereas accept-then-close is reliably
-    understood by websocket clients as "connected, then the server ended the session".
-    """
     token = websocket.query_params.get("token")
     if not token:
         await websocket.accept()

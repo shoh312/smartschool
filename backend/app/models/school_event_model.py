@@ -6,10 +6,6 @@ from app.database import Base
 
 
 class SchoolEvent(Base):
-    """A calendar entry: holiday, exam, control-work day, or general event.
-    `class_id` null means it applies to the whole school; set, it applies
-    only to that class (e.g. one class's control-work day).
-    """
 
     __tablename__ = "school_events"
 
@@ -23,7 +19,6 @@ class SchoolEvent(Base):
 
     description = Column(Text, nullable=True)
 
-    # "holiday" | "exam" | "test" | "event"
     event_type = Column(String, nullable=False)
 
     start_date = Column(Date, nullable=False, index=True)

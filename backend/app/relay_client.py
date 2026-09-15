@@ -1,19 +1,3 @@
-# -*- coding: utf-8 -*-
-"""The school server's end of the relay (see the Public Server's
-``routers/relay_router.py`` for the wire format).
-
-This server has no address on the internet. What it has is an outbound
-route to the Public Server, so it dials out, keeps that socket open, and
-answers whatever comes back down it against its own API -- in-process for
-HTTP, and over a loopback websocket for the streams. A director on mobile
-data ends up talking to this box exactly as they would on the school Wi-Fi,
-only slower.
-
-The connection is kept alive for the life of the process and re-dialled
-with a backoff whenever it drops: the public server restarting, the
-school's internet flapping, the router rebooting at night. None of that
-needs a person.
-"""
 
 import asyncio
 import base64
@@ -32,9 +16,6 @@ logger = logging.getLogger(__name__)
 RECONNECT_MIN = 3
 RECONNECT_MAX = 60
 
-# A fresh secret per tunnel connection. The public server gets it in the
-# hello and uses it to open parent live streams (see websocket_router
-# /ws/parent-stream); nothing else on the network knows it.
 current_relay_secret: str | None = None
 
 
@@ -48,7 +29,6 @@ def _tunnel_url() -> str:
 
 
 async def relay_loop() -> None:
-    """Runs forever. Started from main.py alongside the other background loops."""
     if not settings.public_server_api_key:
         logger.warning("relay: PUBLIC_SERVER_API_KEY is empty; the school will not be reachable from outside")
         return
@@ -57,15 +37,13 @@ async def relay_loop() -> None:
         try:
             await _serve_once()
             delay = RECONNECT_MIN
-        except Exception as exc:  # noqa: BLE001 -- keep dialling whatever went wrong
+        except Exception as exc:
             logger.warning("relay: link down (%s); retrying in %ss", type(exc).__name__, delay)
         await asyncio.sleep(delay + random.uniform(0, 2))
         delay = min(delay * 2, RECONNECT_MAX)
 
 
 async def _serve_once() -> None:
-    # Imported here, not at module top: main.py imports this module, and the
-    # app object does not exist until main.py has finished.
     from app.main import app
 
     url = _tunnel_url()
@@ -130,7 +108,7 @@ async def _answer_http(client: httpx.AsyncClient, payload: dict, send_json) -> N
             "headers": {k: v for k, v in response.headers.items() if k.lower() in ("content-type", "content-disposition", "cache-control")},
             "body_b64": base64.b64encode(response.content).decode("ascii"),
         })
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("relay: request %s failed: %s", request_id, exc)
         await send_json({
             "type": "http_response", "id": request_id, "status": 502,
@@ -140,7 +118,6 @@ async def _answer_http(client: httpx.AsyncClient, payload: dict, send_json) -> N
 
 
 class _Stream:
-    """One tunnelled websocket, mirrored onto a loopback socket to ourselves."""
 
     def __init__(self, stream_id: str, path: str, query: str, send_json, send_frame):
         self.id = stream_id
@@ -162,10 +139,8 @@ class _Stream:
                         await self.send_frame(self.id, b"b", bytes(message))
                     else:
                         await self.send_frame(self.id, b"t", message.encode("utf-8"))
-                # The close reason ("no_lesson", "live_video_disabled") travels
-                # back so the phone can say why instead of "connection lost".
                 reason = getattr(local, "close_reason", None)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             reason = getattr(getattr(exc, "rcvd", None), "reason", None) or reason
             logger.debug("relay: stream %s ended: %s", self.id, exc)
         finally:

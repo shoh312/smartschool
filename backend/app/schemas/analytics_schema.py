@@ -10,12 +10,6 @@ class SubjectAverage(BaseModel):
 
 
 class ClassSubjectAverage(BaseModel):
-    """One subject's standing across a whole class.
-
-    Separate from [SubjectAverage] because of ``student_count``: for one
-    pupil that number is always 1 and would be noise, but for a class it is
-    what says whether the average covers everybody or a handful.
-    """
 
     subject: str
     average: float

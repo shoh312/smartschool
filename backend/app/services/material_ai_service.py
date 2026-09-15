@@ -1,27 +1,8 @@
-"""Drafting lesson material with Gemini.
-
-The teacher gives a starting point -- a topic, a photograph of a textbook
-page, or text pasted from wherever they already keep it -- and this returns
-the same block list the editor and the paste importer produce. Nothing is
-saved: the teacher reviews and edits every block before any of it becomes a
-material, because a model that is mostly right about quadratic equations is
-still occasionally confidently wrong, and this ends up in front of children.
-
-The two things that make the output usable rather than a wall of prose:
-
-* a ``responseSchema``, so Gemini answers in the block structure directly;
-* a validation pass, which holds every block to the same rules the editor
-  enforces and drops what can't be repaired -- a question with no correct
-  answer can never be answered right, and the pupil only finds that out at
-  the end of the test.
-"""
 
 import re
 
 from app.services.gemini_client import GeminiError, generate_json, image_part, text_part
 
-# Mirrors app/models/material_model.py; kept as plain strings so the prompt
-# and the schema can't drift from the model's own vocabulary.
 QUESTION_TYPES = ("single", "truefalse", "fill", "match", "order")
 
 DIFFICULTIES = ("easy", "medium", "hard")
@@ -47,16 +28,6 @@ _RESPONSE_SCHEMA = {
                     "block_type": {"type": "STRING", "enum": ["page", "question"]},
                     "body": {"type": "STRING"},
                     "question_type": {"type": "STRING", "enum": list(QUESTION_TYPES)},
-                    # Two fields, both plain, for every question type.
-                    #
-                    # There used to be seven (single_options,
-                    # single_correct_index, truefalse_answer, fill_answers,
-                    # match_left, match_right, order_items) and the model
-                    # could not keep them straight: it stamped
-                    # truefalse_answer on *every* question and left the
-                    # type's own field empty, so roughly half of what it
-                    # produced was unanswerable and got dropped. Fewer
-                    # slots, and no per-type choice to get wrong.
                     "options": {"type": "ARRAY", "items": {"type": "STRING"}},
                     "answer": {"type": "STRING"},
                 },
@@ -103,14 +74,6 @@ _DIFFICULTY_HINTS = {
 
 
 def _distribute(question_count: int, types: list[str]) -> dict[str, int]:
-    """How many questions of each selected type.
-
-    Asking for "use these types" produced almost nothing but true/false:
-    given a free choice the model reaches for the cheapest question to
-    write. Handing it an explicit quota per type is what actually spreads
-    them out. The remainder goes to the types the teacher listed first,
-    which are the ones they picked most deliberately.
-    """
     base, remainder = divmod(question_count, len(types))
     return {
         question_type: base + (1 if index < remainder else 0)
@@ -167,8 +130,6 @@ def _build_prompt(
         + (f" va bu material {class_name} sinfi uchun." if class_name else ".")
         + f"\n\n{source}\n\n"
         f"Vazifa: {structure}\n\n"
-        # A bare list of allowed types produced almost nothing but
-        # true/false; a quota per type is what actually spreads them.
         f"Savol turlari AYNAN shunday taqsimlansin (majburiy): {wanted_types}.\n"
         f"{type_rules}\n\n"
         f"{_DIFFICULTY_HINTS.get(difficulty, '')}\n\n"
@@ -182,29 +143,17 @@ def _build_prompt(
         "- 'title' ga materialning qisqa nomini, 'description' ga bir jumlalik "
         "izohini yoz.\n"
         "- Savol matnida javobning o'zi yozilib qolmasin.\n"
-        # The app renders plain text, so LaTeX arrives on the pupil's screen
-        # as literal backslashes and braces.
         "- Formulalarni ODDIY MATN bilan yoz: a^2 + b^2 = c^2, sqrt(16), 1/2. "
         "LaTeX belgilarini ishlatma.\n"
         f"- AYNAN {question_count} ta savol bo'lsin -- kam ham, ko'p ham emas."
     )
 
 
-# --------------------------------------------------------------------------
-# Validation
-# --------------------------------------------------------------------------
-
 def _clean(value) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
 
 def _fold(value: str) -> str:
-    """Loosest sensible comparison for "is this the same answer".
-
-    The model routinely writes the correct option back as "5." or "5)" when
-    the option itself is "5"; letting a trailing full stop throw away an
-    otherwise perfect question would be absurd.
-    """
     text = re.sub(r"[.,;:!?)\]}\s]+$", "", value.strip())
     return re.sub(r"\s+", " ", text).casefold()
 
@@ -216,16 +165,6 @@ def _clean_list(values) -> list[str]:
 
 
 def _validate_block(raw: dict) -> dict | None:
-    """Turn one raw block into an editor-shaped one, or None to drop it.
-
-    Dropping is deliberate. Everything here is a case where the block cannot
-    be answered correctly no matter what the pupil does -- a matching
-    question with four items on the left and three on the right, a
-    multiple-choice question whose correct index points past the end of the
-    options. Handing those to the teacher as something to "fix" is worse
-    than not offering them: the fault isn't visible until someone sits the
-    test.
-    """
     if not isinstance(raw, dict):
         return None
 
@@ -234,8 +173,6 @@ def _validate_block(raw: dict) -> dict | None:
         return None
 
     if raw.get("block_type") == "page":
-        # Pages keep their paragraph breaks; only questions are collapsed
-        # to a single line.
         return {"block_type": "page", "body": str(raw.get("body")).strip(), "points": 0}
 
     question_type = raw.get("question_type")
@@ -251,10 +188,7 @@ def _validate_block(raw: dict) -> dict | None:
         if len(options) < 2 or not answer:
             return None
         if len(set(options)) != len(options):
-            return None  # a duplicated option means two "correct" answers
-        # Matched by text, not by an index the model kept forgetting to
-        # send. A near-miss on spacing or a trailing full stop shouldn't
-        # cost a whole question, so compare loosely.
+            return None
         folded = [_fold(o) for o in options]
         try:
             index = folded.index(_fold(answer))
@@ -284,8 +218,6 @@ def _validate_block(raw: dict) -> dict | None:
         block["correct"] = {"answers": answers}
 
     elif question_type == "match":
-        # Each option is one "left = right" pair, so the two sides can't
-        # come back different lengths the way two separate lists did.
         left: list[str] = []
         right: list[str] = []
         for option in options:
@@ -299,7 +231,6 @@ def _validate_block(raw: dict) -> dict | None:
         if len(left) < 2:
             return None
         block["options"] = {"left": left, "right": right}
-        # Authored in matching order, same convention as the editor.
         block["correct"] = {"pairs": [[i, i] for i in range(len(left))]}
 
     elif question_type == "order":
@@ -340,16 +271,9 @@ def _validate(parsed: dict, kind: str) -> dict:
         "title": _clean(parsed.get("title")) or "",
         "description": _clean(parsed.get("description")) or None,
         "blocks": blocks,
-        # Surfaced so the teacher is told when the model produced fewer
-        # questions than they asked for, instead of quietly getting six
-        # when they wanted ten.
         "dropped_count": dropped,
     }
 
-
-# --------------------------------------------------------------------------
-# Entry point
-# --------------------------------------------------------------------------
 
 def generate_material(
     *,
@@ -366,7 +290,6 @@ def generate_material(
     difficulty: str = "medium",
     language: str = "tojik (kirill)",
 ) -> dict:
-    """Draft a material. Returns ``{title, description, blocks, dropped_count}``."""
     if not (topic or source_text or image_bytes):
         raise MaterialAiError("Mavzu, matn yoki surat kerak")
 
@@ -402,10 +325,6 @@ def generate_material(
     try:
         result = _validate(call(prompt), kind)
     except MaterialAiError:
-        # Everything it produced was unanswerable -- in practice this means
-        # it filled the wrong answer field for the question type it chose.
-        # One more attempt, with the field names spelled out again, beats
-        # handing the teacher an error for something a retry usually fixes.
         result = _validate(
             call(
                 prompt
@@ -416,10 +335,6 @@ def generate_material(
             kind,
         )
 
-    # The count the teacher asked for is a promise, and until now it wasn't
-    # kept: the model tends to write a few short, and validation then drops
-    # any that came back unanswerable, so "10" arrived as six or seven. Ask
-    # once more for exactly the shortfall and append what comes back.
     questions = [b for b in result["blocks"] if b["block_type"] == "question"]
     missing = question_count - len(questions)
     if missing > 0:
@@ -438,7 +353,6 @@ def generate_material(
             missing -= 1
         result["dropped_count"] += extra["dropped_count"]
 
-    # And trim if it overshot, so "exactly N" holds in both directions.
     result["blocks"] = _trim_questions(result["blocks"], question_count)
     for position, block in enumerate(result["blocks"]):
         block["position"] = position
@@ -465,12 +379,6 @@ def _top_up_prompt(base_prompt: str, missing: int, short: dict[str, int]) -> str
 
 
 def _trim_questions(blocks: list[dict], limit: int) -> list[dict]:
-    """Keep at most `limit` questions, dropping the last ones.
-
-    Trimming from the end rather than anywhere keeps a lesson's opening
-    pages and their questions intact; what goes is the tail the model added
-    beyond what was asked for.
-    """
     kept: list[dict] = []
     seen = 0
     for block in blocks:

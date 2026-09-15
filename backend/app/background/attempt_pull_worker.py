@@ -1,20 +1,3 @@
-"""Collects pupils' finished test work from the Public Server.
-
-Every other piece of data in this system travels one way: written here,
-pushed out. Test attempts are the exception -- a pupil sits at home, where
-only the Public Server is reachable, so their answers are written there.
-
-This server sits on the school's LAN with no inbound route from the
-internet, and that is worth keeping: it means the pupil database, the
-cameras and the journal are simply not addressable from outside. So instead
-of letting the Public Server call in, *we* call out on a timer, take
-whatever is waiting, and acknowledge it.
-
-The acknowledge happens strictly after the local commit, so the worst case
-of a crash mid-transfer is the same attempts arriving twice -- and
-`public_id` is unique, so the second arrival updates the same row instead
-of duplicating it.
-"""
 
 import asyncio
 from datetime import datetime
@@ -41,13 +24,6 @@ def _parse_dt(value):
 
 
 def _apply_attempt(db, row: dict) -> bool:
-    """Upsert one pulled attempt. Returns True if it can be acknowledged.
-
-    An attempt whose assignment or pupil doesn't exist locally is *not*
-    acknowledged: that means the two databases genuinely disagree, and
-    dropping the row would silently lose a pupil's work. Leaving it unacked
-    makes it come back next pass, once whatever is missing has synced.
-    """
     assignment = (
         db.query(MaterialAssignment)
         .filter(MaterialAssignment.id == row.get("local_assignment_id"))
@@ -78,7 +54,6 @@ def _apply_attempt(db, row: dict) -> bool:
 
 
 async def pull_attempts_once() -> int:
-    """One round trip. Returns how many attempts were stored."""
     if not settings.public_server_api_key:
         return 0
 
@@ -105,7 +80,6 @@ async def pull_attempts_once() -> int:
             db.close()
 
         if acked:
-            # Only now, with the rows durable on our side.
             await client.post(
                 f"{settings.public_server_url}/sync/attempts/ack",
                 json={"public_ids": acked},
@@ -119,10 +93,7 @@ async def attempt_pull_loop():
         try:
             await pull_attempts_once()
         except (httpx.HTTPError, OSError):
-            # The Public Server being unreachable is the normal state of a
-            # school with a flaky line, not an error worth stopping over --
-            # the same attempts are still waiting on the next pass.
             pass
-        except Exception as exc:  # noqa: BLE001 -- a bad row must not kill the loop
+        except Exception as exc:
             print(f"[attempt-pull] unexpected error: {ascii(str(exc))}")
         await asyncio.sleep(POLL_INTERVAL_SECONDS)

@@ -6,9 +6,6 @@ from app.database import Base
 
 
 class Announcement(Base):
-    """A director's post to teachers/parents (e.g. "Payshanba kuni yig'ilish").
-    `class_id` null means it targets the whole school; set, only that class.
-    """
 
     __tablename__ = "announcements"
 

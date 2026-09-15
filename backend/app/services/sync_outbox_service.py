@@ -12,22 +12,12 @@ from app.realtime import wake_sync_worker
 
 @event.listens_for(Session, "before_commit")
 def _mark_pending_sync_wake(session: Session) -> None:
-    # `session.new` is only populated up to the point the flush/commit
-    # clears it, so this has to run in before_commit (not after_commit,
-    # where it'd already be empty) -- stash the result on session.info to
-    # read back once the commit has actually landed.
     if any(isinstance(obj, SyncOutboxEntry) for obj in session.new):
         session.info["_wake_sync_after_commit"] = True
 
 
 @event.listens_for(Session, "after_commit")
 def _wake_sync_worker_after_commit(session: Session) -> None:
-    # Waking the drain loop only after the transaction that added the
-    # SyncOutboxEntry has actually committed -- not at enqueue time, before
-    # the caller's own db.commit() -- avoids a race where the loop wakes,
-    # queries, finds nothing yet (row not durable/visible), and falls all
-    # the way back to the POLL_INTERVAL_SECONDS timeout anyway, defeating
-    # the point of waking it early at all.
     if session.info.pop("_wake_sync_after_commit", False):
         wake_sync_worker()
 
@@ -58,20 +48,12 @@ def _parent_payload(parent: Parent) -> dict:
     return {
         "phone": parent.phone,
         "full_name": parent.full_name,
-        # The hash, never the password. It is generated on this machine (see
-        # credentials_service) because that is where the SMS is sent from,
-        # and it has to reach the Public Server because that is where the
-        # parent actually signs in.
         "password_hash": parent.password_hash,
         "password_salt": parent.password_salt,
     }
 
 
 def _resolve_parent_and_class(db: Session, student: Student):
-    """Returns (parent, class_obj) or (None, None) if this student has no
-    parent phone to sync to -- nothing for the Public Server to attach the
-    event to, so callers should skip enqueueing entirely in that case.
-    """
     if not student.parent_id:
         return None, None
     parent = db.query(Parent).filter(Parent.id == student.parent_id).first()
@@ -86,12 +68,6 @@ def _resolve_parent_and_class(db: Session, student: Student):
 
 
 def _enqueue(db: Session, entity_type: str, entity_id: int, operation: str, payload: dict) -> None:
-    # Add-only, no commit -- the caller's own db.commit() (right after this
-    # call, alongside the source-of-truth write) is what makes this durable.
-    # See SyncOutboxEntry's docstring for why that ordering matters. The
-    # drain loop's wake-up is triggered by the after_commit session event
-    # below (not here) -- see its comment for why it can't happen at
-    # enqueue time.
     db.add(
         SyncOutboxEntry(
             entity_type=entity_type,
@@ -103,13 +79,6 @@ def _enqueue(db: Session, entity_type: str, entity_id: int, operation: str, payl
 
 
 def enqueue_student_event(db: Session, student: Student, operation: str = "upsert") -> None:
-    """Send a pupil's own record across.
-
-    Used to return early when the pupil had no parent phone -- which
-    silently stranded every such pupil on the school server, login and all,
-    so they could sign in on the school's network and nowhere else. A pupil
-    exists whether or not the school wrote down a parent's number.
-    """
     parent, class_obj = _resolve_parent_and_class(db, student)
     if parent is None:
         class_obj = (
@@ -165,14 +134,6 @@ def enqueue_grade_event(db: Session, grade, operation: str = "upsert") -> None:
 
 
 def enqueue_student_analytics_event(db: Session, student: Student, overview: dict) -> None:
-    """Pushes a pre-computed ranking/analytics snapshot (see
-    analytics_service.build_student_overview) to the Public Server. Ranking
-    needs the whole class/parallel/school roster, which the Public Server
-    never has a full copy of (it only ever receives one child's own data per
-    sync event) -- so unlike grades/attendance, this can't be recomputed
-    there from synced rows. The local server computes it and pushes the
-    finished numbers instead, same as every other synced entity.
-    """
     parent, class_obj = _resolve_parent_and_class(db, student)
     if not parent:
         return
@@ -237,13 +198,6 @@ def enqueue_diary_event(
     homework: str | None,
     teacher_comment: str | None,
 ) -> None:
-    """Diary content is identical for every student in `class_id` -- fanned
-    out as one outbox row per student (see `_enqueue`'s entity_id choice
-    below) so it reuses the existing per-student outbox/retry machinery
-    untouched instead of a second, parallel broadcast path. Public Server
-    dedupes these back down to one row on ingest (unique on school_id +
-    local_lesson_id + log_date, not per-student).
-    """
     for student in _students_for_class(db, class_id):
         parent, class_obj = _resolve_parent_and_class(db, student)
         if not parent:
@@ -251,11 +205,6 @@ def enqueue_diary_event(
         _enqueue(
             db,
             "diary",
-            # A distinct id per fanned-out row (not the shared lesson_id) so
-            # the sync worker's in-batch ordering guard -- which skips any
-            # repeat (entity_type, entity_id) pair within one drain pass --
-            # doesn't silently defer N-1 of these N identical-content rows to
-            # later polls. See sync_worker.py::drain_outbox_once.
             student.id,
             "upsert",
             {
@@ -365,17 +314,6 @@ def enqueue_attendance_event(db: Session, attendance, operation: str = "upsert")
     )
 
 
-# --------------------------------------------------------------------------
-# Learning materials
-#
-# The odd ones out: these carry no parent/student block. Every other event
-# type is fanned out once per affected pupil because the Public Server keys
-# its data off a parent's family, but a material belongs to a *class* -- and
-# pupils now sign in for themselves, so a pupil with no parent on file must
-# still receive their homework. Sending one class-scoped event instead also
-# avoids shipping the same question bank thirty times over.
-# --------------------------------------------------------------------------
-
 def _material_payload(material) -> dict:
     return {
         "local_id": material.id,
@@ -384,8 +322,6 @@ def _material_payload(material) -> dict:
         "description": material.description,
         "teacher_name": material.teacher_name,
         "max_score": material.max_score,
-        # Correct answers travel with the blocks: the Public Server marks
-        # the work itself, and never sends `correct` on to a pupil's device.
         "blocks": [
             {
                 "local_id": block.id,

@@ -20,13 +20,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_context.verify(plain_password, hashed_password)
 
 
-# Students verify against Public Server (no LAN access required, same as
-# parents), which deliberately has no passlib/bcrypt dependency -- see
-# public_server/app/utils/security.py::hash_school_key for the existing
-# precedent of a dependency-light hash used there instead of bcrypt. This
-# pair is computed once here (when a director sets/changes a student's
-# password) and the resulting salt+hash are synced down; the plaintext is
-# never stored or sent anywhere past this function.
 def hash_student_password(password: str) -> tuple[str, str]:
     salt = secrets.token_hex(16)
     digest = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
@@ -38,12 +31,6 @@ def verify_student_password(password: str, salt: str, expected_hash: str) -> boo
     return secrets.compare_digest(digest, expected_hash)
 
 
-# Deliberately not the full alphabet. These credentials are read off an SMS
-# and typed by hand, often by a parent on a phone keyboard, so the pairs that
-# get mistyped are left out: 0/O, 1/l/I, 5/S, 8/B. A shorter alphabet costs
-# some entropy -- 8 characters from these 49 is still about 45 bits, which is
-# far beyond guessing a school account -- and buys back every support call
-# that starts with "it says wrong password".
 _PASSWORD_ALPHABET = "abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRTUVWXYZ23467"
 
 PASSWORD_LENGTH = 8

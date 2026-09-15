@@ -24,18 +24,6 @@ def subject_averages(db: Session, student_id: int, quarter: int, school_year: in
 def class_subject_averages(
     db: Session, student_ids: list[int], quarter: int, school_year: int
 ) -> list[dict]:
-    """How a whole group of pupils is doing, subject by subject.
-
-    Averaged over every mark in the subject rather than over per-pupil
-    averages: a pupil with twelve marks in maths and one in music should
-    weigh the same as anyone else in maths, and averaging averages would
-    instead let a single-mark pupil swing the subject as hard as a
-    well-assessed one.
-
-    ``student_count`` is how many pupils have at least one mark in that
-    subject, which is what tells a director whether "4.2 in music" is the
-    class or just the two pupils who were graded.
-    """
     if not student_ids:
         return []
 
@@ -59,9 +47,6 @@ def class_subject_averages(
         }
         for subject, avg, grade_count, student_count in rows
     ]
-    # Strongest first: the screen reads top-down as best-to-worst, so the
-    # subject needing attention is the last row rather than something the
-    # reader has to hunt for.
     breakdown.sort(key=lambda row: row["average"], reverse=True)
     return breakdown
 
@@ -89,10 +74,6 @@ def overall_averages_for_students(
 
 
 def _ranked_ids(student_ids: list[int], averages: dict[int, float]) -> list[int]:
-    # Students with no grades this quarter have no average to compare --
-    # rank them after everyone who does, rather than treating a missing
-    # average as a 0 (which would unfairly bury a student who simply hasn't
-    # been graded yet this quarter below one who's genuinely failing).
     return sorted(
         student_ids,
         key=lambda sid: (averages.get(sid) is None, -(averages.get(sid) or 0)),
@@ -100,10 +81,6 @@ def _ranked_ids(student_ids: list[int], averages: dict[int, float]) -> list[int]
 
 
 def _group_average_from(averages: dict[int, float]) -> float | None:
-    """Mean of a group's per-student overall averages (each student weighted
-    equally, not each grade) -- powers the "you vs your class" comparison
-    shown alongside rank.
-    """
     values = [v for v in averages.values() if v is not None]
     return round(sum(values) / len(values), 2) if values else None
 
@@ -111,11 +88,6 @@ def _group_average_from(averages: dict[int, float]) -> float | None:
 def rank_and_group_average(
     db: Session, student_ids: list[int], student_id: int, quarter: int, school_year: int
 ) -> tuple[int | None, int, float | None]:
-    """Rank position + the group's average in one pass -- build_student_overview
-    needs both per scope (class/parallel/school) and they're derived from the
-    exact same averages dict, so computing it once instead of twice halves
-    the query count for what's otherwise the same data fetched back to back.
-    """
     averages = overall_averages_for_students(db, student_ids, quarter, school_year)
     ranked = _ranked_ids(student_ids, averages)
     out_of = len(student_ids)
@@ -186,32 +158,12 @@ def school_student_ids(db: Session, school_id: int | None) -> list[int]:
 
 
 def bottom_performers(db: Session, student_ids: list[int], quarter: int, school_year: int, limit: int = 15) -> list[dict]:
-    """Same shape as leaderboard(), worst-first -- the low end of the same
-    ranking a director/teacher already sees, surfaced separately so they
-    don't have to scroll a whole school's leaderboard to find who needs help.
-
-    Reversing the full leaderboard would put not-yet-graded students (who
-    leaderboard() ranks *last*, deliberately not conflated with a real 0 --
-    see _ranked_ids) at the *top* of this list instead of the students who
-    are actually struggling. Filter those out first.
-    """
     board = leaderboard(db, student_ids, quarter, school_year)
     graded = [entry for entry in board if entry["overall_average"] is not None]
     return list(reversed(graded))[:limit]
 
 
 def biggest_decliners(db: Session, student_ids: list[int], quarter: int, school_year: int, limit: int = 15) -> list[dict]:
-    """Students whose overall average dropped the most from the previous
-    quarter to this one. A student missing a grade in either quarter is
-    excluded -- there's nothing to compare, and treating a missing grade as
-    0 would falsely flag "never graded yet" as "collapsed".
-
-    quarter <= 1 is rejected rather than wrapping to quarter 4 of the
-    previous school year -- that comparison would need a *different*
-    school_year for the "previous" side, which this function isn't set up
-    to resolve, and a chorak-1-vs-summer-break comparison isn't
-    meaningful anyway.
-    """
     if quarter <= 1:
         return []
 
@@ -219,9 +171,6 @@ def biggest_decliners(db: Session, student_ids: list[int], quarter: int, school_
     previous = overall_averages_for_students(db, student_ids, quarter - 1, school_year)
     students = {s.id: s for s in db.query(Student).filter(Student.id.in_(student_ids)).all()}
 
-    # Which class each flagged student is in: in a school of any size a bare
-    # name isn't enough for staff to place the pupil, so the class travels
-    # with every row here the same way it already does on the leaderboard.
     class_names = {
         row.id: row.name
         for row in db.query(Class).filter(
@@ -256,13 +205,6 @@ def biggest_decliners(db: Session, student_ids: list[int], quarter: int, school_
 
 
 def quarterly_trend(db: Session, student_id: int, up_to_quarter: int, school_year: int) -> list[dict]:
-    """Overall average for each quarter from 1 through up_to_quarter within
-    the given school year, computed fresh from Grade rows every call rather
-    than stored as snapshots -- Grade.quarter/school_year already makes this
-    a cheap per-student query (a handful of indexed rows per quarter), so a
-    history table would just be a second source of truth to keep in sync
-    for no real benefit.
-    """
     return [
         {"quarter": q, "overall_average": overall_average(db, student_id, q, school_year)}
         for q in range(1, up_to_quarter + 1)
@@ -272,12 +214,6 @@ def quarterly_trend(db: Session, student_id: int, up_to_quarter: int, school_yea
 def build_student_overview(
     db: Session, student: Student, quarter: int | None = None, school_year: int | None = None
 ) -> dict:
-    """The full per-student analytics payload -- shared by the /analytics
-    router (director/teacher/parent reading live) and the sync pusher (which
-    snapshots this same shape to the Public Server so parents can read it
-    there too, since ranking needs the whole class/parallel/school roster
-    that the Public Server never has a complete copy of).
-    """
     quarter = quarter or current_quarter()
     school_year = school_year if school_year is not None else current_school_year()
 

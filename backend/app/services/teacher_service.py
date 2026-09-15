@@ -108,11 +108,6 @@ def teacher_can_grade_class(
         TeacherClass.teacher_id == teacher_id, TeacherClass.class_id == class_id
     )
     if subject:
-        # An assignment row with no subject set is unrestricted (matches any
-        # subject). Without the `.is_(None)` branch, a NULL-subject row would
-        # never match a caller asking for a specific subject -- SQL NULL is
-        # never equal to anything, not even another NULL -- silently locking
-        # that teacher out of grading.
         query = query.filter(
             or_(TeacherClass.subject == subject, TeacherClass.subject.is_(None))
         )

@@ -14,17 +14,11 @@ def _parse_start(lesson: Lesson) -> time | None:
 
 
 def _end_time(lesson: Lesson, start: time) -> time:
-    # Lessons never span midnight (duration is a school period, ~45 minutes),
-    # so a plain timedelta add on a throwaway date is safe here.
     end_dt = datetime(2000, 1, 1, start.hour, start.minute) + timedelta(minutes=lesson.duration_minutes)
     return end_dt.time()
 
 
 def active_lesson_for_class(db: Session, class_id: int, now: datetime | None = None) -> Lesson | None:
-    """The Lesson (subject/period) currently in session for this class, or
-    None if no lesson is scheduled right now -- used by the detection loop to
-    know which lesson a camera match should be attributed to.
-    """
     now = now or datetime.now()
     current_time = now.time()
     lessons = db.query(Lesson).filter(
@@ -43,9 +37,6 @@ def active_lesson_for_class(db: Session, class_id: int, now: datetime | None = N
 
 
 def finished_lessons_today(db: Session, now: datetime | None = None) -> list[Lesson]:
-    """Every Lesson scheduled for today whose end time has already passed --
-    used by the absence-marking job to know which lessons are done grading
-    attendance for."""
     now = now or datetime.now()
     current_time = now.time()
     lessons = db.query(Lesson).filter(Lesson.day_of_week == now.weekday()).all()

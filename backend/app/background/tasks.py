@@ -37,17 +37,7 @@ def _live_status_payload(db):
         & (Attendance.attendance_date == today),
     ).filter(Student.is_active == True).all()
 
-    # Class names come from here rather than being joined on the client.
-    #
-    # The desktop dashboard groups the day by class, and it used to do that
-    # by looking each pupil up in the list the app had loaded separately.
-    # The two disagreed -- that list is loaded for a different purpose and
-    # does not always hold every pupil -- so classes showed 0 present while
-    # the header counted 31. One source, one answer.
     class_names = {row.id: row.name for row in db.query(Class).all()}
-    # Which classes are actually in a lesson right now. The desktop dashboard
-    # uses it to show an academy only the groups that are in the building --
-    # a group whose lesson finished at four should not still be listed at six.
     lesson_states = class_lesson_states(db)
 
     return {
@@ -65,11 +55,6 @@ def _live_status_payload(db):
                 "time_in": attendance.time_in.isoformat() if attendance and attendance.time_in else None,
                 "time_out": attendance.time_out.isoformat() if attendance and attendance.time_out else None,
                 "last_seen": attendance.last_seen.isoformat() if attendance and attendance.last_seen else None,
-                # The last resort for "when". A pupil marked present from
-                # somewhere other than the camera can carry no time_in and no
-                # last_seen at all, and the desktop dashboard then had no way
-                # to place them on the morning's curve -- it showed an empty
-                # panel under a header counting thirty-one arrivals.
                 "detected_at": attendance.detected_at.isoformat() if attendance and attendance.detected_at else None,
                 "camera_id": attendance.camera_id if attendance else None,
             }
@@ -92,13 +77,6 @@ def _attendance_pass() -> dict:
 
 async def attendance_background_loop():
     while True:
-        # Off the event loop. These are synchronous SQLAlchemy calls that
-        # sweep every school's attendance, and awaiting nothing while they
-        # run meant the loop simply stopped for as long as they took --
-        # every request, every websocket, the live video included. Measured
-        # against the camera, the picture stalled up to three seconds at a
-        # time while the capture thread beside it kept producing 20 frames a
-        # second that nothing was free to send.
         payload = await asyncio.to_thread(_attendance_pass)
         await manager.broadcast(payload)
         await asyncio.sleep(30)
@@ -118,17 +96,7 @@ def _analytics_pass() -> None:
 
 
 async def analytics_sync_loop():
-    """Every 5 minutes, recomputes and re-syncs every active student's
-    ranking snapshot to the Public Server. The reactive push in
-    journal_router covers the graded student themselves instantly, but a
-    classmate's new grade also shifts this student's class/parallel/school
-    rank -- this periodic sweep is what keeps that number from going stale
-    for everyone who *wasn't* the one just graded.
-    """
     while True:
-        # Threaded for the same reason as the attendance sweep: this rebuilds
-        # an overview for every active student in the school, and it ran
-        # inline on the event loop.
         await asyncio.to_thread(_analytics_pass)
         await asyncio.sleep(300)
 
@@ -160,14 +128,6 @@ def _diary_pass() -> None:
 
 
 async def diary_sync_loop():
-    """Every 15 minutes, pushes today's and tomorrow's resolved diary for
-    every class that has at least one Lesson slot. A homework/comment write
-    already pushes immediately (see diary_router.py's PATCH), but this sweep
-    is what lets a parent see tomorrow's schedule (subject/teacher/room/time)
-    even before any teacher has written a single homework note for it.
-    """
     while True:
-        # Threaded like the other sweeps -- this one walks every class and
-        # resolves two days of diary for each.
         await asyncio.to_thread(_diary_pass)
         await asyncio.sleep(900)

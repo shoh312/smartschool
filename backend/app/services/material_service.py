@@ -1,15 +1,3 @@
-"""Business rules for learning materials, kept out of the router.
-
-The two rules worth naming, because everything else follows from them:
-
-* A teacher owns their own materials. Nobody else -- not another teacher,
-  not the director -- may edit or hand out someone's material, the same way
-  only the assigned teacher may write a diary entry.
-* On a **control** assignment, scores stay hidden until the deadline passes
-  or the whole class has submitted. Before that a teacher sees only who has
-  finished. That's the school's rule: the first pupil to finish must not be
-  able to phone the answers round to the rest.
-"""
 
 from datetime import datetime
 
@@ -39,12 +27,7 @@ from app.services.material_grading import suggest_grade
 from app.services.teacher_service import teacher_can_grade_class
 
 
-# --------------------------------------------------------------------------
-# Lookups and permissions
-# --------------------------------------------------------------------------
-
 def get_owned_material(db: Session, material_id: int, teacher: Teacher) -> Material:
-    """For anything that changes a material: only its author may."""
     material = get_readable_material(db, material_id, teacher.school_id)
     if material.teacher_id != teacher.id:
         raise HTTPException(
@@ -55,13 +38,6 @@ def get_owned_material(db: Session, material_id: int, teacher: Teacher) -> Mater
 
 
 def get_readable_material(db: Session, material_id: int, school_id: int | None) -> Material:
-    """For reading: anyone in the same school.
-
-    Colleagues can look at each other's work (and copy it) so the same
-    topic isn't written from scratch by five people, and the director can
-    see what is being set -- but neither can edit or hand out somebody
-    else's material. That's what get_owned_material above is for.
-    """
     material = (
         db.query(Material)
         .options(selectinload(Material.blocks))
@@ -98,12 +74,6 @@ def get_owned_assignment(db: Session, assignment_id: int, teacher: Teacher) -> M
 
 
 def get_visible_assignment(db: Session, assignment_id: int, actor) -> MaterialAssignment:
-    """For reading results: the assignment's own teacher, or the director.
-
-    Kept separate from get_owned_assignment so the read path can widen
-    without the write path following it -- a director watching a class's
-    progress must not be able to change a deadline or push grades.
-    """
     assignment = (
         db.query(MaterialAssignment)
         .filter(MaterialAssignment.id == assignment_id)
@@ -127,14 +97,6 @@ def get_visible_assignment(db: Session, assignment_id: int, actor) -> MaterialAs
 def require_teaches_class(
     db: Session, teacher: Teacher, class_id: int, subject: str | None = None
 ) -> Class:
-    """A teacher may only hand material to a class they actually teach.
-
-    Without this a physics teacher could push a test into any class in the
-    school -- the same reasoning behind the diary's per-lesson edit check.
-    Reuses the journal's rule so "may set a test" and "may grade" can never
-    drift apart: a teacher who can hand out a control test must be able to
-    put its marks in the journal afterwards.
-    """
     school_class = db.query(Class).filter(Class.id == class_id).first()
     if not school_class or school_class.school_id != teacher.school_id:
         raise HTTPException(status_code=404, detail="Class not found")
@@ -147,17 +109,7 @@ def require_teaches_class(
     return school_class
 
 
-# --------------------------------------------------------------------------
-# Writing
-# --------------------------------------------------------------------------
-
 def replace_blocks(db: Session, material: Material, blocks: list[MaterialBlockIn]) -> None:
-    """Swap a material's blocks for a new ordered run.
-
-    The editor always sends the whole list, so rewriting wholesale is both
-    simpler and safer than diffing: positions stay dense and a block that
-    was dragged from 5th to 2nd doesn't need special handling.
-    """
     for existing in list(material.blocks):
         db.delete(existing)
     db.flush()
@@ -177,46 +129,22 @@ def replace_blocks(db: Session, material: Material, blocks: list[MaterialBlockIn
         )
 
 
-# --------------------------------------------------------------------------
-# Visibility of results
-# --------------------------------------------------------------------------
-
 def results_are_visible(
     assignment: MaterialAssignment,
     student_count: int,
     submitted_count: int,
     now: datetime | None = None,
 ) -> bool:
-    """Whether scores may be shown to the teacher yet.
-
-    Practice work has nothing to hide -- it isn't graded and pupils are told
-    right/wrong as they go, so the teacher sees results immediately. A
-    control assignment unlocks when its deadline passes, or early if every
-    pupil in the class has already submitted (waiting out the clock then
-    serves no purpose).
-    """
     if assignment.mode != MODE_CONTROL:
         return True
     if student_count and submitted_count >= student_count:
         return True
     if assignment.due_at is None:
-        # A control with no deadline can only unlock by everyone finishing;
-        # otherwise the teacher would be locked out forever.
         return False
     return (now or datetime.utcnow()) >= assignment.due_at
 
 
-# --------------------------------------------------------------------------
-# Read models
-# --------------------------------------------------------------------------
-
 def _best_attempts(db: Session, assignment_id: int) -> dict[int, MaterialAttempt]:
-    """The attempt that counts for each pupil: the FIRST one they submitted.
-
-    Later runs are practice. If the first try scored 50% and a retry scored
-    80%, the teacher, the parent and the pupil's own panel all keep seeing
-    50% -- the mark reflects what the pupil knew when they first sat it.
-    """
     first: dict[int, MaterialAttempt] = {}
     attempts = (
         db.query(MaterialAttempt)
@@ -272,12 +200,6 @@ def assignment_out(db: Session, assignment: MaterialAssignment) -> AssignmentOut
 
 
 def assignment_results(db: Session, assignment: MaterialAssignment) -> tuple[AssignmentOut, list[AssignmentResultRow]]:
-    """Every pupil in the class, whether they've submitted or not.
-
-    Listing only the pupils who answered would hide exactly the ones a
-    teacher is looking for, so non-submitters come back too, with empty
-    score fields.
-    """
     summary = assignment_out(db, assignment)
     students = (
         db.query(Student)
@@ -298,8 +220,6 @@ def assignment_results(db: Session, assignment: MaterialAssignment) -> tuple[Ass
             attempt_count=counts.get(student.id, 0),
             transferred=bool(attempt.transferred) if attempt else False,
         )
-        # Before the unlock, "who has finished" is all a teacher gets --
-        # deliberately no score, percent or suggested grade.
         if summary.results_visible and attempt is not None:
             percent = attempt.percent
             row.score = attempt.score

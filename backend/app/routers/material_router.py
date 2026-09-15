@@ -1,10 +1,3 @@
-"""Teacher-side API for learning materials.
-
-Authoring, handing out, watching progress and pushing the marks into the
-journal all happen here, on the school's own server. Pupils never touch
-these endpoints -- they work from home against the Public Server, and their
-attempts are pulled back by the attempt sync worker.
-"""
 
 from datetime import datetime, timedelta, timezone
 
@@ -48,8 +41,6 @@ from app.utils.academic_calendar import current_quarter, quarter_for_date, schoo
 
 router = APIRouter(tags=["materials"])
 
-# Same reasoning as the journal router: grades are a classroom-time record,
-# so "today" is the school's day (UTC+5), not the host machine's.
 SCHOOL_TZ = timezone(timedelta(hours=5))
 
 
@@ -67,26 +58,12 @@ def _resolve_subject(teacher: Teacher, requested: str | None) -> str:
     return subject
 
 
-# --------------------------------------------------------------------------
-# Library
-# --------------------------------------------------------------------------
-
 @router.get("/materials", response_model=list[MaterialSummaryOut])
 def list_materials(
     scope: str = "mine",
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    """The library, either the caller's own work or the whole school's.
-
-    `scope=school` is what makes the shared shelf work: everyone can see
-    (and copy) a colleague's lesson rather than writing the same topic five
-    times over. Editing and handing out stay with the author -- the rows
-    carry `teacher_id`/`teacher_name` so the app can say whose it is.
-
-    A director only ever has a school view; they have no materials of their
-    own to be "mine".
-    """
     school_id = material_service.actor_school_id(actor)
     query = (
         db.query(Material)
@@ -129,11 +106,6 @@ def get_material(
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    """Readable by any colleague in the school, and by the director.
-
-    Read only -- every write endpoint below still goes through
-    get_owned_material, so looking at a colleague's lesson is exactly that.
-    """
     material = material_service.get_readable_material(
         db, material_id, material_service.actor_school_id(actor)
     )
@@ -154,9 +126,6 @@ def update_material(
     if payload.description is not None:
         material.description = payload.description
     if payload.blocks is not None:
-        # Editing the questions of something pupils are already answering
-        # would silently invalidate their in-flight attempts (block ids are
-        # rewritten), so it's blocked once the material is out there.
         published = (
             db.query(MaterialAssignment)
             .filter(
@@ -196,20 +165,10 @@ def duplicate_material(
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Copy a material into your own library.
-
-    Two jobs at once: the escape hatch for the "already handed out" lock
-    above, and the way one teacher adapts a colleague's lesson instead of
-    writing the same topic from scratch. So the source may be anyone's in
-    the school -- but the copy always belongs to whoever asked for it, and
-    keeps their subject, not the original author's.
-    """
     source = material_service.get_readable_material(db, material_id, teacher.school_id)
     copy = Material(
         school_id=source.school_id,
         teacher_id=teacher.id,
-        # A physics teacher copying a maths lesson would otherwise end up
-        # with a material they can't hand to any of their own classes.
         subject=teacher.subject or source.subject,
         title=f"{source.title} (nusxa)",
         description=source.description,
@@ -248,13 +207,6 @@ async def ai_generate_material(
     file: UploadFile | None = File(None),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Draft material with Gemini and hand it straight back.
-
-    Saves nothing, on purpose. The teacher reviews and edits every block in
-    the app and then calls the normal POST /materials, which already does
-    the validation, the sync and the ownership -- none of which this needs
-    to duplicate, and none of which should run on text nobody has read yet.
-    """
     image_bytes = await file.read() if file is not None else None
     if image_bytes is not None and not image_bytes:
         image_bytes = None
@@ -270,8 +222,6 @@ async def ai_generate_material(
             class_name=class_name,
             question_count=question_count,
             page_count=page_count,
-            # Sent as one comma-separated field: multipart repeats a key for
-            # a list, which the Flutter client would have to special-case.
             question_types=[t.strip() for t in question_types.split(",") if t.strip()],
             difficulty=difficulty,
             language=language,
@@ -287,17 +237,11 @@ def parse_paste(
     payload: PasteImportRequest,
     _teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Preview only -- nothing is stored. The teacher sees the parsed
-    questions in the editor and can fix them before saving."""
     try:
         return PasteImportResponse(blocks=parse_pasted_blocks(payload.text))
     except PasteImportError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-
-# --------------------------------------------------------------------------
-# Handing out
-# --------------------------------------------------------------------------
 
 @router.get("/material-assignments", response_model=list[AssignmentOut])
 def list_assignments(
@@ -306,12 +250,6 @@ def list_assignments(
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    """A teacher's own handouts -- or, for a director, the whole school's.
-
-    The director's view is read-only by construction: every write endpoint
-    below takes a teacher token, so there is nothing here for them to
-    change, only to see.
-    """
     school_id = material_service.actor_school_id(actor)
     query = (
         db.query(MaterialAssignment)
@@ -335,20 +273,11 @@ def create_assignments(
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Hand one material to one or more classes in a single call.
-
-    Re-handing it to a class it's already in updates that assignment's
-    deadline and rules rather than creating a duplicate -- a teacher
-    extending a deadline shouldn't produce a second copy for the pupils.
-    """
     material = material_service.get_owned_material(db, payload.material_id, teacher)
     if material.question_count == 0 and not material.blocks:
         raise HTTPException(status_code=400, detail="This material is empty")
 
     if payload.mode == MODE_CONTROL and payload.due_at is None:
-        # A control assignment with no deadline can only ever unlock by every
-        # single pupil submitting -- one absentee locks the teacher out of
-        # the marks for good. Refuse rather than create that trap.
         raise HTTPException(
             status_code=400,
             detail="A control assignment needs a deadline",
@@ -422,22 +351,12 @@ def delete_assignment(
     return None
 
 
-# --------------------------------------------------------------------------
-# Results
-# --------------------------------------------------------------------------
-
 @router.get("/material-assignments/{assignment_id}/results", response_model=AssignmentResultsOut)
 def assignment_results(
     assignment_id: int,
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    """Who did the work, and (once unlocked) how they got on.
-
-    A director may read any assignment in their school -- that's the point
-    of them having this section at all. The reveal rule is unchanged for
-    both roles: a control test's marks stay hidden until its deadline.
-    """
     assignment = material_service.get_visible_assignment(db, assignment_id, actor)
     summary, rows = material_service.assignment_results(db, assignment)
     return AssignmentResultsOut(
@@ -454,12 +373,6 @@ def transfer_grades(
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Turn reviewed results into journal grades.
-
-    The teacher sends the marks they approved (pre-filled from the
-    suggestion, edited where they disagreed), so this never invents a grade
-    on its own. Pupils left out of `items` simply don't get one.
-    """
     assignment = material_service.get_owned_assignment(db, assignment_id, teacher)
     material = assignment.material
 
@@ -476,9 +389,6 @@ def transfer_grades(
         )
     material_service.require_teaches_class(db, teacher, assignment.class_id, material.subject)
 
-    # The mark lands on the day the test was handed out -- that is the lesson
-    # it belongs to in the register -- not on the day the teacher pressed
-    # "transfer", which may be days later and not a lesson day at all.
     today = assignment.published_at.date() if assignment.published_at else _school_today()
     quarter = quarter_for_date(today)
     school_year = school_year_for_date(today)
@@ -507,8 +417,6 @@ def transfer_grades(
             )
         attempt = attempts.get(student.id)
         if attempt is not None and attempt.transferred:
-            # Already in the journal from an earlier transfer -- skip rather
-            # than give the pupil a second mark for the same test.
             continue
 
         grade = Grade(

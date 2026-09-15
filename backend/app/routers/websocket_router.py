@@ -32,21 +32,13 @@ async def stream_websocket(
     director=Depends(get_current_director_ws),
     db: Session = Depends(get_db),
 ):
-    # The same switch the HTTP endpoints honour. Enforcing it only there left
-    # the one path the app actually watches through wide open, so a director
-    # who turned live video off was still being streamed.
     school = db.query(School).filter(School.id == director.school_id).first()
     if school is not None and not school.live_video_enabled:
-        # Accept first, then close -- the same handshake convention the token
-        # check uses, so the client sees a clean end rather than a raw abort.
         await websocket.accept()
         await websocket.close(code=1008, reason='live_video_disabled')
         return
 
     await websocket.accept()
-    # Tells the camera thread somebody is actually watching, so it keeps the
-    # stream open instead of dropping it between detection windows -- which
-    # is what made the live view run for ten seconds and then freeze.
     stream_manager.add_viewer(camera_id)
     try:
         last_frame: bytes | None = None
@@ -55,28 +47,12 @@ async def stream_websocket(
             if frame is not None and frame is not last_frame:
                 await websocket.send_bytes(frame)
                 last_frame = frame
-            # Polled well inside the encoder's own 15 fps ceiling. At 50ms
-            # the wait was a large fraction of the gap between frames, so
-            # frames went out in an uneven cadence -- which the eye reads as
-            # stutter even when every frame arrives. The cost of looking more
-            # often is a dictionary lookup.
             await asyncio.sleep(0.015)
     except WebSocketDisconnect:
         pass
     finally:
-        # Must run on every exit path, not just a clean disconnect: a viewer
-        # left counted forever would pin the camera open for the rest of the
-        # server's life.
         stream_manager.remove_viewer(camera_id)
 
-
-# --------------------------------------------------------------------------
-# A parent watching their child's lesson. Reached only through the public
-# server (which checked the parent owns the child): it opens this socket
-# over the tunnel with the per-connection relay secret. The camera is the
-# one whose timetable slot for that class is running right now -- outside a
-# lesson there is nothing to see, and no other class is ever shown.
-# --------------------------------------------------------------------------
 
 import hmac as _hmac
 from datetime import datetime as _dt
@@ -97,7 +73,7 @@ def _camera_for_class_now(db: Session, class_id: int) -> int | None:
             return p.camera_id
     cls = db.query(Class).filter(Class.id == class_id).first()
     if cls is not None and cls.start_time and cls.end_time and str(cls.start_time)[:5] <= hm < str(cls.end_time)[:5]:
-        cam = db.query(Camera).filter(Camera.class_id == class_id, Camera.is_active == True).first()  # noqa: E712
+        cam = db.query(Camera).filter(Camera.class_id == class_id, Camera.is_active == True).first()
         if cam is not None:
             return cam.id
     return None

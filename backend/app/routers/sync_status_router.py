@@ -17,10 +17,6 @@ router = APIRouter(
 
 @router.get("/status")
 def sync_status(db: Session = Depends(get_db)):
-    """Makes a stuck outbox queue visible instead of silently invisible --
-    if this shows a growing pending count with an old oldest_pending_at, the
-    Public Server is unreachable and needs attention.
-    """
     pending_count = db.query(func.count(SyncOutboxEntry.id)).filter(
         SyncOutboxEntry.status == "pending"
     ).scalar()

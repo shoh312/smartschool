@@ -20,12 +20,6 @@ from app.utils.academic_calendar import current_quarter, school_year_for_date
 
 router = APIRouter(tags=["journal"])
 
-# Grades are entered live during the school day, so "today" must be judged in
-# the school's local time (Tajikistan, UTC+5, no DST) rather than the server
-# machine's own clock/timezone -- otherwise a UTC-hosted server disagrees
-# with the classroom about which calendar day it is near local midnight, and
-# a grade entered minutes ago becomes immediately uneditable (or a grade
-# entered near midnight the previous UTC day looks "not from today").
 SCHOOL_TZ = timezone(timedelta(hours=5))
 
 
@@ -74,10 +68,6 @@ def create_grade(
     _require_student_in_class(db, payload.student_id, payload.class_id)
 
     today = _school_today()
-    # A grade dated anything other than today would fail the same
-    # today-only check the moment it's read back in _require_own_grade,
-    # permanently locking it from its own creator. Reject it up front
-    # instead of silently creating an uneditable grade.
     if payload.grade_date is not None and payload.grade_date != today:
         raise HTTPException(status_code=400, detail="Grades can only be entered for today")
 
@@ -87,10 +77,6 @@ def create_grade(
         teacher_id=teacher.id,
         subject=payload.subject,
         quarter=payload.quarter or current_quarter(),
-        # Always derived from grade_date (always "today"), never from the
-        # possibly-overridden quarter -- a make-up grade entered today for a
-        # past quarter is still being recorded today, so it belongs to
-        # today's school year regardless of which quarter it's tagged with.
         school_year=school_year_for_date(today),
         value=payload.value,
         comment=payload.comment,
@@ -102,13 +88,6 @@ def create_grade(
     _push_student_analytics(db, grade.student_id, grade.quarter, grade.school_year)
     db.commit()
     db.refresh(grade)
-    # Set from the already-loaded `teacher` param (must be after commit --
-    # commit's default expire_on_commit marks every attribute, relationships
-    # included, for a fresh reload on next access) instead of letting
-    # response serialization lazy-load grade.teacher (-> teacher_name
-    # property) via a brand new query on the way out. That extra query was
-    # adding multi-second latency whenever it landed behind a lock (see the
-    # sibling fix in update_grade for the same pattern).
     grade.teacher = teacher
     return grade
 
@@ -121,26 +100,15 @@ async def scan_journal_photo_endpoint(
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Reads a photo of a paper journal page via Gemini vision and matches
-    each detected row against the class roster. Returns candidates only --
-    nothing is written to the journal here. The caller reviews/edits the
-    list client-side, then confirms by calling the normal POST /grades once
-    per row (same permission checks, same today-only date rule, same sync
-    fan-out -- this endpoint doesn't need to duplicate any of that).
-    """
     if not teacher_can_grade_class(db, teacher.id, class_id, subject):
         raise HTTPException(
             status_code=403,
             detail="You are not assigned to teach this subject in this class",
         )
 
-    # Surname-first, matching the journal's own "Фамилия Имя" column order --
-    # comparing against "{first_name} {last_name}" handicapped the fuzzy
-    # matcher for no reason (reversed word order tanks a character-sequence
-    # similarity score even for an otherwise-exact name).
     roster = [
         (s.id, f"{s.last_name} {s.first_name}".strip())
-        for s in db.query(Student).filter(Student.class_id == class_id, Student.is_active == True).all()  # noqa: E712
+        for s in db.query(Student).filter(Student.class_id == class_id, Student.is_active == True).all()
     ]
 
     image_bytes = await file.read()
@@ -150,10 +118,6 @@ async def scan_journal_photo_endpoint(
         print(f"[journal-scan] content_type={file.content_type!r} bytes={len(image_bytes)} error={ascii(str(exc))}")
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # ascii() (not !r) -- the Windows console's cp1251 codec can't print
-    # Cyrillic directly and raising mid-print here would 500 a request that
-    # actually succeeded, so every field that might hold Cyrillic text goes
-    # through ascii() to force a safe \uXXXX-escaped representation instead.
     print(f"[journal-scan] {len(results)} rows for class_id={class_id} subject={ascii(subject)}:")
     for row in results:
         print(
@@ -165,12 +129,6 @@ async def scan_journal_photo_endpoint(
 
 
 def _push_student_analytics(db: Session, student_id: int, quarter: int, school_year: int | None) -> None:
-    """Recomputes and re-syncs this student's ranking snapshot to the
-    Public Server (see enqueue_student_analytics_event) so a parent's app --
-    which never talks to this local server -- reflects the new grade's
-    effect on the student's average/rank without waiting for the periodic
-    analytics_sync_loop pass.
-    """
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         return
@@ -201,11 +159,6 @@ def list_grades(
             )
     elif actor.role == "teacher":
         if class_id is not None:
-            # A teacher currently assigned to this class (and subject, if
-            # given) should see every grade recorded for it, not only the
-            # ones they personally entered -- otherwise grades appear to
-            # "disappear" from the roster view after a mid-term teacher
-            # reassignment, even though the director still sees them all.
             if not teacher_can_grade_class(db, actor.teacher.id, class_id, subject):
                 raise HTTPException(
                     status_code=403,
@@ -218,7 +171,7 @@ def list_grades(
             query = query.filter(Grade.teacher_id == actor.teacher.id)
             if student_id is not None:
                 query = query.filter(Grade.student_id == student_id)
-    else:  # director
+    else:
         query = query.join(Student, Student.id == Grade.student_id).filter(
             Student.school_id == actor.director.school_id
         )
@@ -240,19 +193,6 @@ def list_absences(
     db: Session = Depends(get_db),
     actor: AuthActor = Depends(get_current_actor),
 ):
-    """Which pupils the cameras did not see in which lesson of which subject.
-
-    The register and the marks are the same page to a teacher, but they come
-    from different tables: a mark is something a person wrote, an absence is
-    something nobody did. Kept as separate rows rather than a magic grade
-    value, so a pupil can be marked absent from a lesson they were also
-    graded in (they came late, after the sweep), and so the marks stay
-    exactly what the teacher entered.
-
-    Returns one entry per absent lesson: several on one day means several
-    lessons of that subject that day, which the journal grid shows as one
-    cell.
-    """
     if actor.role == "teacher":
         if not teacher_can_grade_class(db, actor.teacher.id, class_id, subject):
             raise HTTPException(
@@ -314,8 +254,6 @@ def update_grade(
     _push_student_analytics(db, grade.student_id, grade.quarter, grade.school_year)
     db.commit()
     db.refresh(grade)
-    # See the matching comment in create_grade -- avoids a lazy-loaded
-    # grade.teacher query during response serialization.
     grade.teacher = teacher
     return grade
 

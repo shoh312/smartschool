@@ -6,11 +6,6 @@ from app.database import Base
 
 
 class LessonLog(Base):
-    """The diary/ruznoma entry for one lesson *occurrence* -- homework and a
-    teacher's note for a specific date, as opposed to `Lesson` which is just
-    the recurring weekly template. One row per (lesson, date), created only
-    once a teacher actually writes something.
-    """
 
     __tablename__ = "lesson_logs"
     __table_args__ = (UniqueConstraint("lesson_id", "log_date", name="uq_lesson_logs_lesson_date"),)

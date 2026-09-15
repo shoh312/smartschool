@@ -42,10 +42,6 @@ def get_attendance_history(
             student = db.query(Student).filter(Student.id == student_id).first()
             if not student or student.parent_id not in actor.parent_ids:
                 raise HTTPException(status_code=403, detail="Not your student")
-        # `parent_id` (singular) stays in the function signature for the
-        # existing query-param contract, but a parent may have a sibling
-        # Parent row at another school -- fetch across the whole family, not
-        # just this one row.
         parent_ids = actor.parent_ids
     else:
         school_id = actor.director.school_id
@@ -163,9 +159,6 @@ def _student_attendance_summary(
 
     attendance_rate = (present_days + late_days) / total_days * 100 if total_days > 0 else 0.0
 
-    # Today is read off the same rows rather than with another query -- it is
-    # already in `rows` whenever the range includes today, which the
-    # analytics screen's default 30-day window always does.
     today = date.today()
     today_status = next(
         (att.status for att in rows if att.attendance_date == today),
@@ -269,8 +262,6 @@ def monthly_attendance_report(
     dependencies=[Depends(get_current_superadmin)],
 )
 def check_absent(db: Session = Depends(get_db)):
-    # System-wide maintenance operation (also runs automatically every cycle in
-    # the background loop) -- superadmin-only since it touches every school's data.
     return mark_absent_students(db)
 
 
@@ -283,13 +274,6 @@ def check_left_school(db: Session = Depends(get_db)):
     return mark_left_school_students(db)
 
 
-# --------------------------------------------------------------------------
-# Manual marking -- the director ticks a pupil off by hand when a camera is
-# not in place yet (or missed someone). "present" goes through the same path
-# a camera detection takes, so the parent gets the same notification and the
-# public server the same sync row; "absent" overwrites today's row.
-# --------------------------------------------------------------------------
-
 from pydantic import BaseModel
 from datetime import datetime as _dt
 
@@ -301,7 +285,7 @@ from app.services.sync_outbox_service import enqueue_attendance_event
 
 class ManualAttendanceRequest(BaseModel):
     student_id: int
-    status: str = "present"  # present | absent
+    status: str = "present"
 
 
 @router.post("/manual", response_model=AttendanceResponse)

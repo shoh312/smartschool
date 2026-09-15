@@ -36,8 +36,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["students"], dependencies=[Depends(get_current_director)])
 
-# A separate router (no director-only dependency) for the parent-facing
-# "my children" endpoint -- the main router above requires a director.
 parent_router = APIRouter(tags=["students"])
 
 
@@ -46,9 +44,6 @@ def get_my_students(
     db: Session = Depends(get_db),
     parent: Parent = Depends(get_current_parent),
 ):
-    # A parent with children at two different schools has a sibling Parent
-    # row per school sharing the same phone -- return every school's
-    # children, not just the ones under this exact logged-in row.
     family_ids = get_parent_family_ids(db, parent)
 
     rows = db.query(Student, Class).filter(
@@ -76,18 +71,8 @@ def get_my_students(
         for student, school_class in rows
     ]
 
-# ==================================================
-# CREATE STUDENT
-# ==================================================
 
 def _claim_username(db: Session, value: str, student_id: int | None = None) -> str:
-    """The username a director typed, refused politely if it is taken.
-
-    Without this the clash surfaced as a UniqueViolation from Postgres and
-    the request became a bare 500 -- so the app could only say "something
-    went wrong", and a director who had picked a login already in use had no
-    way of learning that. They simply pressed save again, and again.
-    """
     candidate = value.strip()
     clash = db.query(Student).filter(Student.username == candidate)
     if student_id is not None:
@@ -130,9 +115,6 @@ def create_student(
 
     return new_student
 
-# ==================================================
-# GET STUDENTS
-# ==================================================
 
 @router.get(
     "/students",
@@ -208,11 +190,6 @@ def director_create_student(
 
         raise HTTPException(status_code=400, detail="Parent phone is required")
 
-    # Scope the lookup to this school -- a phone match belonging to a
-    # different school must not be reused, or a new student here would get
-    # silently attached to another school's parent account (and its
-    # /students/me would start returning both schools' children mixed
-    # together).
     parent = db.query(Parent).filter(
         Parent.phone == normalized_phone,
         Parent.school_id == director.school_id,
@@ -232,11 +209,6 @@ def director_create_student(
 
         db.refresh(parent)
 
-    # A parent who has never signed in has no password_hash yet -- give
-    # them one now instead of leaving the account unusable until they find
-    # their own way into the app. Same salted-sha256 pair the students get
-    # (see hash_student_password), because the Public Server verifies a
-    # parent's password the same way -- see verification_service.py there.
     parent_plaintext_password = None
 
     if not parent.password_hash:
@@ -296,28 +268,13 @@ def director_create_student(
 
     new_student.face_encoding = encoding
 
-    # Sign-in details, issued once and texted once. The plaintexts live only
-    # in these two variables -- what reaches the database and the sync is a
-    # salted hash. See credentials_service for why the message is sent from
-    # here rather than from the Public Server.
     student_username, student_password = issue_login_for(db, new_student, password)
 
     db.flush()
-    # Sync the enrollment now (not only on the first grade/attendance event)
-    # so the parent can log into the Public Server the same day.
     enqueue_student_event(db, new_student, operation="upsert")
 
     db.commit()
 
-    # After the commit, deliberately: a push cannot be rolled back, so it
-    # must not go out for a registration that then fails to save.
-    #
-    # The pupil's login goes to the app, never by SMS. The parent gets into
-    # the app by registering themselves -- phone, code, their own password
-    # -- and this message is waiting for them when they do. Sending school
-    # -issued passwords by SMS as well meant two credentials arriving by two
-    # routes and the app still asking for a third, which is what made the
-    # sign-in confusing enough to be unusable.
     send_credentials_notification(
         parent=parent,
         student=new_student,
@@ -325,12 +282,6 @@ def director_create_student(
         student_password=student_password,
     )
 
-    # A parent who just got a fresh password (see above) has no app and no
-    # device token yet -- the in-app notification above cannot reach them.
-    # SMS is the only channel available at this point, so it fires
-    # unconditionally here (not gated on push having failed, unlike the
-    # attendance fallback in notifications/firebase.py) except for the
-    # school's own SMS kill switch (School.sms_enabled).
     school = db.query(School).filter(School.id == director.school_id).first()
     if parent_plaintext_password and settings.sms_provider == "robita" and school is not None and school.sms_enabled:
         school_name = school.name if school else "SmartFlow"
@@ -351,9 +302,6 @@ def director_create_student(
         try:
             robita_client.send(to_local_number(parent.phone), message)
         except Exception:
-            # Never lets a flaky SMS panel fail a registration that has
-            # already been saved -- same reasoning as
-            # send_credentials_notification above.
             logger.exception("Robita SMS failed for new parent %s", parent.id)
 
     db.refresh(new_student)
@@ -372,7 +320,6 @@ def director_create_student(
         "is_active": new_student.is_active,
         "username": new_student.username,
     }
-
 
 
 @router.post("/students/register-face/{student_id}")
@@ -429,11 +376,6 @@ def update_student(
     first_name: str = Form(...),
     last_name: str = Form(...),
     class_id: int = Form(...),
-    # Optional, unlike on create. Most students in a school have no parent
-    # account: the bulk import creates them from a class list, and a phone
-    # number arrives later or never. Requiring it here made every one of
-    # those students impossible to edit at all -- the form came back 422
-    # before it could rename anyone or move them between classes.
     parent_phone: str | None = Form(None),
     is_active: bool = Form(True),
     username: str | None = Form(None),
@@ -456,12 +398,6 @@ def update_student(
     if not school_class:
         raise HTTPException(status_code=404, detail="Class not found")
 
-    # Handle parent -- scoped to this school, see director_create_student for why.
-    #
-    # An empty or absent phone means "leave the parent alone", not "clear
-    # it": the edit form is also how a name or class is corrected, and those
-    # edits must not quietly detach a student from a parent who is already
-    # linked. Only a phone that was actually typed changes the link.
     normalized_phone = normalize_phone(parent_phone) if parent_phone else ""
     parent = None
     if normalized_phone:
@@ -542,40 +478,27 @@ def delete_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     
-    # Explicitly delete associated records in correct order to avoid FK violations
     from app.models.attendance_model import Attendance
     from app.models.notification_model import NotificationEvent
     from app.models.journal_model import Grade
     from app.models.lesson_attendance_model import LessonAttendance
     from app.models.material_model import MaterialAttempt
 
-    # 1. Delete notifications related to the student's attendances
     attendance_ids = [a.id for a in db.query(Attendance).filter(Attendance.student_id == student_id).all()]
     if attendance_ids:
         db.query(NotificationEvent).filter(NotificationEvent.attendance_id.in_(attendance_ids)).delete(synchronize_session=False)
 
-    # 2. Delete notifications directly related to the student
     db.query(NotificationEvent).filter(NotificationEvent.student_id == student_id).delete(synchronize_session=False)
 
-    # 3. Delete attendance records
     db.query(Attendance).filter(Attendance.student_id == student_id).delete(synchronize_session=False)
 
-    # 4. Delete grades entered for this student
     db.query(Grade).filter(Grade.student_id == student_id).delete(synchronize_session=False)
 
-    # 4b. Delete per-lesson attendance and material-assignment attempts --
-    # both carry a student_id FK with no ORM cascade, so left alone they
-    # block the delete below with the same FK violation grades/attendance
-    # used to.
     db.query(LessonAttendance).filter(LessonAttendance.student_id == student_id).delete(synchronize_session=False)
     db.query(MaterialAttempt).filter(MaterialAttempt.student_id == student_id).delete(synchronize_session=False)
 
-    # 5. Tell the Public Server this student is gone -- deactivate, not a
-    # hard delete, so history already synced (old grades/attendance) doesn't
-    # vanish retroactively from the parent's view.
     enqueue_student_event(db, student, operation="deactivate")
 
-    # 6. Delete the student
     photo_path = student.photo
     db.delete(student)
     db.commit()
@@ -593,20 +516,9 @@ def issue_student_logins(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """Give a class (or the whole school) their own logins.
-
-    The passwords come back in plain text in this response and nowhere
-    else -- they are stored only as a salted hash. This is the one moment
-    they can be written down or printed for the children, which is why the
-    app shows them on a screen the director has to dismiss deliberately.
-
-    Pupils who already have a login are left alone unless `reset_existing`:
-    re-running it for a class must not quietly invalidate logins the
-    children have already learned.
-    """
     query = db.query(Student).filter(
         Student.school_id == director.school_id,
-        Student.is_active == True,  # noqa: E712 -- SQLAlchemy column comparison
+        Student.is_active == True,
     )
     if class_id is not None:
         school_class = db.query(Class).filter(
@@ -623,9 +535,6 @@ def issue_student_logins(
     db.flush()
     for row in issued:
         student = next(s for s in students if s.id == row["student_id"])
-        # The Public Server needs the hash, or the pupil can sign in on the
-        # school's network and nowhere else -- which is the one place they
-        # never are.
         enqueue_student_event(db, student, operation="upsert")
     db.commit()
 

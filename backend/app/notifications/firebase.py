@@ -59,9 +59,6 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
         db.commit()
         return event
 
-    # The director's "notifications to parents" switch (School.sms_enabled)
-    # is the master switch: off means nothing leaves this server for a
-    # parent -- no push, no SMS -- so a test run never reaches a family.
     parent_row = db.query(Parent).filter(Parent.id == event.parent_id).first()
     school_row = db.query(School).filter(School.id == parent_row.school_id).first() if parent_row and parent_row.school_id else db.query(School).first()
     if school_row is None or not school_row.sms_enabled:
@@ -70,14 +67,6 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
         db.commit()
         return event
 
-    # A device's Firebase token is registered against whichever Parent row
-    # was active at login time, but a parent with children at two schools
-    # has a sibling Parent row (same phone, different school) that this
-    # event might belong to instead -- look up tokens across the whole
-    # family so a school-B attendance event still reaches a device that
-    # only ever logged in and registered its token under school-A's row.
-    # DeviceToken.token is unique, so a token can't just be duplicated onto
-    # every sibling row at registration time.
     parent = db.query(Parent).filter(Parent.id == event.parent_id).first()
     family_ids = get_parent_family_ids(db, parent) if parent else [event.parent_id]
 
@@ -87,15 +76,7 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
     ).all()
 
     if not tokens:
-        # Nobody's phone is registered for push -- the parent never opened
-        # the app. Fall back to SMS (Robita has no API, so this drives its
-        # web panel directly, see robita_sms.py) rather than losing the
-        # notification entirely -- unless the school has switched SMS off
-        # (see School.sms_enabled), which a director does when a schedule
-        # is entered but no camera is watching it yet.
         school = db.query(School).filter(School.id == parent.school_id).first() if parent else None
-        # Strict: no school row, or SMS switched off, means no text. A parent
-        # whose school link is missing must not become a paid message.
         if settings.sms_provider == "robita" and parent and parent.phone and school is not None and school.sms_enabled:
             ok, detail = robita_client.send(
                 to_local_number(parent.phone),

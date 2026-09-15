@@ -113,10 +113,6 @@ def delete_lesson(
         LessonAttendance.lesson_id == lesson_id
     ).first() is not None
     if has_attendance:
-        # Recorded attendance history exists for this lesson -- deleting it
-        # would either cascade-destroy that history or hit the FK constraint
-        # and 500, so ask the caller to edit the schedule going forward
-        # (e.g. change start_time) instead of deleting a slot with a past.
         raise HTTPException(
             status_code=409,
             detail="This lesson has recorded attendance and cannot be deleted. Edit it instead.",
@@ -136,10 +132,6 @@ def lesson_attendance_status(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """Per-lesson roster view for a class/day: which students were present,
-    late, or absent for each lesson -- the fine-grained counterpart to
-    `/attendance/live-status`, which only knows about the whole day.
-    """
     _require_class(db, class_id, director)
     on = on or date.today()
 
@@ -183,16 +175,6 @@ def generate_timetable(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """Lay out a draft week for every class from its assigned subjects.
-
-    A starting point to correct, not a finished timetable -- but the table
-    was nearly empty, and the diary, per-lesson attendance and "which
-    lesson is on now" all read from it.
-
-    Classes that already have lessons are left alone unless `replace`, and
-    even then any lesson with a diary entry or attendance behind it is
-    skipped rather than deleted along with its history.
-    """
     return timetable_service.generate_for_school(
         db,
         director.school_id,

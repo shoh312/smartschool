@@ -118,36 +118,20 @@ def delete_class(class_id: int, db: Session = Depends(get_db), director: Directo
         db.query(Attendance).filter(Attendance.id.in_(attendance_ids)).delete(synchronize_session=False)
 
     db.query(Grade).filter((Grade.class_id == class_id) | (Grade.student_id.in_(student_ids))).delete(synchronize_session=False)
-    # Same FK-violation issue grades/attendance used to have -- neither
-    # table has an ORM cascade from Student, so a class with any recorded
-    # lesson attendance or material attempt would 500 on delete otherwise.
     if student_ids:
         db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(student_ids)).delete(synchronize_session=False)
         db.query(MaterialAttempt).filter(MaterialAttempt.student_id.in_(student_ids)).delete(synchronize_session=False)
     db.query(TeacherClass).filter(TeacherClass.class_id == class_id).delete(synchronize_session=False)
 
-    # The timetable (lessons) and homework assignments (materials) also key
-    # off class_id with no ORM cascade, and lessons themselves have their
-    # own dependents (attendance taken against them, teacher's day-by-day
-    # logs) that block the delete one level further down.
     lesson_ids = [l.id for l in db.query(Lesson.id).filter(Lesson.class_id == class_id).all()]
     if lesson_ids:
         db.query(LessonAttendance).filter(LessonAttendance.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
         db.query(LessonLog).filter(LessonLog.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
     db.query(Lesson).filter(Lesson.class_id == class_id).delete(synchronize_session=False)
-    # material_attempts cascades automatically (ON DELETE CASCADE on
-    # assignment_id), so deleting the assignment is enough here.
     db.query(MaterialAssignment).filter(MaterialAssignment.class_id == class_id).delete(synchronize_session=False)
 
-    # Announcements/events about this class stay as school-wide history --
-    # class_id is nullable on both, matching how Camera is detached above
-    # rather than deleted.
     db.query(Announcement).filter(Announcement.class_id == class_id).update({"class_id": None}, synchronize_session=False)
     db.query(SchoolEvent).filter(SchoolEvent.class_id == class_id).update({"class_id": None}, synchronize_session=False)
-    # "homework" has no ORM model (the feature was removed from the app) but
-    # the table -- and its FK to classes -- is still in the database on
-    # installations that had it. A fresh database never creates it, so guard
-    # with to_regclass the same way database.py does for room_positions.
     if db.execute(text("SELECT to_regclass('public.homework')")).scalar():
         db.execute(text("DELETE FROM homework WHERE class_id = :class_id"), {"class_id": class_id})
 
@@ -172,14 +156,6 @@ def list_cameras(db: Session = Depends(get_db), director: Director = Depends(get
 
 @router.get("/cameras/status")
 def camera_status(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
-    """What each of this school's cameras is doing right now.
-
-    Reports the loop's own view -- connected, recognising, how many seconds
-    until the next window -- rather than anything inferred from the data it
-    produces. On a morning when nobody has arrived yet those are the same
-    empty database and completely different situations: a camera counting
-    down, and a camera that never started.
-    """
     from app.ai.live_detection import camera_statuses
 
     cameras = {
@@ -192,15 +168,10 @@ def camera_status(db: Session = Depends(get_db), director: Director = Depends(ge
     for status in camera_statuses():
         camera = cameras.get(status.get("camera_id"))
         if camera is None:
-            continue        # another school's camera; not this director's business
+            continue
         rows.append({
             **status,
             "camera_name": camera.name,
-            # `class_id` in the status is whichever class is in session right
-            # now, and is null outside lesson hours. `camera_class_id` is the
-            # room the camera is bolted to, which never changes -- a watcher
-            # following one class needs that one, or it loses its camera the
-            # moment the bell goes and reports it as dead.
             "camera_class_id": camera.class_id,
             "class_name": classes.get(status.get("class_id") or camera.class_id),
         })
@@ -273,8 +244,6 @@ def update_school_settings(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """Both switches change what everyone else in the school sees, which is
-    why they are the director's and not a per-device preference."""
     school = db.query(School).filter(School.id == director.school_id).first()
     if not school:
         raise HTTPException(status_code=404, detail="School not found")
@@ -293,24 +262,10 @@ def update_school_settings(
     return school
 
 
-# Mon-Sat: an academy that works Saturdays is the normal case here, and a
-# lesson on a day nobody comes simply never matches anything.
 _WORKING_DAYS = (0, 1, 2, 3, 4, 5)
 
 
 def _sync_lessons_for_position(db: Session, position: CameraPosition) -> None:
-    """Writes the lessons a position implies, so the rest of the app keeps
-    working in group mode.
-
-    An academy keeps no lesson timetable -- but the diary, the subject
-    register and the per-lesson \"absent\" mark all read lessons. Deriving
-    them from the position means the director enters the schedule once, on
-    the camera, and every one of those features keeps working with no
-    special case anywhere.
-
-    A slot with no weekday repeats every day, so it becomes one lesson per
-    working day. They are removed with the position (position_id cascades).
-    """
     minutes = _minutes_between(position.start_time, position.end_time)
     days = [position.day_of_week] if position.day_of_week is not None else list(_WORKING_DAYS)
     for day in days:
@@ -377,12 +332,6 @@ def create_camera_position(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """Adds one slot: from when to when, and whose group.
-
-    Overlaps are refused rather than stored. Two groups in one room at one
-    time is not a schedule the camera can act on -- it would load one roster
-    and mark the other group absent, every day, with nothing to show why.
-    """
     _require_camera(db, camera_id, director)
 
     school_class = db.query(Class).filter(
@@ -455,14 +404,6 @@ def camera_for_class(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """The camera that watches this class, however it is attached.
-
-    A school bolts a camera to a class and that is the answer. An academy
-    bolts it to a *room*, and which group is in front of it is a question for
-    the timetable -- so a group-mode camera has no class_id at all, and the
-    live view found nothing to show for any group. Looking through the
-    positions as well is what makes "watch this group" work in both.
-    """
     school_class = db.query(Class).filter(
         Class.id == class_id,
         Class.school_id == director.school_id,
@@ -473,7 +414,7 @@ def camera_for_class(
     direct = db.query(Camera).filter(
         Camera.class_id == class_id,
         Camera.school_id == director.school_id,
-        Camera.is_active == True,  # noqa: E712
+        Camera.is_active == True,
     ).first()
     if direct:
         return direct
@@ -484,7 +425,7 @@ def camera_for_class(
         .filter(
             CameraPosition.class_id == class_id,
             Camera.school_id == director.school_id,
-            Camera.is_active == True,  # noqa: E712
+            Camera.is_active == True,
         )
         .first()
     )

@@ -1,10 +1,3 @@
-"""Lets the Flutter app find this backend automatically on the local network.
-
-The phone/PC's LAN IP changes every time it joins a different Wi-Fi (a recurring
-pain point), so instead of the client hardcoding an IP, it broadcasts a UDP
-"who's out there" packet and this responder replies with the API port. The
-client then talks to whichever address the reply actually came from.
-"""
 
 import asyncio
 import socket
@@ -22,7 +15,7 @@ class _DiscoveryProtocol(asyncio.DatagramProtocol):
         self.transport: asyncio.DatagramTransport | None = None
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
-        self.transport = transport  # type: ignore[assignment]
+        self.transport = transport
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         if data.strip() != MAGIC_REQUEST or self.transport is None:

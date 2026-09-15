@@ -26,19 +26,11 @@ class AttendanceResponse(BaseModel):
 
 
 class LiveAttendanceStatus(BaseModel):
-    # Deliberately the same shape as the websocket broadcast in
-    # background/tasks.py. The two feed the same screen, one on first load
-    # and one every few seconds after, and when they disagreed the screen
-    # flickered: the socket filled the charts, the poll five seconds later
-    # overwrote them with rows that carried no class and no time, and they
-    # emptied until the next broadcast.
     student_id: int
     first_name: str
     last_name: str
     class_id: Optional[int] = None
     class_name: Optional[str] = None
-    # "none" | "upcoming" | "running" | "finished" -- what today's timetable
-    # says about this pupil's class at this moment.
     class_lesson_state: str = "none"
     status: str
     attendance_date: date
@@ -67,11 +59,6 @@ class StudentAttendanceSummary(BaseModel):
     attendance_rate: float
     daily_records: list[DailyAttendanceRecord] = []
 
-    # How this student stands *today*, separate from the 30-day history
-    # above: "present", "late", "absent", "left_school", or None when the
-    # cameras have not reached a verdict yet. The analytics screen colours
-    # each student's card from this, so a director sees today's room at a
-    # glance instead of only the month's averages.
     today_status: Optional[str] = None
 
 

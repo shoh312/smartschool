@@ -37,18 +37,6 @@ def get_daily_attendance(db: Session, student_id: int, day: date) -> Attendance 
 
 
 def _class_start_from_camera(db: Session, camera_id: int) -> time | None:
-    """The hour the people this camera watches were due to arrive.
-
-    Falling back to the school's morning cutoff when this returns None is
-    right for a school and badly wrong for an academy. A camera bolted to a
-    room carries no class of its own, so every group it saw came back None,
-    and a pupil recognised at 14:04 for a lesson that began at 14:00 was
-    written down as late against an 08:15 cutoff -- present in the lesson's
-    own register, late on the day's, and red in the analytics either way.
-
-    So a room camera is asked the only question that makes sense for it:
-    which group is in front of it right now, and when was that group due.
-    """
     from app.models.camera_model import Camera
     from app.models.class_model import Class
 
@@ -70,7 +58,6 @@ def _class_start_from_camera(db: Session, camera_id: int) -> time | None:
 
 
 def _slot_start_for_camera(db: Session, camera_id: int, now: datetime | None = None) -> time | None:
-    """Start time of the timetable slot this room camera is inside."""
     from app.models.camera_position_model import CameraPosition
     from app.services.camera_position_service import Slot, active_slot
 
@@ -106,11 +93,6 @@ def record_detection(
     detected_at = detected_at or datetime.now()
     today = detected_at.date()
 
-    # A paused school (School.is_active) records nothing at all -- not
-    # even a "present", so a camera left plugged in during setup can't
-    # write attendance the director hasn't agreed is real yet. Returned
-    # rather than raised: the caller (live_detection.py) only reads
-    # `.status` off the result.
     from app.models.school_model import School
 
     student_school_id = db.query(Student.school_id).filter(Student.id == student_id).scalar()
@@ -137,7 +119,6 @@ def record_detection(
             attendance.status = _status_for_detection(detected_at, class_start)
             attendance.time_in = attendance.time_in or detected_at
             
-            # Send notification when they return or arrive late after being marked absent
             student = db.query(Student).filter(Student.id == student_id).first()
             if student:
                 create_notification_event(
@@ -173,7 +154,6 @@ def record_detection(
     db.commit()
     db.refresh(attendance)
 
-    # Send notification for the first arrival of the day
     student = db.query(Student).filter(Student.id == student_id).first()
     if student:
         create_notification_event(
@@ -191,22 +171,6 @@ def record_detection(
 
 
 def classes_in_session_on(lessons, weekday: int, clock: str | None = None, grace_minutes: int = 0) -> set[int]:
-    """Which classes are expected in by `clock` on this weekday.
-
-    A timetable slot is the only evidence the app has that a class was
-    expected to be somewhere. Without this the day-level absence job marked
-    every active pupil absent every single day after the cutoff -- Sundays,
-    holidays, and classes whose timetable the school has not entered yet --
-    which is how the database ended up with 842 absences against 1 present,
-    56 of them on a Sunday.
-
-    `clock` is what makes it "by now" rather than "at some point today", and
-    it matters for an academy: a group whose lesson starts at 14:00 was being
-    reported absent from 08:15, because having a lesson *somewhere* in the
-    day was taken as being late for it. A school never noticed -- its first
-    lesson starts before the cutoff -- but an afternoon group is not late at
-    breakfast.
-    """
     def _m(hhmm: str) -> int:
         h, m = (hhmm or "00:00")[:5].split(":")
         return int(h) * 60 + int(m)
@@ -231,16 +195,9 @@ def mark_absent_students(
     if day == now.date() and now.time() < cutoff:
         return []
 
-    # No lesson on the books means no school to be absent from. The
-    # per-lesson job next door has always worked this way (it iterates
-    # finished_lessons_today); this one did not, and that was the bug.
     clock = now.strftime("%H:%M") if day == now.date() else "23:59"
     in_session = classes_in_session_on(db.query(Lesson).all(), day.weekday(), clock, grace_minutes=ABSENCE_GRACE_MINUTES)
 
-    # An academy keeps no lesson timetable -- its schedule is the camera's
-    # own list of groups, and without this every group would be exempt from
-    # absence marking forever, silently. A group counts once its slot has
-    # started: before that there is nothing to be late for.
     in_session |= classes_with_started_slot(
         [
             Slot(id=row.id, class_id=row.class_id, start_time=row.start_time,
@@ -254,26 +211,17 @@ def mark_absent_students(
     if not in_session:
         return []
 
-    # Only classes a camera actually watched today. A dead camera, or a
-    # group with no camera at all, must not turn into a room full of
-    # "absent" and a text to every parent -- the director marks those by
-    # hand. Imported lazily: live_detection imports this module.
     from app.ai.live_detection import classes_watched_on
 
     in_session &= classes_watched_on(day)
     if not in_session:
         return []
 
-    # A school pauses itself (School.is_active) between "the schedule is
-    # entered" and "a camera is actually watching it" -- without this, a
-    # class with a real Lesson/CameraPosition row but nobody to detect
-    # presence would get every pupil marked absent, and their parent
-    # texted about it, the first time this job ran.
     from app.models.class_model import Class
     from app.models.school_model import School
 
     inactive_school_ids = {
-        row[0] for row in db.query(School.id).filter(School.is_active == False).all()  # noqa: E712
+        row[0] for row in db.query(School.id).filter(School.is_active == False).all()
     }
     if inactive_school_ids:
         paused_class_ids = {
@@ -284,7 +232,7 @@ def mark_absent_students(
             return []
 
     active_students = db.query(Student).filter(
-        Student.is_active == True,  # noqa: E712
+        Student.is_active == True,
         Student.class_id.in_(in_session),
     ).all()
     created = []
@@ -322,15 +270,6 @@ def mark_absent_students(
 
 
 class DetectionCycleCounter:
-    """Counts a camera's completed detect windows, per day.
-
-    Exists as its own object because the interesting case is the one that is
-    easy to get wrong in an inline counter: a camera thread runs for days,
-    and a count carried over from yesterday would mark a whole class absent
-    on the very first sweep of the morning -- before anybody has walked in.
-    Rolling the count over at the date boundary is the whole job, and it is
-    worth being able to test without a camera or a database.
-    """
 
     def __init__(self, threshold: int, today: date | None = None):
         self.threshold = threshold
@@ -342,7 +281,6 @@ class DetectionCycleCounter:
         return self._count
 
     def record(self, day: date | None = None) -> bool:
-        """Records one completed window; True once enough have run today."""
         day = day or date.today()
         if day != self._day:
             self._day = day
@@ -356,29 +294,12 @@ def mark_absent_after_detection_cycles(
     class_id: int,
     day: date | None = None,
 ) -> list[Attendance]:
-    """Marks a class's still-unseen students absent, once the camera has had
-    more than one go at finding them.
-
-    [mark_absent_students] answers the same question by the clock: anyone not
-    seen by 08:15 is absent. That misfires whenever the camera's own schedule
-    and the clock disagree -- a class starting late, a camera that reconnected
-    slowly, a school day shifted for an event -- and it marks a child absent
-    who nobody ever actually looked for.
-
-    Counting the camera's passes instead ties the verdict to the evidence:
-    the first pass can miss somebody who was turned away or walking in, so it
-    only says "not found yet". By the second pass the room has been looked at
-    twice, and a student still missing is genuinely not there.
-
-    The caller owns the counting -- this runs only when it has already
-    happened at least twice today (see live_detection.py).
-    """
     now = datetime.now()
     day = day or now.date()
 
     students = db.query(Student).filter(
         Student.class_id == class_id,
-        Student.is_active == True,  # noqa: E712
+        Student.is_active == True,
     ).all()
 
     created = []
@@ -439,21 +360,10 @@ def record_lesson_detection(
     confidence: float | None = 1.0,
     detected_at: datetime | None = None,
 ) -> LessonAttendance:
-    """Per-lesson counterpart to `record_detection` -- upserts one row per
-    (student, lesson, day) so a student's presence can be judged per subject
-    instead of only once for the whole day. Called alongside `record_detection`,
-    never instead of it, so the existing day-level screens are unaffected.
-    """
     detected_at = detected_at or datetime.now()
     today = detected_at.date()
     existing = get_lesson_attendance(db, student_id, lesson_id, today)
     if existing:
-        # A pupil marked absent two sweeps into the lesson and then seen at
-        # minute ten did turn up, and the register has to say so. Without
-        # this the early marking would be a one-way door: the day-level
-        # record_detection has always corrected itself this way, and the
-        # per-lesson one did not, which is only safe while nothing marks a
-        # lesson absent before it ends.
         if existing.status == ABSENT:
             existing.status = _status_for_lesson_detection(detected_at, lesson_start)
             existing.camera_id = camera_id or existing.camera_id
@@ -484,25 +394,12 @@ def mark_absent_for_lesson(
     lesson_id: int,
     day: date | None = None,
 ) -> list[LessonAttendance]:
-    """Marks absent, in the lesson that is running right now, every active
-    pupil in the class the camera has not seen during it.
-
-    Called from the detection loop once the room has been swept twice (see
-    ABSENT_AFTER_CYCLES), rather than waiting for the bell like
-    `mark_absent_for_finished_lessons` does. The point is the subject
-    register: a teacher wants to see who is missing from *this* lesson while
-    it is still running, not after it.
-
-    Safe to call on every sweep afterwards -- it skips anyone who already has
-    a row -- and safe to be wrong, because `record_lesson_detection` upgrades
-    an absence back to present the moment the pupil is seen.
-    """
     day = day or date.today()
     created: list[LessonAttendance] = []
 
     students = db.query(Student).filter(
         Student.class_id == class_id,
-        Student.is_active == True,  # noqa: E712
+        Student.is_active == True,
     ).all()
 
     for student in students:
@@ -527,14 +424,6 @@ def mark_absent_for_lesson(
 
 
 def mark_absent_for_finished_lessons(db: Session) -> list[LessonAttendance]:
-    """For every lesson that has already ended today, mark absent any active
-    student in that class with no LessonAttendance row yet. Naturally
-    idempotent (skips students who already have a row), so this can run on
-    every background-loop tick with no separate "already processed" state --
-    unlike the day-level `mark_absent_students`, no notification is sent here
-    per lesson (a student absent all day would otherwise get one notification
-    per period).
-    """
     today = date.today()
     created: list[LessonAttendance] = []
 
@@ -573,22 +462,10 @@ def mark_left_school_students(
     missing_after_minutes = missing_after_minutes or settings.left_school_after_minutes
     threshold = now - timedelta(minutes=missing_after_minutes)
 
-    # Group-mode schools are left out of this entirely.
-    #
-    # "Not seen for half an hour" means a child has left the building when a
-    # camera watches its class continuously. It means nothing at all when the
-    # camera looks at the room for ten seconds once every twenty minutes:
-    # missing three of those looks is what sitting behind a classmate looks
-    # like, and the register would quietly turn a pupil who is present into
-    # one who went home -- changing the analytics block the roll call had
-    # already settled, and telling their parent they left.
-    #
-    # The roll call decides who came; after it, only being seen may change a
-    # record, and only upwards.
     from app.models.school_model import School
 
     group_mode_schools = [
-        row[0] for row in db.query(School.id).filter(School.group_mode == True).all()  # noqa: E712
+        row[0] for row in db.query(School.id).filter(School.group_mode == True).all()
     ]
 
     query = db.query(Attendance).filter(
@@ -656,11 +533,6 @@ def attendance_history(
     ).limit(limit).all()
 
 
-# What today's timetable says about one class, right now.
-#
-# "none" is not a state of a lesson, it is the absence of one: the class has
-# nothing scheduled today at all. An academy's dashboard uses it to leave
-# such a group out entirely, which is different from showing it as finished.
 LESSON_NONE = "none"
 LESSON_UPCOMING = "upcoming"
 LESSON_RUNNING = "running"
@@ -668,18 +540,6 @@ LESSON_FINISHED = "finished"
 
 
 def class_lesson_states(db: Session, now: datetime | None = None) -> dict[int, str]:
-    """Today's lesson state per class: not scheduled, not started yet,
-    running, or over.
-
-    One pass over today's timetable rather than three questions asked
-    separately, because the three answers have to agree: a group cannot be
-    both finished and upcoming, and computing them apart is how that
-    happens.
-
-    Half-open windows, like `covers`: a lesson ending at 11:00 and one
-    starting at 11:00 are back to back, and the group that has just arrived
-    is the one that counts as running.
-    """
     now = now or datetime.now()
     weekday = now.weekday()
     minutes_now = now.hour * 60 + now.minute
@@ -707,19 +567,6 @@ def class_lesson_states(db: Session, now: datetime | None = None) -> dict[int, s
 
 
 def classes_in_session_now(db: Session, now: datetime | None = None) -> set[int]:
-    """Classes whose lesson is running at this moment.
-
-    Different from `classes_in_session_on`, which answers "was this class
-    expected in by now" and keeps saying yes for the rest of the day. This
-    one is a window: it opens when the lesson starts and closes when it
-    ends, because the desktop dashboard uses it to show an academy only the
-    groups that are in the building right now -- a group whose two hours
-    finished at four should not still be sitting in the panel at six.
-
-    Half-open, like `covers`: a lesson ending at 11:00 and one starting at
-    11:00 are back to back, and the group that has just arrived is the one
-    that counts.
-    """
     now = now or datetime.now()
     weekday = now.weekday()
     minutes_now = now.hour * 60 + now.minute

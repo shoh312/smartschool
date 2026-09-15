@@ -31,7 +31,6 @@ class Teacher(Base):
 
 
 class TeacherClass(Base):
-    """Which classes a teacher is allowed to enter grades for."""
 
     __tablename__ = "teacher_classes"
 

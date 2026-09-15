@@ -12,9 +12,6 @@ router = APIRouter(prefix="/stream", tags=["Stream"], dependencies=[Depends(get_
 
 
 async def frame_generator(camera_id: int = 0):
-    # Counted as a viewer for the same reason the WebSocket is: an MJPEG
-    # client is watching just as much, and without this the camera would
-    # keep dropping the stream between detection windows underneath it.
     stream_manager.add_viewer(camera_id)
     try:
         while True:
@@ -24,12 +21,10 @@ async def frame_generator(camera_id: int = 0):
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
             await asyncio.sleep(0.1)
     finally:
-        # Runs when the client goes away and the generator is closed.
         stream_manager.remove_viewer(camera_id)
 
 
 def _require_live_enabled(db: Session, director: Director) -> None:
-    """The director's switch, enforced here and not only in the app."""
     school = db.query(School).filter(School.id == director.school_id).first()
     if school is not None and not school.live_video_enabled:
         raise HTTPException(status_code=403, detail='live_video_disabled')

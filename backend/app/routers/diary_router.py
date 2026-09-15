@@ -38,9 +38,6 @@ def get_diary(
     if not school_class or school_class.school_id != _actor_school_id(actor):
         raise HTTPException(status_code=404, detail="Class not found")
 
-    # A diary really belongs to one pupil, so staff can narrow the class
-    # view down to a single student and see their grades alongside the
-    # (class-wide) lessons and homework.
     if student_id is not None:
         student = db.query(Student).filter(
             Student.id == student_id,
@@ -70,10 +67,6 @@ def update_diary_log(
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    # Homework and the teacher's note are that teacher's own record of the
-    # lesson, so only the teacher this lesson is assigned to may write them.
-    # A director can read every class's diary but not author entries in it --
-    # previously any director could overwrite any teacher's homework.
     if actor.role != "teacher" or lesson.teacher_id != actor.teacher.id:
         raise HTTPException(
             status_code=403,
@@ -81,11 +74,6 @@ def update_diary_log(
         )
 
     on = on or date.today()
-    # A log written for a date whose weekday isn't one this lesson runs on
-    # would be stored and synced to the Public Server (parents/students would
-    # see it) yet never appear again in this local diary, which only resolves
-    # lessons matching `on_date.weekday()` -- silently unreachable, uneditable
-    # data. Reject it instead.
     if on.weekday() != lesson.day_of_week:
         raise HTTPException(
             status_code=400,
