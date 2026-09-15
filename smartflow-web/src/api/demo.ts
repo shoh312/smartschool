@@ -156,7 +156,7 @@ function cameraStatus(): CameraStatusDto[] {
   const now = new Date(); const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
   return cameras.map((c) => {
     const slot = positions.find((p) => p.camera_id === c.id && p.start_time <= hm && hm < p.end_time)
-    return { camera_id: c.id, camera_name: c.name, class_name: slot?.class_name ?? classes.find((k) => k.id === c.class_id)?.name ?? null, connected: c.id !== 2 || now.getSeconds() % 50 > 5, detecting: !!slot, phase: slot ? 'detecting' : 'dars vaqti emas', roll_call: false }
+    return { camera_id: c.id, class_id: slot?.class_id ?? c.class_id ?? null, camera_name: c.name, class_name: slot?.class_name ?? classes.find((k) => k.id === c.class_id)?.name ?? null, connected: c.id !== 2 || now.getSeconds() % 50 > 5, detecting: !!slot, phase: slot ? 'detecting' : 'dars vaqti emas', roll_call: false }
   })
 }
 const manual = new Map<number, string>()

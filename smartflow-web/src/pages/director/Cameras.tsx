@@ -3,10 +3,10 @@ import { loadSession, wsBase } from '../../api/client'
 import { isDemo } from '../../api/demo'
 import { Ill } from '../../ui/illustrations'
 import { director } from '../../api/endpoints'
-import type { CameraDto, CameraPositionDto, CameraStatusDto, ClassDto } from '../../api/types'
+import type { CameraDto, CameraPositionDto, CameraStatusDto, ClassDto, LiveStatusDto } from '../../api/types'
 import { useT } from '../../i18n'
 import { IcClock, IcEdit, IcExpand, IcPlay, IcPlus, IcTrash } from '../../ui/icons'
-import { Confirm, Empty, ErrorBox, errorText, Field, Modal, Skeleton, useAsync, useErrorMessage, useToast } from '../../ui/kit'
+import { Avatar, Confirm, Empty, ErrorBox, errorText, Field, Modal, Skeleton, useAsync, useErrorMessage, useFmt, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 import { phaseText } from './Home'
 
@@ -193,11 +193,64 @@ function demoFeed(canvasRef: React.RefObject<HTMLCanvasElement>, onFrame: () => 
   return () => { alive = false; window.clearTimeout(timer) }
 }
 
+/**
+ * Live view with the lesson beside it: whichever group is in front of this
+ * camera right now, its pupils, and who has been seen -- refreshed every
+ * few seconds from the same status the camera loop writes.
+ */
 function LiveModal({ camera, status, onClose }: { camera: CameraDto; status?: CameraStatusDto; onClose: () => void }) {
   const { t } = useT()
+  const f = useFmt()
+  const students = useAsync(() => director.students(), [])
+  const [live, setLive] = useState<Map<number, LiveStatusDto>>(new Map())
+  useEffect(() => {
+    let alive = true, timer = 0
+    const tick = async () => {
+      try { const l = await director.liveStatus(); if (alive) setLive(new Map(l.map((x) => [x.student_id, x]))) } catch {}
+      if (alive) timer = window.setTimeout(tick, 5000)
+    }
+    tick()
+    return () => { alive = false; window.clearTimeout(timer) }
+  }, [])
+  const classId = status?.class_id ?? camera.class_id ?? null
+  const pupils = (students.data ?? []).filter((s) => s.class_id === classId).sort((a, b) => a.last_name.localeCompare(b.last_name))
+  const came = pupils.filter((s) => ['present', 'late'].includes(live.get(s.id)?.status ?? ''))
+  const lesson = !!status?.class_name && status.phase !== 'dars vaqti emas'
+
   return (
     <Modal title={camera.name} lead={status ? `${status.class_name ?? ''} · ${phaseText(status, t)}` : undefined} onClose={onClose} full>
-      <LiveVideo cameraId={camera.id} />
+      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1.6fr) minmax(260px, 1fr)', gap: 16, alignItems: 'start' }}>
+        <LiveVideo cameraId={camera.id} />
+        <div className="card tight" style={{ maxHeight: '60vh', overflow: 'auto' }}>
+          {!lesson || classId == null ? (
+            <div className="muted small" style={{ padding: 8 }}>{t('cam_no_lesson')}</div>
+          ) : (
+            <>
+              <div className="row mb12">
+                <div className="grow">
+                  <div className="bold" style={{ fontSize: 15 }}>{status?.class_name}</div>
+                  <div className="tiny faint">{t('present_now', came.length)} / {pupils.length}{status?.detecting ? ` · ${t('detecting')}` : ''}</div>
+                </div>
+                <span className={'chip ' + (came.length === pupils.length && pupils.length ? 'mint' : 'brand')}>{came.length}/{pupils.length}</span>
+              </div>
+              <div className="col" style={{ gap: 4 }}>
+                {pupils.map((s) => {
+                  const st = live.get(s.id)?.status ?? 'not_detected'
+                  const ok = st === 'present' || st === 'late'
+                  return (
+                    <div key={s.id} className="row" style={{ padding: '5px 6px', borderRadius: 10, background: ok ? 'var(--mint-soft)' : 'transparent' }}>
+                      <Avatar first={s.first_name} last={s.last_name} id={s.id} size="sm" />
+                      <div className="grow ellipsis small bold">{s.last_name} {s.first_name}</div>
+                      <span className={'chip ' + (ok ? 'mint' : st === 'absent' ? 'rose' : '')} style={{ height: 24, fontSize: 11 }}>{ok && live.get(s.id)?.time_in ? f.time(live.get(s.id)!.time_in) : t('st_' + st)}</span>
+                    </div>
+                  )
+                })}
+                {students.data && pupils.length === 0 && <div className="muted small">{t('no_pupils')}</div>}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </Modal>
   )
 }

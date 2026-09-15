@@ -49,6 +49,7 @@ export interface AbsenceDto { student_id: number; subject: string; date: string;
 export interface CameraDto { id: number; class_id?: number | null; name: string; ip_address?: string | null; rtsp_url?: string | null; is_active?: boolean }
 export interface CameraStatusDto {
   camera_id: number
+  class_id?: number | null
   camera_name?: string | null
   class_name?: string | null
   connected?: boolean
