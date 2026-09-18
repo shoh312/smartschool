@@ -6,6 +6,7 @@ import { LangProvider } from './i18n'
 import { ToastProvider } from './ui/kit'
 import { Shell } from './ui/Shell'
 import { Login } from './pages/auth/Login'
+import { Landing } from './pages/Landing'
 import { DirectorHome } from './pages/director/Home'
 import { Classes, ClassDetail } from './pages/director/Classes'
 import { Journal } from './pages/director/Journal'
@@ -36,7 +37,9 @@ function Routed() {
   if (!session) {
     return (
       <Routes>
-        <Route path="*" element={<Login />} />
+        <Route index element={<Landing />} />
+        <Route path="login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
   }

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { apiBase, saveSession } from '../../api/client'
 import { setDemo } from '../../api/demo'
 import { auth } from '../../api/endpoints'
@@ -6,7 +7,14 @@ import type { Role } from '../../api/types'
 import { LangSwitch, useT } from '../../i18n'
 import { errorText, Field, useErrorMessage } from '../../ui/kit'
 import { Ill } from '../../ui/illustrations'
-import { IcBook, IcCamera, IcSparkles } from '../../ui/icons'
+import { IcBack, IcBook, IcCamera, IcSparkles } from '../../ui/icons'
+
+/** Enters the demo as the given role: sample data, nothing saved, no server. */
+export function startDemo(r: Role) {
+  setDemo(true)
+  if (r === 'director') saveSession({ token: 'demo', role: 'director', id: 1, fullName: 'Шарипов Шоҳрух', email: 'director@cict.tj', serverUrl: 'demo' })
+  else saveSession({ token: 'demo', role: 'teacher', id: 1, fullName: 'Раҳимова Нигина', email: 'n.rahimova@cict.tj', subject: 'BackEnd #1', serverUrl: 'demo' })
+}
 
 export function Login() {
   const { t } = useT()
@@ -16,12 +24,6 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  function startDemo(r: Role) {
-    setDemo(true)
-    if (r === 'director') saveSession({ token: 'demo', role: 'director', id: 1, fullName: 'Шарипов Шоҳрух', email: 'director@cict.tj', serverUrl: 'demo' })
-    else saveSession({ token: 'demo', role: 'teacher', id: 1, fullName: 'Раҳимова Нигина', email: 'n.rahimova@cict.tj', subject: 'BackEnd #1', serverUrl: 'demo' })
-  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -67,6 +69,7 @@ export function Login() {
       </div>
       <div className="auth-form">
         <form className="auth-card" onSubmit={submit}>
+          <Link to="/" className="ld-back"><IcBack /> {t('ld_back_home')}</Link>
           <h2>{t('login_title')}</h2>
           <p className="lead">{t('login_lead')}</p>
           <div className="seg mb16">
