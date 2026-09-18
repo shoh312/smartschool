@@ -1,8 +1,8 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { LangSwitch, useT } from '../i18n'
 import { Ill, type IllName } from '../ui/illustrations'
-import { IcBell, IcBook, IcCamera, IcChart, IcCheck, IcNext, IcShield, IcSparkles, IcUsers } from '../ui/icons'
+import { IcBell, IcBook, IcCamera, IcChart, IcCheck, IcDownload, IcNext, IcShield, IcSparkles, IcUsers, IcX } from '../ui/icons'
 import { startDemo } from './auth/Login'
 
 /**
@@ -10,9 +10,20 @@ import { startDemo } from './auth/Login'
  * in (sign in, or the demo that needs no server). Everything below the fold
  * fades up as it scrolls into view; nothing here talks to the API.
  */
+/** The Android build lives next to the web files, so the public server hands it out at /web/smartflow.apk. */
+export const APK_URL = import.meta.env.BASE_URL + 'smartflow.apk'
+const APK_MB = 23
+
 export function Landing() {
   const { t } = useT()
   useReveal()
+  const [apk, setApk] = useState(false)
+  useEffect(() => {
+    let seen = false
+    try { seen = sessionStorage.getItem('sf.apk') === '1' } catch {}
+    if (!seen) { const id = setTimeout(() => setApk(true), 900); return () => clearTimeout(id) }
+  }, [])
+  function closeApk() { setApk(false); try { sessionStorage.setItem('sf.apk', '1') } catch {} }
 
   return (
     <div className="ld">
@@ -30,6 +41,7 @@ export function Landing() {
           </nav>
           <div className="row">
             <LangSwitch />
+            <button className="btn ghost ld-hide-sm" onClick={() => setApk(true)}><IcDownload /> {t('ld_apk_nav')}</button>
             <Link to="/login" className="btn soft ld-hide-sm">{t('sign_in')}</Link>
             <button className="btn primary" onClick={() => startDemo('director')}>{t('ld_try_demo')}</button>
           </div>
@@ -47,7 +59,7 @@ export function Landing() {
               <Link to="/login" className="btn primary lg">{t('ld_hero_cta')} <IcNext /></Link>
               <button className="btn soft lg" onClick={() => startDemo('director')}>{t('ld_try_demo')}</button>
             </div>
-            <div className="ld-note"><Ill name="phone_sms" size={46} /> {t('ld_hero_note')}</div>
+            <a href={APK_URL} download="SmartFlow.apk" className="ld-note ld-note-link"><Ill name="phone_sms" size={46} /> <span>{t('ld_hero_note')}<b>{t('ld_apk_download')} · {APK_MB} MB</b></span></a>
           </div>
           <Mock />
         </div>
@@ -127,6 +139,20 @@ export function Landing() {
           <span className="small faint">© {new Date().getFullYear()} SmartFlow</span>
         </div>
       </footer>
+
+      {apk && (
+        <div className="overlay" onClick={closeApk}>
+          <div className="modal ld-apk" onClick={(e) => e.stopPropagation()}>
+            <button className="btn icon ghost ld-apk-x" onClick={closeApk} aria-label={t('ld_apk_later')}><IcX /></button>
+            <div className="ld-apk-art"><Ill name="phone_sms" size={150} /></div>
+            <h2>{t('ld_apk_title')}</h2>
+            <p className="lead">{t('ld_apk_body')}</p>
+            <a href={APK_URL} download="SmartFlow.apk" className="btn primary lg" style={{ width: '100%' }} onClick={closeApk}><IcDownload /> {t('ld_apk_download')}</a>
+            <div className="small faint" style={{ textAlign: 'center', marginTop: 10 }}>{t('ld_apk_size', APK_MB)}</div>
+            <button className="btn ghost" style={{ width: '100%', marginTop: 10 }} onClick={closeApk}>{t('ld_apk_later')}</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

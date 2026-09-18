@@ -87,5 +87,7 @@ if (WEB_DIR / "index.html").is_file():
     def web_app(path: str = ""):
         candidate = (WEB_DIR / path).resolve() if path else None
         if candidate is not None and candidate.is_file() and WEB_DIR in candidate.parents:
+            if candidate.suffix == ".apk":
+                return FileResponse(candidate, media_type="application/vnd.android.package-archive", filename="SmartFlow.apk")
             return FileResponse(candidate)
         return FileResponse(WEB_DIR / "index.html")

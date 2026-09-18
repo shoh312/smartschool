@@ -456,4 +456,10 @@ export const STRINGS: Record<string, [string, string, string]> = {
   ld_cta_b: ['Демо бе сервер кор мекунад — ҳама чизро санҷед, баъд бо ҳисоби мактаб ворид шавед.', 'Демо работает без сервера — попробуйте всё, затем войдите со школьной учётной записью.', 'The demo needs no server: try everything, then sign in with your school account.'],
   ld_footer: ['SmartFlow — лоиҳаи CICT Academy, Душанбе', 'SmartFlow — проект CICT Academy, Душанбе', 'SmartFlow — a CICT Academy project, Dushanbe'],
   ld_back_home: ['Ба саҳифаи асосӣ', 'На главную', 'Back to home'],
+  ld_apk_title: ['Иловаи SmartFlow барои Android', 'Приложение SmartFlow для Android', 'The SmartFlow app for Android'],
+  ld_apk_body: ['Барои волидон, муаллимон ва директор: давомот, журнал, рӯзнома ва видеои зиндаи дарс — дар телефон. Файлро боргирӣ карда, кушоед ва насбро иҷозат диҳед.', 'Для родителей, учителей и директора: посещаемость, журнал, дневник и живое видео урока — в телефоне. Скачайте файл, откройте его и разрешите установку.', 'For parents, teachers and the director: attendance, register, diary and live lesson video on the phone. Download the file, open it and allow the install.'],
+  ld_apk_download: ['Боргирии APK', 'Скачать APK', 'Download the APK'],
+  ld_apk_size: ['Android 8.0 ва болотар · {0} МБ', 'Android 8.0 и выше · {0} МБ', 'Android 8.0 or newer · {0} MB'],
+  ld_apk_later: ['Баъдтар', 'Позже', 'Later'],
+  ld_apk_nav: ['Илова', 'Приложение', 'App'],
 }

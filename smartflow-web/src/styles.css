@@ -535,3 +535,12 @@ body { background: var(--page); background-image: radial-gradient(900px 500px at
   .ld-mock-body { grid-template-columns: 1fr; } .ld-mock-body aside { display: none; }
   .ld-section { padding: 56px 0; }
 }
+
+.ld-note-link { border-radius: 14px; padding: 6px 10px 6px 4px; margin-left: -4px; transition: background .15s; }
+.ld-note-link:hover { background: var(--brand-tint); }
+.ld-note-link b { display: block; color: var(--brand); font-size: 12.5px; margin-top: 2px; }
+.ld-apk { width: min(440px, 100%); text-align: center; position: relative; padding: 30px 28px 24px; }
+.ld-apk-x { position: absolute; right: 14px; top: 14px; }
+.ld-apk-art { display: grid; place-items: center; margin-bottom: 8px; }
+.ld-apk h2 { font-size: 22px; }
+.ld-apk .lead { font-size: 14px; line-height: 1.5; }
