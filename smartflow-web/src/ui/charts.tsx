@@ -206,6 +206,74 @@ export function AreaChart({ points, max = 10, height = 200, color = 'var(--brand
   )
 }
 
+// -------------------------------------------------------- line chart
+
+/**
+ * A multi-series line chart with gridlines, a full x-axis, a soft area under
+ * the first series, and a highlighted point with a tooltip — the "distribution"
+ * look. Each series is a run of values aligned to `labels`; a dashed series
+ * reads as the comparison line.
+ */
+export function LineChart({ series, labels, max, height = 210, unit = '', highlight, everyLabel }: {
+  series: { label: string; color: string; dashed?: boolean; values: (number | null)[] }[]
+  labels: string[]; max?: number; height?: number; unit?: string; highlight?: number; everyLabel?: number
+}) {
+  const on = useMounted()
+  const W = 360, padL = 34, padB = 26, padT = 14
+  const plotH = height - padB - padT
+  const plotW = W - padL - 10
+  const n = labels.length
+  const top = max ?? Math.max(1, ...series.flatMap((s) => s.values.map((v) => v ?? 0)))
+  const x = (i: number) => padL + (i * plotW) / Math.max(1, n - 1)
+  const y = (v: number) => padT + plotH * (1 - v / top)
+  const hi = highlight ?? n - 1
+  const step = everyLabel ?? Math.ceil(n / 7)
+  const id = 'lg' + Math.round(top * 13 + n)
+  const primary = series[0]
+  return (
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={primary.color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={primary.color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {ticks(top).map((tk, i) => (
+        <g key={i}>
+          <line x1={padL} y1={y(tk)} x2={W - 4} y2={y(tk)} stroke="var(--border)" strokeWidth={1} strokeDasharray={i === 0 ? '0' : '3 4'} />
+          <text x={padL - 6} y={y(tk) + 3} textAnchor="end" fontSize="9" fill="var(--ink-3)" fontWeight="700">{fmt(tk)}{unit}</text>
+        </g>
+      ))}
+      {series.map((s, si) => {
+        const pts = s.values.map((v, i) => ({ x: x(i), y: y(v ?? 0) }))
+        const line = smoothPath(pts)
+        return (
+          <g key={si}>
+            {si === 0 && <path d={`${line} L ${x(n - 1)},${padT + plotH} L ${x(0)},${padT + plotH} Z`} fill={`url(#${id})`} opacity={on ? 1 : 0} style={{ transition: 'opacity 1s' }} />}
+            <path d={line} fill="none" stroke={s.color} strokeWidth={s.dashed ? 2 : 2.8} strokeLinecap="round" strokeLinejoin="round"
+              strokeDasharray={s.dashed ? '5 5' : undefined} opacity={s.dashed ? 0.7 : 1}
+              style={{ strokeDasharray: s.dashed ? '5 5' : 1400, strokeDashoffset: on ? 0 : (s.dashed ? 0 : 1400), transition: 'stroke-dashoffset 1.3s ease', opacity: on ? (s.dashed ? 0.7 : 1) : 0 }} />
+          </g>
+        )
+      })}
+      {/* highlight on the primary series */}
+      {primary.values[hi] != null && (
+        <g opacity={on ? 1 : 0} style={{ transition: 'opacity .5s .8s' }}>
+          <line x1={x(hi)} y1={y(primary.values[hi]!)} x2={x(hi)} y2={padT + plotH} stroke={primary.color} strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />
+          <circle cx={x(hi)} cy={y(primary.values[hi]!)} r={5.5} fill={primary.color} stroke="#fff" strokeWidth={2.5} />
+          <g>
+            <rect x={x(hi) - 24} y={y(primary.values[hi]!) - 27} width={48} height={19} rx={6} fill="var(--ink)" />
+            <text x={x(hi)} y={y(primary.values[hi]!) - 14} textAnchor="middle" fontSize="10" fill="#fff" fontWeight="800">{fmt(primary.values[hi]!)}{unit}</text>
+          </g>
+        </g>
+      )}
+      {labels.map((lb, i) => ((i % step === 0 || i === n - 1) &&
+        <text key={i} x={x(i)} y={height - 8} textAnchor="middle" fontSize="9" fill="var(--ink-3)" fontWeight="700">{lb}</text>
+      ))}
+    </svg>
+  )
+}
+
 // -------------------------------------------------------------- delta
 
 /** A small up/down change badge, green for a rise, rose for a fall. */

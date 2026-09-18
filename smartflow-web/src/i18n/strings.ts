@@ -556,5 +556,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
   ob_stu_2_b: ['Тестҳоро дар телефон ҳал кун — фавран натиҷаро мебинӣ.', 'Решай тесты в телефоне — сразу видишь результат.', 'Take quizzes on your phone — see the result at once.'],
   ob_stu_3_t: ['Пешрафти ту', 'Твой прогресс', 'Your progress'],
   ob_stu_3_b: ['Бали миёна ва ҷои ту дар рейтинг — ҳама намоён.', 'Средний балл и твоё место в рейтинге — всё видно.', 'Your average and rank — all visible.'],
-
+  att_trend_title: ['Давомот аз рӯи рӯзҳо', 'Посещаемость по дням', 'Attendance by day'],
+  att_trend_sub: ['14 рӯзи охир — фоизи омадагон ва ғоибон', 'За 14 дней — доля пришедших и отсутствующих', 'Last 14 days — share present and absent'],
+  att_trend_today: ['имрӯз омаданд', 'пришли сегодня', 'came today'],
 }

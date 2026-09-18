@@ -99,6 +99,7 @@ export const director = {
   deletePosition: (cameraId: number, id: number) => del<void>(`cameras/${cameraId}/positions/${id}`),
 
   liveStatus: () => get<LiveStatusDto[]>('attendance/live-status'),
+  attendanceHistory: (limit = 5000) => get<AttendanceRowDto[]>('attendance/history', { limit }),
   markAttendance: (studentId: number, status: 'present' | 'absent') => post<LiveStatusDto>('attendance/manual', { student_id: studentId, status }),
   settings: () => get<SchoolSettingsDto>('school/settings'),
   updateSettings: (b: Partial<SchoolSettingsDto>) => put<SchoolSettingsDto>('school/settings', b),

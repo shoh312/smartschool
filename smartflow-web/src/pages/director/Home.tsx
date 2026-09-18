@@ -8,7 +8,7 @@ import { IcBook, IcCheck, IcNext } from '../../ui/icons'
 import { Ill, type IllName } from '../../ui/illustrations'
 import { Avatar, ErrorBox, fmtAvg, Grade, Skeleton, useAsync, useFmt } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
-import { BarChart, DonutChart, Ring } from '../../ui/charts'
+import { BarChart, Delta, DonutChart, LineChart, Ring } from '../../ui/charts'
 
 export function DirectorHome() {
   const { t } = useT()
@@ -20,6 +20,7 @@ export function DirectorHome() {
   const attention = useAsync(() => director.needsAttention(), [])
   const ranking = useAsync(() => director.schoolRanking(), [])
   const events = useAsync(() => director.calendar(), [])
+  const history = useAsync(() => director.attendanceHistory(), [])
   const [cams, setCams] = useState<CameraStatusDto[]>([])
   const [live, setLive] = useState<LiveStatusDto[]>([])
 
@@ -57,6 +58,29 @@ export function DirectorHome() {
   })()
   const todayIso = today.toISOString().slice(0, 10)
   const upcoming = (events.data ?? []).filter((e) => (e.end_date ?? e.start_date) >= todayIso).sort((a, b) => a.start_date.localeCompare(b.start_date)).slice(0, 4)
+
+  // Daily attendance trend over the last two weeks, from the raw history: what
+  // share came (present or late) each day, and what share was absent.
+  const trend = (() => {
+    const days: string[] = []
+    for (let i = 13; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d.toISOString().slice(0, 10)) }
+    const per = new Map<string, { came: number; absent: number }>()
+    for (const r of history.data ?? []) {
+      const day = r.attendance_date?.slice(0, 10); if (!day) continue
+      const p = per.get(day) ?? { came: 0, absent: 0 }
+      if (r.status === 'present' || r.status === 'late') p.came++
+      else if (r.status === 'absent') p.absent++
+      per.set(day, p)
+    }
+    const rows = days.map((d) => {
+      const p = per.get(d); const tot = p ? p.came + p.absent : 0
+      return { day: d, came: tot ? Math.round((p!.came / tot) * 100) : null, absent: tot ? Math.round((p!.absent / tot) * 100) : null, has: tot > 0 }
+    })
+    return rows
+  })()
+  const trendDays = trend.filter((r) => r.has)
+  const lastPct = trendDays.length ? trendDays[trendDays.length - 1].came ?? 0 : 0
+  const prevPct = trendDays.length > 1 ? trendDays[trendDays.length - 2].came ?? 0 : lastPct
 
   return (
     <>
@@ -103,6 +127,36 @@ export function DirectorHome() {
           </div>
         </div>
       </div>
+
+      {trendDays.length > 1 && (
+        <div className="card mb24">
+          <div className="row mb16" style={{ alignItems: 'flex-start' }}>
+            <div className="grow">
+              <div className="card-title" style={{ marginBottom: 2 }}>{t('att_trend_title')}</div>
+              <div className="small muted">{t('att_trend_sub')}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
+                <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.5px' }}>{lastPct}%</div>
+                <Delta value={lastPct - prevPct} unit="%" />
+              </div>
+              <div className="tiny faint">{t('att_trend_today')}</div>
+            </div>
+          </div>
+          <LineChart
+            labels={trend.map((r) => f.ddmm(r.day))}
+            unit="%" max={100}
+            series={[
+              { label: t('att_present'), color: 'var(--brand)', values: trend.map((r) => r.came) },
+              { label: t('att_absent'), color: 'var(--rose)', dashed: true, values: trend.map((r) => r.absent) },
+            ]}
+          />
+          <div className="legend" style={{ justifyContent: 'center' }}>
+            <span><i style={{ background: 'var(--brand)' }} /> {t('att_present')}</span>
+            <span><i style={{ background: 'var(--rose)', opacity: .7 }} /> {t('att_absent')}</span>
+          </div>
+        </div>
+      )}
 
       {classAvg.length > 0 && (
         <div className="card mb24">
