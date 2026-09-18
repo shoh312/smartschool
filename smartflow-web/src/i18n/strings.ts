@@ -53,8 +53,6 @@ export const STRINGS: Record<string, [string, string, string]> = {
   st_absent: ['Ғоиб', 'Отсутствует', 'Absent'],
   st_left_school: ['Рафт', 'Ушёл', 'Left'],
   st_not_detected: ['Ҳанӯз нест', 'Ещё не пришёл', 'Not yet'],
-  demo_title: ['Реҷаи намоишӣ', 'Демо-режим', 'Demo mode'],
-  demo_body: ['Бе сервер — бо маълумоти намунавӣ. Ҳама чиз кор мекунад, вале нигоҳ дошта намешавад.', 'Без сервера — на примерных данных. Всё работает, но не сохраняется.', 'No server needed — sample data. Everything works, nothing is kept.'],
 
   // ---- nav
   nav_home: ['Асосӣ', 'Главная', 'Home'],
@@ -381,7 +379,6 @@ export const STRINGS: Record<string, [string, string, string]> = {
   ld_nav_how: ['Чӣ тавр кор мекунад', 'Как это работает', 'How it works'],
   ld_nav_roles: ['Барои кӣ', 'Для кого', 'For whom'],
   ld_nav_security: ['Амният', 'Безопасность', 'Security'],
-  ld_try_demo: ['Демо-ро санҷед', 'Попробовать демо', 'Try the demo'],
   ld_eyebrow: ['Платформаи рақамӣ барои мактаб ва академияҳо', 'Цифровая платформа для школ и академий', 'A digital platform for schools and academies'],
   ld_hero_title: ['Мактабе, ки худаш давомотро мегирад', 'Школа, которая сама ведёт посещаемость', 'A school that takes its own attendance'],
   ld_hero_body: ['Камера хонандаро мешиносад, журнал худаш пур мешавад, волидон дар ҳамон дақиқа хабар мегиранд. Директор ва муаллим — дар як экран, бе коғаз.', 'Камера узнаёт ученика, журнал заполняется сам, родители получают уведомление в ту же минуту. Директор и учитель — на одном экране, без бумаги.', 'The camera recognises the pupil, the register fills itself in, parents hear about it the same minute. Director and teacher on one screen, no paper.'],
@@ -453,7 +450,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
   ld_sec3_t: ['Дастрасӣ аз рӯи нақш', 'Доступ по ролям', 'Role-based access'],
   ld_sec3_b: ['Директор, муаллим, волид ва хонанда — ҳар кадом танҳо чизи худро мебинад. Токенҳо, на паролҳо.', 'Директор, учитель, родитель и ученик видят только своё. Токены, а не пароли.', 'Director, teacher, parent and pupil each see only their own. Tokens, not passwords.'],
   ld_cta_t: ['Мактаби худро дар як экран бинед', 'Увидьте свою школу на одном экране', 'See your school on one screen'],
-  ld_cta_b: ['Демо бе сервер кор мекунад — ҳама чизро санҷед, баъд бо ҳисоби мактаб ворид шавед.', 'Демо работает без сервера — попробуйте всё, затем войдите со школьной учётной записью.', 'The demo needs no server: try everything, then sign in with your school account.'],
+  ld_cta_b: ['Бо ҳисоби мактабии худ ворид шавед ё иловаи Android-ро барои телефон боргирӣ кунед.', 'Войдите со школьной учётной записью или скачайте приложение для Android.', 'Sign in with your school account or download the Android app.'],
   ld_footer: ['SmartFlow — лоиҳаи CICT Academy, Душанбе', 'SmartFlow — проект CICT Academy, Душанбе', 'SmartFlow — a CICT Academy project, Dushanbe'],
   ld_back_home: ['Ба саҳифаи асосӣ', 'На главную', 'Back to home'],
   ld_apk_title: ['Иловаи SmartFlow барои Android', 'Приложение SmartFlow для Android', 'The SmartFlow app for Android'],

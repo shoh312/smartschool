@@ -1,20 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { apiBase, saveSession } from '../../api/client'
-import { setDemo } from '../../api/demo'
 import { auth } from '../../api/endpoints'
 import type { Role } from '../../api/types'
 import { LangSwitch, useT } from '../../i18n'
 import { errorText, Field, useErrorMessage } from '../../ui/kit'
 import { Ill } from '../../ui/illustrations'
 import { IcBack, IcBook, IcCamera, IcSparkles } from '../../ui/icons'
-
-/** Enters the demo as the given role: sample data, nothing saved, no server. */
-export function startDemo(r: Role) {
-  setDemo(true)
-  if (r === 'director') saveSession({ token: 'demo', role: 'director', id: 1, fullName: 'Шарипов Шоҳрух', email: 'director@cict.tj', serverUrl: 'demo' })
-  else saveSession({ token: 'demo', role: 'teacher', id: 1, fullName: 'Раҳимова Нигина', email: 'n.rahimova@cict.tj', subject: 'BackEnd #1', serverUrl: 'demo' })
-}
 
 export function Login() {
   const { t } = useT()
@@ -29,7 +21,6 @@ export function Login() {
     e.preventDefault()
     if (busy) return
     setBusy(true); setError(null)
-    setDemo(false)   // a real sign-in always leaves the demo, whatever was tried before
     try {
       if (role === 'director') {
         const r = await auth.directorLogin(email.trim(), password)
@@ -81,19 +72,6 @@ export function Login() {
             <Field label={t('password')}><input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></Field>
             {error && <div className="error-box">{msg(error)}</div>}
             <button className="btn primary" style={{ height: 46 }} disabled={busy}>{busy ? t('signing_in') : t('sign_in')}</button>
-          </div>
-          <div className="card tight mt24" style={{ background: 'var(--brand-tint)', borderColor: 'var(--brand-soft)', boxShadow: 'none' }}>
-            <div className="row">
-              <Ill name="phone_sms" size={54} />
-              <div className="grow">
-                <div className="bold">{t('demo_title')}</div>
-                <div className="small muted">{t('demo_body')}</div>
-              </div>
-            </div>
-            <div className="row mt12" style={{ gap: 8 }}>
-              <button type="button" className="btn soft grow" style={{ background: 'var(--surface)' }} onClick={() => startDemo('director')}>{t('role_director')}</button>
-              <button type="button" className="btn soft grow" style={{ background: 'var(--surface)' }} onClick={() => startDemo('teacher')}>{t('role_teacher')}</button>
-            </div>
           </div>
         </form>
       </div>

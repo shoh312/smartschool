@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { isDemo } from '../../api/demo'
 import { director } from '../../api/endpoints'
 import type { SchoolSettingsDto } from '../../api/types'
 import { useT, type Lang } from '../../i18n'
@@ -80,7 +79,7 @@ export function Settings() {
                 <div className="bold">{session?.fullName}</div>
                 <div className="small muted">{session?.email}{session?.subject ? ` · ${session.subject}` : ''}</div>
               </div>
-              <span className={'chip ' + (isDemo() ? 'amber' : 'brand')}>{isDemo() ? 'DEMO' : isDirector ? t('role_director') : t('role_teacher')}</span>
+              <span className="chip brand">{isDirector ? t('role_director') : t('role_teacher')}</span>
             </div>
           </div>
         </div>

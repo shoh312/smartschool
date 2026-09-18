@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { saveSession } from '../api/client'
-import { isDemo } from '../api/demo'
 import type { Session } from '../api/types'
 import { useT } from '../i18n'
 import { IcBell, IcBook, IcCalendar, IcCamera, IcChart, IcGrid, IcHome, IcLayers, IcLogout, IcSettings, IcUser, IcUsers } from './icons'
@@ -38,7 +37,7 @@ export function Shell({ session }: { session: Session }) {
           <div className="brand-mark">S</div>
           <div>
             <div className="brand-name">SmartFlow</div>
-            <div className="brand-sub">{director ? t('role_director') : t('role_teacher')}{isDemo() && <span className="chip amber" style={{ height: 20, marginLeft: 6, padding: '0 7px', fontSize: 10.5 }}>DEMO</span>}</div>
+            <div className="brand-sub">{director ? t('role_director') : t('role_teacher')}</div>
           </div>
         </div>
         <nav className="nav">

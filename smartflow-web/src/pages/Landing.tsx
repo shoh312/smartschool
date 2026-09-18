@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom'
 import { LangSwitch, useT } from '../i18n'
 import { Ill, type IllName } from '../ui/illustrations'
 import { IcBell, IcBook, IcCamera, IcChart, IcCheck, IcDownload, IcNext, IcShield, IcSparkles, IcUsers, IcX } from '../ui/icons'
-import { startDemo } from './auth/Login'
 
 /**
  * The public front page at /web/: what SmartFlow is, for whom, and two ways
- * in (sign in, or the demo that needs no server). Everything below the fold
+ * in (sign in, or download the Android app). Everything below the fold
  * fades up as it scrolls into view; nothing here talks to the API.
  */
 /** The Android build lives next to the web files, so the public server hands it out at /web/smartflow.apk. */
@@ -42,8 +41,7 @@ export function Landing() {
           <div className="row">
             <LangSwitch />
             <button className="btn ghost ld-hide-sm" onClick={() => setApk(true)}><IcDownload /> {t('ld_apk_nav')}</button>
-            <Link to="/login" className="btn soft ld-hide-sm">{t('sign_in')}</Link>
-            <button className="btn primary" onClick={() => startDemo('director')}>{t('ld_try_demo')}</button>
+            <Link to="/login" className="btn primary">{t('sign_in')}</Link>
           </div>
         </div>
       </header>
@@ -57,7 +55,7 @@ export function Landing() {
             <p>{t('ld_hero_body')}</p>
             <div className="row wrap" style={{ gap: 12, marginTop: 30 }}>
               <Link to="/login" className="btn primary lg">{t('ld_hero_cta')} <IcNext /></Link>
-              <button className="btn soft lg" onClick={() => startDemo('director')}>{t('ld_try_demo')}</button>
+              <button className="btn soft lg" onClick={() => setApk(true)}><IcDownload /> {t('ld_apk_download')}</button>
             </div>
             <a href={APK_URL} download="SmartFlow.apk" className="ld-note ld-note-link"><Ill name="phone_sms" size={46} /> <span>{t('ld_hero_note')}<b>{t('ld_apk_download')} · {APK_MB} MB</b></span></a>
           </div>
@@ -124,8 +122,8 @@ export function Landing() {
               <h2>{t('ld_cta_t')}</h2>
               <p>{t('ld_cta_b')}</p>
               <div className="row wrap" style={{ gap: 10, marginTop: 22 }}>
-                <button className="btn lg ld-btn-white" onClick={() => startDemo('director')}>{t('ld_try_demo')}</button>
-                <Link to="/login" className="btn lg ld-btn-ghost">{t('sign_in')}</Link>
+                <Link to="/login" className="btn lg ld-btn-white">{t('sign_in')}</Link>
+                <button className="btn lg ld-btn-ghost" onClick={() => setApk(true)}><IcDownload /> {t('ld_apk_download')}</button>
               </div>
             </div>
             <Ill name="school" size={260} className="ld-cta-art" />

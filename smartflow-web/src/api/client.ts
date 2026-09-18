@@ -1,4 +1,3 @@
-import { demoRequest, isDemo, setDemo } from './demo'
 import type { Session } from './types'
 
 /**
@@ -48,6 +47,7 @@ export function loadSession(): Session | null {
   try {
     const raw = localStorage.getItem(STORAGE_SESSION)
     if (raw) session = JSON.parse(raw) as Session
+    if (session?.token === 'demo') { session = null; localStorage.removeItem(STORAGE_SESSION) }
   } catch {}
   return session
 }
@@ -58,7 +58,6 @@ export function saveSession(s: Session | null) {
     if (s) localStorage.setItem(STORAGE_SESSION, JSON.stringify(s))
     else localStorage.removeItem(STORAGE_SESSION)
   } catch {}
-  if (!s) setDemo(false)   // signing out of the demo leaves it behind
   listeners.forEach((l) => l())
 }
 
@@ -96,11 +95,6 @@ interface Options {
 }
 
 export async function request<T>(path: string, o: Options = {}): Promise<T> {
-  if (isDemo()) {
-    const q: Record<string, string> = {}
-    if (o.query) for (const [k, v] of Object.entries(o.query)) if (v !== undefined && v !== null) q[k] = String(v)
-    return demoRequest<T>(o.method ?? (o.body !== undefined || o.form ? 'POST' : 'GET'), path, q, o.body, o.form)
-  }
   const url = new URL(path.replace(/^\//, ''), apiBase())
   if (o.query) for (const [k, v] of Object.entries(o.query)) if (v !== undefined && v !== null) url.searchParams.set(k, String(v))
   const headers: Record<string, string> = { Accept: 'application/json' }
