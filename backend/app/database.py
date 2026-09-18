@@ -80,6 +80,7 @@ def ensure_database_schema():
         "CREATE INDEX IF NOT EXISTS ix_grades_school_year ON grades (school_year)",
         "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id)",
         "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS room VARCHAR",
+        "ALTER TABLE lesson_attendance ADD COLUMN IF NOT EXISTS confidence DOUBLE PRECISION",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS username VARCHAR",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_students_username ON students (username)",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash VARCHAR",

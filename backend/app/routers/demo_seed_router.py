@@ -107,6 +107,18 @@ def seed_demo(
 
     rnd = random.Random(seed * 1000 + student_id)
     until = date.today() - timedelta(days=1)
+    try:
+        return _run_seed(db, student, class_id, teacher, since, until, present, rnd)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        import traceback
+        raise HTTPException(status_code=400, detail=f"seed failed: {type(exc).__name__}: {exc}\n{traceback.format_exc()[-1200:]}")
+
+
+def _run_seed(db, student, class_id, teacher, since, until, present, rnd):
+    student_id = student.id
     _wipe_previous(db, student_id)
 
     grades = attendance = lesson_rows = diary = 0
@@ -118,27 +130,49 @@ def seed_demo(
         start = datetime.combine(day, time(int(hh), int(mm)))
         came = rnd.random() < present
 
-        # one day-level row per day, first lesson decides
+        # one day-level row per day, first lesson decides. A real detection
+        # (any row that is not one of ours) always wins -- we never duplicate
+        # or overwrite the school's own attendance.
         if day not in seen_days:
             seen_days.add(day)
-            if came:
-                late = rnd.random() < 0.12
-                t_in = start + timedelta(minutes=rnd.randint(12, 25) if late else rnd.randint(-8, 4))
-                row = Attendance(student_id=student_id, camera_id=None, status="late" if late else "present",
-                                 confidence=DEMO_CONF, attendance_date=day, time_in=t_in, time_out=t_in + timedelta(minutes=lesson.duration_minutes or 60),
-                                 last_seen=t_in + timedelta(minutes=lesson.duration_minutes or 60), detected_at=t_in)
+            existing = db.query(Attendance).filter(Attendance.student_id == student_id, Attendance.attendance_date == day).first()
+            if existing is not None and existing.confidence != DEMO_CONF:
+                pass
             else:
-                row = Attendance(student_id=student_id, camera_id=None, status="absent", confidence=DEMO_CONF, attendance_date=day, detected_at=start + timedelta(minutes=30))
-            db.add(row)
-            db.flush()
-            enqueue_attendance_event(db, row, operation="upsert", notify=False)
-            attendance += 1
+                row = existing
+                if came:
+                    late = rnd.random() < 0.12
+                    t_in = start + timedelta(minutes=rnd.randint(12, 25) if late else rnd.randint(-8, 4))
+                    fields = dict(status="late" if late else "present", confidence=DEMO_CONF, attendance_date=day,
+                                  time_in=t_in, time_out=t_in + timedelta(minutes=lesson.duration_minutes or 60),
+                                  last_seen=t_in + timedelta(minutes=lesson.duration_minutes or 60), detected_at=t_in)
+                else:
+                    fields = dict(status="absent", confidence=DEMO_CONF, attendance_date=day, detected_at=start + timedelta(minutes=30))
+                if row is None:
+                    row = Attendance(student_id=student_id, camera_id=None, **fields)
+                    db.add(row)
+                else:
+                    for k, v in fields.items():
+                        setattr(row, k, v)
+                db.flush()
+                enqueue_attendance_event(db, row, operation="upsert", notify=False)
+                attendance += 1
 
         if lesson.id is not None:
-            db.add(LessonAttendance(student_id=student_id, lesson_id=lesson.id, camera_id=None,
-                                    status="present" if came else "absent", confidence=DEMO_CONF,
-                                    attendance_date=day, detected_at=start))
-            lesson_rows += 1
+            la = db.query(LessonAttendance).filter(
+                LessonAttendance.student_id == student_id, LessonAttendance.lesson_id == lesson.id,
+                LessonAttendance.attendance_date == day).first()
+            if la is None:
+                db.add(LessonAttendance(student_id=student_id, lesson_id=lesson.id, camera_id=None,
+                                        status="present" if came else "absent", confidence=DEMO_CONF,
+                                        attendance_date=day, detected_at=start))
+                db.flush()
+                lesson_rows += 1
+            elif la.confidence == DEMO_CONF:
+                la.status = "present" if came else "absent"
+                la.detected_at = start
+                db.flush()
+                lesson_rows += 1
 
             # homework for the whole group on that lesson (only if nobody wrote one)
             log = db.query(LessonLog).filter(LessonLog.lesson_id == lesson.id, LessonLog.log_date == day).first()
