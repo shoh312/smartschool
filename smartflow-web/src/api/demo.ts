@@ -71,7 +71,7 @@ const positions: CameraPositionDto[] = [
   { id: 2, camera_id: 1, class_id: 3, class_name: 'Design #1', subject: 'Design #1', day_of_week: null, start_time: '10:00', end_time: '11:30' },
   { id: 3, camera_id: 2, class_id: 2, class_name: 'FrontEnd #2', subject: 'FrontEnd #2', day_of_week: null, start_time: '17:00', end_time: '18:30' },
 ]
-let settings: SchoolSettingsDto = { live_video_enabled: true, group_mode: true, sms_enabled: true, is_active: true }
+let settings: SchoolSettingsDto = { live_video_enabled: true, group_mode: true, sms_enabled: true, attendance_notifications_enabled: true, is_active: true }
 
 const announcements: AnnouncementDto[] = [
   { id: 1, title: 'Имтиҳони ниҳоӣ — BackEnd #1', body: 'Рӯзи ҷумъа соати 15:00 имтиҳони лоиҳавӣ. Ноутбук ва зарядкаро фаромӯш накунед.', class_id: 1, created_at: addDays(today, -1) + 'T10:20:00' },

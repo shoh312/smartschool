@@ -37,6 +37,7 @@ class SyncGrade(BaseModel):
 class SyncAttendance(BaseModel):
     local_id: int
     status: str
+    notify: bool = True
     attendance_date: date
     time_in: Optional[datetime] = None
     time_out: Optional[datetime] = None

@@ -254,6 +254,8 @@ def update_school_settings(
         school.group_mode = payload.group_mode
     if payload.sms_enabled is not None:
         school.sms_enabled = payload.sms_enabled
+    if payload.attendance_notifications_enabled is not None:
+        school.attendance_notifications_enabled = payload.attendance_notifications_enabled
     if payload.is_active is not None:
         school.is_active = payload.is_active
 

@@ -107,6 +107,7 @@ def ensure_database_schema():
         "CREATE INDEX IF NOT EXISTS ix_lessons_position_id ON lessons (position_id)",
         "ALTER TABLE schools ADD COLUMN IF NOT EXISTS sms_enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE schools ALTER COLUMN sms_enabled SET DEFAULT TRUE",
+        "ALTER TABLE schools ADD COLUMN IF NOT EXISTS attendance_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE",
     ]
 
     with engine.begin() as connection:

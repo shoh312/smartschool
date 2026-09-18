@@ -61,9 +61,9 @@ def send_notification_event(db: Session, event: NotificationEvent) -> Notificati
 
     parent_row = db.query(Parent).filter(Parent.id == event.parent_id).first()
     school_row = db.query(School).filter(School.id == parent_row.school_id).first() if parent_row and parent_row.school_id else db.query(School).first()
-    if school_row is None or not school_row.sms_enabled:
+    if event.event_type in ("present", "late", "absent", "left_school") and (school_row is None or not school_row.attendance_notifications_enabled):
         event.status = "skipped"
-        event.error = "Parent notifications are switched off"
+        event.error = "Attendance notifications are switched off"
         db.commit()
         return event
 

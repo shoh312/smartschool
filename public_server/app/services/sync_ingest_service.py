@@ -373,6 +373,8 @@ def _apply_attendance(db: Session, school: School, student: Student, event: Sync
         if status_changed
         else None
     )
+    if not getattr(event.attendance, "notify", True):
+        message = None
     if message is not None:
         title, body = message
         db.flush()

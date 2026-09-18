@@ -47,6 +47,7 @@ class SchoolSettings(BaseModel):
     live_video_enabled: bool
     group_mode: bool
     sms_enabled: bool
+    attendance_notifications_enabled: bool = True
     is_active: bool
 
     class Config:
@@ -57,6 +58,7 @@ class SchoolSettingsUpdate(BaseModel):
     live_video_enabled: Optional[bool] = None
     group_mode: Optional[bool] = None
     sms_enabled: Optional[bool] = None
+    attendance_notifications_enabled: Optional[bool] = None
     is_active: Optional[bool] = None
 
 

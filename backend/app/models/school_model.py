@@ -30,4 +30,8 @@ class School(Base):
         Boolean, default=True, server_default=text("true"), nullable=False
     )
 
+    attendance_notifications_enabled = Column(
+        Boolean, default=True, server_default=text("true"), nullable=False
+    )
+
     created_at = Column(TIMESTAMP, server_default=func.now())

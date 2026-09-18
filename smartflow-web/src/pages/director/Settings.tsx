@@ -35,6 +35,7 @@ export function Settings() {
   const rows: { key: keyof SchoolSettingsDto; title: string; body: string; ill: IllName }[] = [
     { key: 'live_video_enabled', title: t('set_live'), body: t('set_live_body'), ill: 'door_check' as IllName },
     { key: 'group_mode', title: t('set_group'), body: t('set_group_body'), ill: 'school' as IllName },
+    { key: 'attendance_notifications_enabled', title: t('set_attn'), body: t('set_attn_body'), ill: 'door_check' as IllName },
     { key: 'sms_enabled', title: t('set_sms'), body: t('set_sms_body'), ill: 'phone_sms' as IllName },
   ]
 

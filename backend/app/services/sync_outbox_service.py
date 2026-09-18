@@ -284,7 +284,13 @@ def enqueue_announcement_event(db: Session, announcement, operation: str = "upse
         )
 
 
-def enqueue_attendance_event(db: Session, attendance, operation: str = "upsert") -> None:
+def _attendance_notify(db: Session, student) -> bool:
+    from app.models.school_model import School
+    school = db.query(School).filter(School.id == student.school_id).first() if student.school_id else db.query(School).first()
+    return bool(school is None or school.attendance_notifications_enabled)
+
+
+def enqueue_attendance_event(db: Session, attendance, operation: str = "upsert", notify: bool | None = None) -> None:
     student = db.query(Student).filter(Student.id == attendance.student_id).first()
     if not student:
         return
@@ -304,6 +310,7 @@ def enqueue_attendance_event(db: Session, attendance, operation: str = "upsert")
             "student": _student_payload(student, class_obj),
             "attendance": {
                 "local_id": attendance.id,
+                "notify": _attendance_notify(db, student) if notify is None else notify,
                 "status": attendance.status,
                 "attendance_date": _iso(attendance.attendance_date),
                 "time_in": _iso(attendance.time_in),

@@ -335,6 +335,7 @@ fun SettingsScreen(onBack: () -> Unit, vm: SettingsViewModel = koinViewModel()) 
                     val d = s.data
                     Toggle(stringResource(R.string.setting_live), stringResource(R.string.setting_live_hint), d.liveVideoEnabled) { vm.update(SchoolSettingsUpdate(liveVideoEnabled = it)) }
                     Toggle(stringResource(R.string.setting_group), stringResource(R.string.setting_group_hint), d.groupMode) { vm.update(SchoolSettingsUpdate(groupMode = it)) }
+                    Toggle(stringResource(R.string.setting_attn), stringResource(R.string.setting_attn_hint), d.attendanceNotificationsEnabled) { vm.update(SchoolSettingsUpdate(attendanceNotificationsEnabled = it)) }
                     Toggle(stringResource(R.string.setting_sms), stringResource(R.string.setting_sms_hint), d.smsEnabled) { vm.update(SchoolSettingsUpdate(smsEnabled = it)) }
                     Toggle(stringResource(R.string.setting_active), stringResource(R.string.setting_active_hint), d.isActive) { vm.update(SchoolSettingsUpdate(isActive = it)) }
                 }

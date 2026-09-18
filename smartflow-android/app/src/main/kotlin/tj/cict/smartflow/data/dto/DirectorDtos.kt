@@ -95,6 +95,7 @@ data class SchoolSettingsDto(
     @SerialName("live_video_enabled") val liveVideoEnabled: Boolean = true,
     @SerialName("group_mode") val groupMode: Boolean = false,
     @SerialName("sms_enabled") val smsEnabled: Boolean = true,
+    @SerialName("attendance_notifications_enabled") val attendanceNotificationsEnabled: Boolean = true,
     @SerialName("is_active") val isActive: Boolean = true,
 )
 
@@ -103,6 +104,7 @@ data class SchoolSettingsUpdate(
     @SerialName("live_video_enabled") val liveVideoEnabled: Boolean? = null,
     @SerialName("group_mode") val groupMode: Boolean? = null,
     @SerialName("sms_enabled") val smsEnabled: Boolean? = null,
+    @SerialName("attendance_notifications_enabled") val attendanceNotificationsEnabled: Boolean? = null,
     @SerialName("is_active") val isActive: Boolean? = null,
 )
 

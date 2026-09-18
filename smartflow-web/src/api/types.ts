@@ -85,7 +85,7 @@ export interface LiveStatusDto {
   detected_at?: string | null
 }
 
-export interface SchoolSettingsDto { live_video_enabled: boolean; group_mode: boolean; sms_enabled: boolean; is_active: boolean }
+export interface SchoolSettingsDto { live_video_enabled: boolean; group_mode: boolean; sms_enabled: boolean; attendance_notifications_enabled?: boolean; is_active: boolean }
 
 export interface LeaderboardEntryDto {
   student_id: number

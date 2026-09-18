@@ -497,4 +497,6 @@
     <string name="live_forbidden">Live video is not available for this pupil.</string>
     <string name="live_parent_hint">You see the classroom only during your child\'s lesson. The video is not recorded.</string>
     <string name="live_now_count">%1$d of %2$d present</string>
+    <string name="setting_attn">Arrived / absent notifications</string>
+    <string name="setting_attn_hint">Push and SMS to parents when a child arrives or is absent.</string>
 </resources>
