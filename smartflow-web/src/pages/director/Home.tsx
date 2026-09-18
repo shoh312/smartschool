@@ -6,8 +6,9 @@ import { useT } from '../../i18n'
 import { useSession } from '../../App'
 import { IcBook, IcCheck, IcNext } from '../../ui/icons'
 import { Ill, type IllName } from '../../ui/illustrations'
-import { Avatar, ErrorBox, Grade, Skeleton, useAsync, useFmt } from '../../ui/kit'
+import { Avatar, ErrorBox, fmtAvg, Grade, Skeleton, useAsync, useFmt } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
+import { Bars, Donut, Ring } from '../../ui/charts'
 
 export function DirectorHome() {
   const { t } = useT()
@@ -37,9 +38,23 @@ export function DirectorHome() {
   }, [])
 
   const today = new Date()
-  const present = live.filter((s) => s.status === 'present' || s.status === 'late').length
+  const nPresent = live.filter((s) => s.status === 'present').length
+  const nLate = live.filter((s) => s.status === 'late').length
+  const nAbsent = live.filter((s) => s.status === 'absent').length
+  const present = nPresent + nLate
+  const totalPupils = students.data?.length ?? live.length
+  const attRate = totalPupils ? Math.round((present / totalPupils) * 100) : 0
   const inLesson = live.filter((s) => s.class_lesson_state === 'running')
   const online = cams.filter((c) => c.connected).length
+  // school average and per-class averages, straight from the ranking we already load
+  const rank = ranking.data ?? []
+  const schoolAvg = rank.length ? rank.reduce((s, r) => s + (r.overall_average ?? 0), 0) / rank.length : 0
+  const classAvg = (() => {
+    const m = new Map<string, number[]>()
+    for (const r of rank) { const k = r.class_name ?? '—'; const a = m.get(k) ?? []; if (r.overall_average != null) a.push(r.overall_average); m.set(k, a) }
+    return [...m.entries()].filter(([, v]) => v.length).map(([label, v]) => ({ label, value: v.reduce((s, x) => s + x, 0) / v.length }))
+      .sort((a, b) => b.value - a.value)
+  })()
   const todayIso = today.toISOString().slice(0, 10)
   const upcoming = (events.data ?? []).filter((e) => (e.end_date ?? e.start_date) >= todayIso).sort((a, b) => a.start_date.localeCompare(b.start_date)).slice(0, 4)
 
@@ -57,12 +72,51 @@ export function DirectorHome() {
         </div>
       </div>
 
-      <div className="grid c4 mb24">
+      <div className="grid c4 mb24 kpi-row">
         <Stat to="/classes" ill="school" tone="brand" v={classes.data?.length} l={t('nav_classes')} />
         <Stat to="/students" ill="backpack" tone="mint" v={students.data?.length} l={t('nav_students')} />
         <Stat to="/teachers" ill="family" tone="amber" v={teachers.data?.length} l={t('nav_teachers')} />
         <Stat to="/cameras" ill="door_check" tone="sky" v={`${online}/${cams.length}`} l={t('cams_online_l')} />
       </div>
+
+      <div className="grid c3 mb24">
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <Donut size={116} stroke={15}
+            segments={[{ value: nPresent, color: 'var(--mint)' }, { value: nLate, color: 'var(--amber)' }, { value: nAbsent, color: 'var(--rose)' }]}
+            center={<b>{attRate}%</b>} sub={t('attendance_rate')} />
+          <div className="grow">
+            <div className="card-title" style={{ marginBottom: 6 }}>{t('attendance_today')}</div>
+            <div className="legend">
+              <span><i style={{ background: 'var(--mint)' }} /> {t('att_present')} · {nPresent}</span>
+              <span><i style={{ background: 'var(--amber)' }} /> {t('att_late')} · {nLate}</span>
+              <span><i style={{ background: 'var(--rose)' }} /> {t('att_absent')} · {nAbsent}</span>
+            </div>
+          </div>
+        </div>
+        <div className="card kpi" style={{ justifyContent: 'center' }}>
+          <Ring value={schoolAvg} max={10} size={116} color="var(--brand)"
+            center={<b style={{ fontSize: 26 }}>{fmtAvg(schoolAvg)}</b>} sub={t('avg_overall')} />
+          <div className="kpi-txt">
+            <div className="kpi-v">{t('school_avg_title')}</div>
+            <div className="kpi-l">{t('school_avg_sub')}</div>
+          </div>
+        </div>
+        <div className="card kpi" style={{ justifyContent: 'center' }}>
+          <Ring value={present} max={totalPupils || 1} size={116} color="var(--mint)"
+            center={<b style={{ fontSize: 22 }}>{present}<span style={{ fontSize: 13, color: 'var(--ink-3)' }}>/{totalPupils}</span></b>} sub={t('present_l')} />
+          <div className="kpi-txt">
+            <div className="kpi-v">{t('present_now_title')}</div>
+            <div className="kpi-l">{t('cams_online', online, cams.length)}</div>
+          </div>
+        </div>
+      </div>
+
+      {classAvg.length > 0 && (
+        <div className="card mb24">
+          <div className="card-title"><Ill name="trophy" size={30} /> {t('class_averages')}</div>
+          <Bars data={classAvg.slice(0, 12).map((c) => ({ ...c, color: c.value >= 8 ? 'var(--mint)' : c.value >= 6 ? 'var(--brand)' : 'var(--amber)' }))} max={10} />
+        </div>
+      )}
 
       <div className="grid c2">
         <div className="card">

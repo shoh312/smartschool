@@ -5,10 +5,12 @@ import type { Session } from '../api/types'
 import { useT } from '../i18n'
 import { IcBell, IcBook, IcCalendar, IcCamera, IcChart, IcGrid, IcHome, IcLayers, IcLogout, IcSettings, IcUser, IcUsers } from './icons'
 import { Confirm } from './kit'
+import { Onboarding, shouldOnboard } from './Onboarding'
 
 export function Shell({ session }: { session: Session }) {
   const { t } = useT()
   const [out, setOut] = useState(false)
+  const [ob, setOb] = useState(() => shouldOnboard(session.role))
   const director = session.role === 'director'
   const family = session.role === 'parent' || session.role === 'student'
   const roleLabel = director ? t('role_director') : session.role === 'teacher' ? t('role_teacher') : session.role === 'parent' ? t('role_parent') : t('role_student')
@@ -69,7 +71,15 @@ export function Shell({ session }: { session: Session }) {
       <main className="main">
         <Outlet />
       </main>
+      <nav className="mobile-nav">
+        {items.slice(0, 5).map((it) => (
+          <NavLink key={it.to} to={it.to} end={it.end} className={({ isActive }) => 'mnav-item' + (isActive ? ' active' : '')}>
+            <it.icon /><span>{it.label}</span>
+          </NavLink>
+        ))}
+      </nav>
       {out && <Confirm title={t('sign_out')} body={t('sign_out_q')} onNo={() => setOut(false)} onYes={() => saveSession(null)} />}
+      {ob && <Onboarding role={session.role} onClose={() => setOb(false)} />}
     </div>
   )
 }

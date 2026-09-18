@@ -9,6 +9,7 @@ import { Avatar, ErrorBox, fmtAvg, Grade, gradeClass, Skeleton, useAsync, useErr
 import { TopBar } from '../../ui/Shell'
 import { Ill } from '../../ui/illustrations'
 import { IcBack, IcNext, IcPlay } from '../../ui/icons'
+import { Ring, TrendLine } from '../../ui/charts'
 
 type Tab = 'overview' | 'grades' | 'attendance' | 'diary' | 'assignments' | 'live'
 
@@ -62,6 +63,7 @@ function Overview({ studentId }: { studentId: number }) {
   if (a.loading || g.loading) return <Skeleton rows={3} h={90} />
   const an = a.data
   const recent = (g.data ?? []).slice(0, 8)
+  const attPct = an?.lesson_attendance_rate != null ? Math.round((an.lesson_attendance_rate || 0) * 100) : null
   return (
     <div className="grid c2" style={{ alignItems: 'start' }}>
       <div className="col" style={{ gap: 16 }}>
@@ -70,23 +72,25 @@ function Overview({ studentId }: { studentId: number }) {
           {!an && <div className="small muted">{t('family_no_analytics')}</div>}
           {an && (
             <>
-              <div className="row" style={{ gap: 20, alignItems: 'baseline' }}>
-                <div><div style={{ fontSize: 40, fontWeight: 800, color: 'var(--brand)', lineHeight: 1 }}>{fmtAvg(an.overall_average)}</div><div className="small muted">{t('avg_overall')}</div></div>
-                <div className="grow" />
-                <Rank label={t('rank_class')} r={an.class_rank} />
-                <Rank label={t('rank_parallel')} r={an.parallel_rank} />
-                <Rank label={t('rank_school')} r={an.school_rank} />
+              <div className="row" style={{ gap: 18 }}>
+                <Ring value={an.overall_average ?? 0} max={10} size={104} color="var(--brand)"
+                  center={<b style={{ fontSize: 24 }}>{fmtAvg(an.overall_average)}</b>} sub={t('avg_overall')} />
+                <div className="grow row" style={{ gap: 16, justifyContent: 'space-around' }}>
+                  <Rank label={t('rank_class')} r={an.class_rank} />
+                  <Rank label={t('rank_parallel')} r={an.parallel_rank} />
+                  <Rank label={t('rank_school')} r={an.school_rank} />
+                </div>
               </div>
-              {an.lesson_attendance_rate != null && (
-                <div className="mt12"><div className="small muted mb8">{t('attendance_rate')}: <b>{Math.round((an.lesson_attendance_rate || 0) * 100)}%</b></div>
-                  <div className="bar"><span style={{ width: `${Math.round((an.lesson_attendance_rate || 0) * 100)}%` }} /></div></div>
+              {attPct != null && (
+                <div className="mt16"><div className="small muted mb8">{t('attendance_rate')}: <b>{attPct}%</b></div>
+                  <div className="bar"><span style={{ width: `${attPct}%`, background: attPct >= 90 ? 'var(--mint)' : attPct >= 75 ? 'var(--amber)' : 'var(--rose)' }} /></div></div>
               )}
               {an.subject_breakdown?.length > 0 && (
                 <div className="mt16">
                   {an.subject_breakdown.map((s) => (
                     <div key={s.subject} className="row" style={{ padding: '7px 0' }}>
                       <span className="grow ellipsis">{s.subject}</span>
-                      <span className="bar" style={{ width: 120 }}><span style={{ width: `${(s.average / 10) * 100}%` }} /></span>
+                      <span className="bar" style={{ width: 120 }}><span style={{ width: `${(s.average / 10) * 100}%`, background: s.average >= 8 ? 'var(--mint)' : 'var(--brand)' }} /></span>
                       <b style={{ width: 34, textAlign: 'right' }}>{fmtAvg(s.average)}</b>
                     </div>
                   ))}
@@ -95,6 +99,12 @@ function Overview({ studentId }: { studentId: number }) {
             </>
           )}
         </div>
+        {an && an.trend && an.trend.length > 1 && (
+          <div className="card">
+            <div className="card-title"><Ill name="trophy" size={28} /> {t('trend_title')}</div>
+            <TrendLine points={an.trend.map((q) => ({ label: `${t('quarter_short')}${q.quarter}`, value: q.overall_average ?? null }))} />
+          </div>
+        )}
       </div>
       <div className="card">
         <div className="card-title"><Ill name="notebook" size={30} /> {t('recent_grades')}</div>

@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { director } from '../../api/endpoints'
 import type { SchoolSettingsDto } from '../../api/types'
 import { useT, type Lang } from '../../i18n'
+import { saveSession } from '../../api/client'
 import { useSession } from '../../App'
 import { ErrorBox, errorText, Skeleton, Toggle, useAsync, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
-import { IcGlobe, IcUser } from '../../ui/icons'
+import { IcGlobe, IcLogout, IcUser } from '../../ui/icons'
 import { Ill, type IllName } from '../../ui/illustrations'
 
 const LANGS: { code: Lang; name: string; native: string }[] = [
@@ -20,6 +21,7 @@ export function Settings() {
   const toast = useToast()
   const session = useSession()
   const isDirector = session?.role === 'director'
+  const roleName = session?.role === 'director' ? t('role_director') : session?.role === 'teacher' ? t('role_teacher') : session?.role === 'parent' ? t('role_parent') : t('role_student')
   const s = useAsync(() => (isDirector ? director.settings() : Promise.resolve(null)), [isDirector])
   const [local, setLocal] = useState<SchoolSettingsDto | null>(null)
   useEffect(() => { if (s.data) setLocal(s.data) }, [s.data])
@@ -79,8 +81,9 @@ export function Settings() {
                 <div className="bold">{session?.fullName}</div>
                 <div className="small muted">{session?.email}{session?.subject ? ` · ${session.subject}` : ''}</div>
               </div>
-              <span className="chip brand">{isDirector ? t('role_director') : t('role_teacher')}</span>
+              <span className="chip brand">{roleName}</span>
             </div>
+            <button className="btn danger mt16" style={{ width: '100%' }} onClick={() => saveSession(null)}><IcLogout /> {t('sign_out')}</button>
           </div>
         </div>
       </div>
