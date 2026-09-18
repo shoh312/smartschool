@@ -154,7 +154,15 @@ def _get_insight_app():
     return _insight_app
 
 
-_insight_lock = threading.Lock()
+# How many cameras may run face detection at the same instant. A single global
+# lock (concurrency 1) serialised every camera onto one core and left the rest
+# idle; the ONNX session is thread-safe, so we let several run at once and cap
+# the number so a burst never oversubscribes the CPU. Tune with the
+# DETECTION_CONCURRENCY env var (raise it on a bigger box, lower it on a small
+# one).
+import os as _os
+DETECTION_CONCURRENCY = max(1, int(_os.getenv("DETECTION_CONCURRENCY", "4")))
+_insight_lock = threading.Semaphore(DETECTION_CONCURRENCY)
 
 
 def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
