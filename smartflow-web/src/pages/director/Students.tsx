@@ -106,6 +106,8 @@ export function StudentForm({ student, classes, onClose, onSaved }: { student: S
       } else {
         fd.set('parent_phone', phone.trim())
         if (parentName.trim()) fd.set('parent_full_name', parentName.trim())
+        if (username.trim()) fd.set('username', username.trim())
+        if (password) fd.set('password', password)
         fd.set('file', file!)
         await director.createStudent(fd)
       }
@@ -128,8 +130,8 @@ export function StudentForm({ student, classes, onClose, onSaved }: { student: S
         </Field>
         <Field label={t('parent_phone')}><input className="input" placeholder="+992 9xx xx xx xx" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
         {!student && <Field label={t('parent_name')}><input className="input" value={parentName} onChange={(e) => setParentName(e.target.value)} /></Field>}
-        {student && <Field label={t('login')}><input className="input" value={username} onChange={(e) => setUsername(e.target.value)} /></Field>}
-        {student && <Field label={t('new_password')}><input className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('leave_empty')} /></Field>}
+        <Field label={t('login')}><input className="input" autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={student ? undefined : t('login_auto')} /></Field>
+        <Field label={student ? t('new_password') : t('password')}><input className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={student ? t('leave_empty') : t('login_auto')} /></Field>
         <Field label={student ? t('photo_optional') : t('photo_required')}>
           <input className="input" type="file" accept="image/*" style={{ paddingTop: 9 }} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           <span className="tiny faint">{t('photo_hint')}</span>

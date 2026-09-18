@@ -112,6 +112,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
   send: ['Фиристодан', 'Отправить', 'Send'],
   sent: ['Фиристода шуд', 'Отправлено', 'Sent'],
   login: ['Логин', 'Логин', 'Login'],
+  login_auto: ['Холӣ гузоред — худкор сохта мешавад', 'Оставьте пустым — создастся автоматически', 'Leave empty to auto-generate'],
   new_password: ['Пароли нав', 'Новый пароль', 'New password'],
   leave_empty: ['холӣ — бетағйир', 'пусто — без изменений', 'empty — unchanged'],
   greeting: ['Салом, {0}', 'Здравствуйте, {0}', 'Hello, {0}'],

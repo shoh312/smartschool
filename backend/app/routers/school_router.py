@@ -396,6 +396,25 @@ def delete_camera_position(
     ).first()
     if not row:
         raise HTTPException(status_code=404, detail="Position not found")
+
+    # This slot generated its own Lesson rows; they reference it by position_id,
+    # so the position cannot be deleted while they exist. Drop the ones that were
+    # never used, and unlink (keep as history) the ones that already carry
+    # attendance or homework.
+    from app.models.lesson_attendance_model import LessonAttendance
+    from app.models.lesson_log_model import LessonLog
+
+    lessons = db.query(Lesson).filter(Lesson.position_id == position_id).all()
+    for lesson in lessons:
+        used = (
+            db.query(LessonAttendance.id).filter(LessonAttendance.lesson_id == lesson.id).first()
+            or db.query(LessonLog.id).filter(LessonLog.lesson_id == lesson.id).first()
+        )
+        if used:
+            lesson.position_id = None
+        else:
+            db.delete(lesson)
+    db.flush()
     db.delete(row)
     db.commit()
 
