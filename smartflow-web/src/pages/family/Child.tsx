@@ -9,7 +9,7 @@ import { Avatar, ErrorBox, fmtAvg, Grade, gradeClass, Skeleton, useAsync, useErr
 import { TopBar } from '../../ui/Shell'
 import { Ill } from '../../ui/illustrations'
 import { IcBack, IcNext, IcPlay } from '../../ui/icons'
-import { Ring, TrendLine } from '../../ui/charts'
+import { AreaChart, Ring } from '../../ui/charts'
 
 type Tab = 'overview' | 'grades' | 'attendance' | 'diary' | 'assignments' | 'live'
 
@@ -102,7 +102,7 @@ function Overview({ studentId }: { studentId: number }) {
         {an && an.trend && an.trend.length > 1 && (
           <div className="card">
             <div className="card-title"><Ill name="trophy" size={28} /> {t('trend_title')}</div>
-            <TrendLine points={an.trend.map((q) => ({ label: `${t('quarter_short')}${q.quarter}`, value: q.overall_average ?? null }))} />
+            <AreaChart points={an.trend.map((q) => ({ label: `${t('quarter_short')}${q.quarter}`, value: q.overall_average ?? null }))} max={10} height={200} />
           </div>
         )}
       </div>

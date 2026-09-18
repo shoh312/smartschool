@@ -8,7 +8,7 @@ import { IcBook, IcCheck, IcNext } from '../../ui/icons'
 import { Ill, type IllName } from '../../ui/illustrations'
 import { Avatar, ErrorBox, fmtAvg, Grade, Skeleton, useAsync, useFmt } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
-import { Bars, Donut, Ring } from '../../ui/charts'
+import { BarChart, DonutChart, Ring } from '../../ui/charts'
 
 export function DirectorHome() {
   const { t } = useT()
@@ -79,34 +79,27 @@ export function DirectorHome() {
         <Stat to="/cameras" ill="door_check" tone="sky" v={`${online}/${cams.length}`} l={t('cams_online_l')} />
       </div>
 
-      <div className="grid c3 mb24">
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <Donut size={116} stroke={15}
-            segments={[{ value: nPresent, color: 'var(--mint)' }, { value: nLate, color: 'var(--amber)' }, { value: nAbsent, color: 'var(--rose)' }]}
-            center={<b>{attRate}%</b>} sub={t('attendance_rate')} />
-          <div className="grow">
-            <div className="card-title" style={{ marginBottom: 6 }}>{t('attendance_today')}</div>
-            <div className="legend">
-              <span><i style={{ background: 'var(--mint)' }} /> {t('att_present')} · {nPresent}</span>
-              <span><i style={{ background: 'var(--amber)' }} /> {t('att_late')} · {nLate}</span>
-              <span><i style={{ background: 'var(--rose)' }} /> {t('att_absent')} · {nAbsent}</span>
-            </div>
-          </div>
+      <div className="grid mb24" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
+        <div className="card">
+          <div className="card-title">{t('attendance_today')}</div>
+          <DonutChart size={168} stroke={28}
+            segments={[
+              { label: t('att_present'), value: nPresent, color: 'var(--mint)' },
+              { label: t('att_late'), value: nLate, color: 'var(--amber)' },
+              { label: t('att_absent'), value: nAbsent, color: 'var(--rose)' },
+            ]}
+            title={<b>{attRate}%</b>} total={t('present_l')} />
         </div>
-        <div className="card kpi" style={{ justifyContent: 'center' }}>
-          <Ring value={schoolAvg} max={10} size={116} color="var(--brand)"
-            center={<b style={{ fontSize: 26 }}>{fmtAvg(schoolAvg)}</b>} sub={t('avg_overall')} />
-          <div className="kpi-txt">
-            <div className="kpi-v">{t('school_avg_title')}</div>
-            <div className="kpi-l">{t('school_avg_sub')}</div>
+        <div className="col" style={{ gap: 16 }}>
+          <div className="card kpi">
+            <Ring value={schoolAvg} max={10} size={104} color="var(--brand)"
+              center={<b style={{ fontSize: 24 }}>{fmtAvg(schoolAvg)}</b>} sub={t('avg_overall')} />
+            <div className="kpi-txt"><div className="kpi-v">{t('school_avg_title')}</div><div className="kpi-l">{t('school_avg_sub')}</div></div>
           </div>
-        </div>
-        <div className="card kpi" style={{ justifyContent: 'center' }}>
-          <Ring value={present} max={totalPupils || 1} size={116} color="var(--mint)"
-            center={<b style={{ fontSize: 22 }}>{present}<span style={{ fontSize: 13, color: 'var(--ink-3)' }}>/{totalPupils}</span></b>} sub={t('present_l')} />
-          <div className="kpi-txt">
-            <div className="kpi-v">{t('present_now_title')}</div>
-            <div className="kpi-l">{t('cams_online', online, cams.length)}</div>
+          <div className="card kpi">
+            <Ring value={present} max={totalPupils || 1} size={104} color="var(--mint)"
+              center={<b style={{ fontSize: 20 }}>{present}<span style={{ fontSize: 12, color: 'var(--ink-3)' }}>/{totalPupils}</span></b>} sub={t('present_l')} />
+            <div className="kpi-txt"><div className="kpi-v">{t('present_now_title')}</div><div className="kpi-l">{t('cams_online', online, cams.length)}</div></div>
           </div>
         </div>
       </div>
@@ -114,7 +107,7 @@ export function DirectorHome() {
       {classAvg.length > 0 && (
         <div className="card mb24">
           <div className="card-title"><Ill name="trophy" size={30} /> {t('class_averages')}</div>
-          <Bars data={classAvg.slice(0, 12).map((c) => ({ ...c, color: c.value >= 8 ? 'var(--mint)' : c.value >= 6 ? 'var(--brand)' : 'var(--amber)' }))} max={10} />
+          <BarChart data={classAvg.slice(0, 10).map((c) => ({ label: c.label.replace(/[^A-Za-z0-9# ]/g, '').slice(0, 6) || c.label, value: c.value }))} max={10} height={210} />
         </div>
       )}
 
