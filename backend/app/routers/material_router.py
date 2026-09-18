@@ -211,21 +211,30 @@ async def ai_generate_material(
     if image_bytes is not None and not image_bytes:
         image_bytes = None
 
+    # generate_material calls Gemini over a blocking HTTP client with sleeps
+    # between retries. Running it inline would freeze the event loop for tens
+    # of seconds -- long enough for the relay websocket to miss its pings and
+    # drop the school offline. Off it goes to a worker thread instead.
+    import functools
+    import anyio
+
+    work = functools.partial(
+        generate_material,
+        subject=_resolve_subject(teacher, None),
+        kind=kind,
+        topic=topic,
+        source_text=source_text,
+        image_bytes=image_bytes,
+        image_mime=file.content_type if file is not None else None,
+        class_name=class_name,
+        question_count=question_count,
+        page_count=page_count,
+        question_types=[t.strip() for t in question_types.split(",") if t.strip()],
+        difficulty=difficulty,
+        language=language,
+    )
     try:
-        result = generate_material(
-            subject=_resolve_subject(teacher, None),
-            kind=kind,
-            topic=topic,
-            source_text=source_text,
-            image_bytes=image_bytes,
-            image_mime=file.content_type if file is not None else None,
-            class_name=class_name,
-            question_count=question_count,
-            page_count=page_count,
-            question_types=[t.strip() for t in question_types.split(",") if t.strip()],
-            difficulty=difficulty,
-            language=language,
-        )
+        result = await anyio.to_thread.run_sync(work)
     except MaterialAiError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
