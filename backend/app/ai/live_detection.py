@@ -2,6 +2,8 @@ import concurrent.futures
 import cv2
 import hashlib
 import numpy as np
+
+from app.utils.face_crypto import decrypt_text
 import insightface
 import threading
 import time
@@ -310,7 +312,7 @@ def load_students(db: Session, class_id: int | None = None):
                 list(
                     map(
                         float,
-                        student.face_encoding.split(",")
+                        decrypt_text(student.face_encoding).split(",")
                     )
                 )
             )

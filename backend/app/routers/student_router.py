@@ -28,6 +28,7 @@ from fastapi import Form, UploadFile, File
 import shutil
 import os
 
+from app.utils.face_crypto import encrypt_file_in_place, encrypt_text
 from app.ai.face_engine import (
     generate_face_encoding
 )
@@ -64,7 +65,7 @@ def get_my_students(
             "first_name": student.first_name,
             "last_name": student.last_name,
             "photo": student.photo,
-            "face_encoding": student.face_encoding,
+            "face_encoding": None,
             "is_active": student.is_active,
             "username": student.username,
         }
@@ -150,7 +151,7 @@ def get_students(
             "first_name": student.first_name,
             "last_name": student.last_name,
             "photo": student.photo,
-            "face_encoding": student.face_encoding,
+            "face_encoding": None,
             "is_active": student.is_active,
             "username": student.username,
         })
@@ -264,9 +265,11 @@ def director_create_student(
 
         raise HTTPException(status_code=400, detail="Face not detected")
 
+    encrypt_file_in_place(file_path)
+
     new_student.photo = file_path
 
-    new_student.face_encoding = encoding
+    new_student.face_encoding = encrypt_text(encoding)
 
     student_username, student_password = issue_login_for(db, new_student, password)
 
@@ -316,7 +319,7 @@ def director_create_student(
         "first_name": new_student.first_name,
         "last_name": new_student.last_name,
         "photo": new_student.photo,
-        "face_encoding": new_student.face_encoding,
+        "face_encoding": None,
         "is_active": new_student.is_active,
         "username": new_student.username,
     }
@@ -359,9 +362,11 @@ def register_face(
 
         raise HTTPException(status_code=400, detail="Face not detected")
 
+    encrypt_file_in_place(file_path)
+
     student.photo = file_path
 
-    student.face_encoding = encoding
+    student.face_encoding = encrypt_text(encoding)
 
     db.commit()
 
@@ -440,9 +445,10 @@ def update_student(
             shutil.copyfileobj(file.file, buffer)
         
         encoding = generate_face_encoding(file_path)
+        encrypt_file_in_place(file_path)
         if encoding:
             student.photo = file_path
-            student.face_encoding = encoding
+            student.face_encoding = encrypt_text(encoding)
 
     db.flush()
     enqueue_student_event(db, student, operation="upsert")
@@ -459,7 +465,7 @@ def update_student(
         "first_name": student.first_name,
         "last_name": student.last_name,
         "photo": student.photo,
-        "face_encoding": student.face_encoding,
+        "face_encoding": None,
         "is_active": student.is_active,
         "username": student.username,
     }
