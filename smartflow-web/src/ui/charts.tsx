@@ -1,4 +1,18 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+
+/** Measures the container so a chart can fill the full available width (no empty side margins). */
+function useWidth(fallback = 340) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(fallback)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setW(el.clientWidth || fallback))
+    ro.observe(el); setW(el.clientWidth || fallback)
+    return () => ro.disconnect()
+  }, [fallback])
+  return [ref, Math.max(240, w)] as const
+}
 
 /**
  * Small, dependency-free SVG charts drawn with the app's own colour tokens —
@@ -99,15 +113,17 @@ export function BarChart({ data, max, unit = '', height = 200, color = 'var(--br
   max?: number; unit?: string; height?: number; color?: string; stackColor?: string
 }) {
   const on = useMounted()
-  const W = 340, padL = 30, padB = 26, padT = 10
+  const [ref, W] = useWidth()
+  const padL = 30, padB = 26, padT = 10
   const top = max ?? Math.max(1, ...data.map((d) => (d.value + (d.stack ?? 0))))
   const plotH = height - padB - padT
   const plotW = W - padL - 6
-  const bw = Math.min(34, (plotW / data.length) * 0.6)
+  const bw = Math.min(46, (plotW / data.length) * 0.62)
   const step = plotW / data.length
   const y = (v: number) => padT + plotH * (1 - v / top)
   return (
-    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible' }}>
+    <div ref={ref} style={{ width: '100%' }}>
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible', display: 'block' }}>
       {ticks(top).map((tk, i) => (
         <g key={i}>
           <line x1={padL} y1={y(tk)} x2={W - 4} y2={y(tk)} stroke="var(--border)" strokeWidth={1} strokeDasharray={i === 0 ? '0' : '3 4'} />
@@ -137,6 +153,7 @@ export function BarChart({ data, max, unit = '', height = 200, color = 'var(--br
       })}
       {unit && <text x={padL - 6} y={padT - 1} textAnchor="end" fontSize="9" fill="var(--ink-3)">{unit}</text>}
     </svg>
+    </div>
   )
 }
 
@@ -160,7 +177,8 @@ export function AreaChart({ points, max = 10, height = 200, color = 'var(--brand
   max?: number; height?: number; color?: string; unit?: string; highlight?: number
 }) {
   const on = useMounted()
-  const W = 340, padL = 30, padB = 26, padT = 12
+  const [ref, W] = useWidth()
+  const padL = 30, padB = 26, padT = 12
   const plotH = height - padB - padT
   const plotW = W - padL - 8
   const hi = highlight ?? points.length - 1
@@ -171,7 +189,8 @@ export function AreaChart({ points, max = 10, height = 200, color = 'var(--brand
   const area = `${line} L ${xs[xs.length - 1]},${padT + plotH} L ${xs[0]},${padT + plotH} Z`
   const id = 'ag' + Math.round(max * 97)
   return (
-    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible' }}>
+    <div ref={ref} style={{ width: '100%' }}>
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible', display: 'block' }}>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.22" />
@@ -203,6 +222,7 @@ export function AreaChart({ points, max = 10, height = 200, color = 'var(--brand
         </g>
       ))}
     </svg>
+    </div>
   )
 }
 
@@ -219,7 +239,8 @@ export function LineChart({ series, labels, max, height = 210, unit = '', highli
   labels: string[]; max?: number; height?: number; unit?: string; highlight?: number; everyLabel?: number
 }) {
   const on = useMounted()
-  const W = 360, padL = 34, padB = 26, padT = 14
+  const [ref, W] = useWidth()
+  const padL = 34, padB = 26, padT = 14
   const plotH = height - padB - padT
   const plotW = W - padL - 10
   const n = labels.length
@@ -231,7 +252,8 @@ export function LineChart({ series, labels, max, height = 210, unit = '', highli
   const id = 'lg' + Math.round(top * 13 + n)
   const primary = series[0]
   return (
-    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible' }}>
+    <div ref={ref} style={{ width: '100%' }}>
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} style={{ overflow: 'visible', display: 'block' }}>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={primary.color} stopOpacity="0.18" />
@@ -271,6 +293,7 @@ export function LineChart({ series, labels, max, height = 210, unit = '', highli
         <text key={i} x={x(i)} y={height - 8} textAnchor="middle" fontSize="9" fill="var(--ink-3)" fontWeight="700">{lb}</text>
       ))}
     </svg>
+    </div>
   )
 }
 

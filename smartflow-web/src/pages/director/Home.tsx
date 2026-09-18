@@ -144,11 +144,11 @@ export function DirectorHome() {
             </div>
           </div>
           <LineChart
-            labels={trend.map((r) => f.ddmm(r.day))}
-            unit="%" max={100}
+            labels={trendDays.map((r) => f.ddmm(r.day))}
+            unit="%" max={100} height={230}
             series={[
-              { label: t('att_present'), color: 'var(--brand)', values: trend.map((r) => r.came) },
-              { label: t('att_absent'), color: 'var(--rose)', dashed: true, values: trend.map((r) => r.absent) },
+              { label: t('att_present'), color: 'var(--brand)', values: trendDays.map((r) => r.came) },
+              { label: t('att_absent'), color: 'var(--rose)', dashed: true, values: trendDays.map((r) => r.absent) },
             ]}
           />
           <div className="legend" style={{ justifyContent: 'center' }}>
