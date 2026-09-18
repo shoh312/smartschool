@@ -144,3 +144,6 @@ async def start_background_tasks():
     asyncio.create_task(start_discovery_responder(settings.school_server_port))
     asyncio.create_task(relay_loop())
     threading.Thread(target=start_detection_background, daemon=True).start()
+
+    from app.ai.face_engine import warm_up as _warm_face
+    threading.Thread(target=_warm_face, daemon=True).start()

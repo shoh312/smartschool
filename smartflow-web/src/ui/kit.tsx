@@ -169,3 +169,27 @@ export function useFmt() {
 
 export const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 export const addDays = (iso: string, n: number) => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+
+/**
+ * Shrink a photo before upload: a phone snap is 3-8 MB and every byte crawls
+ * through the relay tunnel to the school. We cap the long side at ~1000px and
+ * re-encode as JPEG, which keeps a face crisp while cutting the upload to a
+ * few hundred KB. If anything goes wrong we just hand back the original file.
+ */
+export async function shrinkImage(file: File, maxSide = 1000, quality = 0.85): Promise<Blob> {
+  try {
+    if (!file.type.startsWith('image/')) return file
+    const bmp = await createImageBitmap(file)
+    const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height))
+    if (scale >= 1 && file.size < 800 * 1024) { bmp.close(); return file }
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    canvas.getContext('2d')!.drawImage(bmp, 0, 0, w, h)
+    bmp.close()
+    const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality))
+    return blob && blob.size < file.size ? blob : file
+  } catch {
+    return file
+  }
+}

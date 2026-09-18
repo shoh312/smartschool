@@ -4,7 +4,7 @@ import { director } from '../../api/endpoints'
 import type { ClassDto, StudentDto } from '../../api/types'
 import { useT } from '../../i18n'
 import { IcEdit, IcPlus, IcSearch, IcTrash } from '../../ui/icons'
-import { Avatar, Confirm, Empty, ErrorBox, errorText, Field, Modal, Skeleton, useAsync, useErrorMessage, useToast } from '../../ui/kit'
+import { Avatar, Confirm, Empty, ErrorBox, errorText, Field, Modal, shrinkImage, Skeleton, useAsync, useErrorMessage, useToast } from '../../ui/kit'
 import { TopBar } from '../../ui/Shell'
 
 export function Students() {
@@ -101,14 +101,14 @@ export function StudentForm({ student, classes, onClose, onSaved }: { student: S
         if (phone.trim()) fd.set('parent_phone', phone.trim())
         if (username.trim()) fd.set('username', username.trim())
         if (password) fd.set('password', password)
-        if (file) fd.set('file', file)
+        if (file) fd.set('file', await shrinkImage(file), 'photo.jpg')
         await director.updateStudent(student.id, fd)
       } else {
         fd.set('parent_phone', phone.trim())
         if (parentName.trim()) fd.set('parent_full_name', parentName.trim())
         if (username.trim()) fd.set('username', username.trim())
         if (password) fd.set('password', password)
-        fd.set('file', file!)
+        fd.set('file', await shrinkImage(file!), 'photo.jpg')
         await director.createStudent(fd)
       }
       toast(t('saved')); onSaved()
