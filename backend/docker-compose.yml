@@ -57,6 +57,14 @@ services:
       # Bir vaqtda nechta kamera yuz tanishни ishlaydi. Kuchli serverда
       # oshiring (masalan 6), kichik mini-PC'da 2-3 qiling.
       DETECTION_CONCURRENCY: ${DETECTION_CONCURRENCY:-4}
+      # Davomat vaqti. Boshi: ROLL_CALL_MINUTES daqiqa, har ROLL_CALL_SCAN_SECONDS
+      # soniyada bir rasm (keldi/kelmadi). Keyin: har RECHECK_EVERY_MINUTES daqiqada
+      # RECHECK_SECONDS soniya, o'shanda har RECHECK_SCAN_SECONDS soniyada bir rasm.
+      ROLL_CALL_MINUTES: ${ROLL_CALL_MINUTES:-10}
+      ROLL_CALL_SCAN_SECONDS: ${ROLL_CALL_SCAN_SECONDS:-10}
+      RECHECK_EVERY_MINUTES: ${RECHECK_EVERY_MINUTES:-20}
+      RECHECK_SECONDS: ${RECHECK_SECONDS:-10}
+      RECHECK_SCAN_SECONDS: ${RECHECK_SCAN_SECONDS:-1}
       DATABASE_URL: postgresql://smartschool:${POSTGRES_PASSWORD}@127.0.0.1:5432/smartschool
       SMARTSCHOOL_AUTH_SECRET: ${SMARTSCHOOL_AUTH_SECRET:?openssl rand -hex 32 bilan yarating}
       JWT_SECRET: ${JWT_SECRET:?openssl rand -hex 32 bilan yarating}

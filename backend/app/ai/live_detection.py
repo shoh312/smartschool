@@ -239,10 +239,16 @@ EMBEDDING_DIM = 512
 
 FRAME_SKIP = 20
 
-DETECTION_MIN_INTERVAL = 0.5
-
-ARRIVAL_WINDOW_MINUTES = 10
-ARRIVAL_SCAN_SECONDS = 10
+# --- Davomat vaqti (hammasi .env dan sozlanadi) ---
+# Boshi (ro'yxat): dars boshida ROLL_CALL_MINUTES daqiqa davomida har
+#   ROLL_CALL_SCAN_SECONDS soniyada bir marta rasm olib, keldi/kelmadi ni hal
+#   qiladi (default 10 daqiqa, 10 soniyada bir marta).
+# Keyin (tekshiruv): har RECHECK_EVERY_MINUTES daqiqada RECHECK_SECONDS soniya
+#   tekshiradi va o'sha oynada har RECHECK_SCAN_SECONDS soniyada bir marta rasm
+#   oladi (default: har 20 daqiqada 10 soniya, soniyasiga 1 marta = 10 ta rasm).
+ARRIVAL_WINDOW_MINUTES = int(_os.getenv("ROLL_CALL_MINUTES", "10"))
+ARRIVAL_SCAN_SECONDS = int(_os.getenv("ROLL_CALL_SCAN_SECONDS", "10"))
+DETECTION_MIN_INTERVAL = float(_os.getenv("RECHECK_SCAN_SECONDS", "1"))
 
 ARRIVAL_MIN_LOOK_SECONDS = 60
 
@@ -291,9 +297,9 @@ def arrival_deadline_for(
         return now + ARRIVAL_MIN_LOOK_SECONDS
     return deadline
 
-DETECT_SECONDS = 10
+DETECT_SECONDS = int(_os.getenv("RECHECK_SECONDS", "10"))
 
-WAIT_MINUTES = 20
+WAIT_MINUTES = int(_os.getenv("RECHECK_EVERY_MINUTES", "20"))
 
 RECONNECT_LEAD_SECONDS = 5
 
