@@ -25,6 +25,10 @@ import { Materials } from './pages/teacher/Materials'
 import { MaterialEditor } from './pages/teacher/MaterialEditor'
 import { Results } from './pages/teacher/Results'
 import { Diary } from './pages/teacher/Diary'
+import { FamilyHome } from './pages/family/Home'
+import { Child } from './pages/family/Child'
+import { TakeTest } from './pages/family/TakeTest'
+import { FamilyNotices } from './pages/family/Notices'
 
 export function useSession(): Session | null {
   const [s, set] = useState<Session | null>(loadSession)
@@ -66,18 +70,34 @@ function Routed() {
       </Routes>
     )
   }
+  if (session.role === 'teacher') {
+    return (
+      <Routes>
+        <Route element={<Shell session={session} />}>
+          <Route index element={<TeacherHome />} />
+          <Route path="journal/:classId/:subject" element={<TeacherJournal />} />
+          <Route path="materials" element={<Materials />} />
+          <Route path="materials/new" element={<MaterialEditor />} />
+          <Route path="materials/:id" element={<MaterialEditor />} />
+          <Route path="results/:id" element={<Results />} />
+          <Route path="diary" element={<Diary />} />
+          <Route path="calendar" element={<Calendar />} />
+          <Route path="announcements" element={<Announcements />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    )
+  }
+  // parent or student
   return (
     <Routes>
       <Route element={<Shell session={session} />}>
-        <Route index element={<TeacherHome />} />
-        <Route path="journal/:classId/:subject" element={<TeacherJournal />} />
-        <Route path="materials" element={<Materials />} />
-        <Route path="materials/new" element={<MaterialEditor />} />
-        <Route path="materials/:id" element={<MaterialEditor />} />
-        <Route path="results/:id" element={<Results />} />
-        <Route path="diary" element={<Diary />} />
-        <Route path="calendar" element={<Calendar />} />
-        <Route path="announcements" element={<Announcements />} />
+        <Route index element={<FamilyHome />} />
+        <Route path="child/:id" element={<Child />} />
+        <Route path="child/:id/test/:aid" element={<TakeTest />} />
+        <Route path="test/:aid" element={<TakeTest />} />
+        <Route path="notices" element={<FamilyNotices />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

@@ -10,6 +10,8 @@ export function Shell({ session }: { session: Session }) {
   const { t } = useT()
   const [out, setOut] = useState(false)
   const director = session.role === 'director'
+  const family = session.role === 'parent' || session.role === 'student'
+  const roleLabel = director ? t('role_director') : session.role === 'teacher' ? t('role_teacher') : session.role === 'parent' ? t('role_parent') : t('role_student')
   const items = director
     ? [
         { to: '/', icon: IcHome, label: t('nav_home'), end: true },
@@ -20,6 +22,12 @@ export function Shell({ session }: { session: Session }) {
         { to: '/analytics', icon: IcChart, label: t('nav_analytics') },
         { to: '/announcements', icon: IcBell, label: t('nav_announcements') },
         { to: '/calendar', icon: IcCalendar, label: t('nav_calendar') },
+        { to: '/settings', icon: IcSettings, label: t('nav_settings') },
+      ]
+    : family
+    ? [
+        { to: '/', icon: IcHome, label: session.role === 'parent' ? t('nav_children') : t('nav_home'), end: true },
+        { to: '/notices', icon: IcBell, label: t('nav_notices') },
         { to: '/settings', icon: IcSettings, label: t('nav_settings') },
       ]
     : [
@@ -37,7 +45,7 @@ export function Shell({ session }: { session: Session }) {
           <div className="brand-mark">S</div>
           <div>
             <div className="brand-name">SmartFlow</div>
-            <div className="brand-sub">{director ? t('role_director') : t('role_teacher')}</div>
+            <div className="brand-sub">{roleLabel}</div>
           </div>
         </div>
         <nav className="nav">
@@ -52,7 +60,7 @@ export function Shell({ session }: { session: Session }) {
             <div className="avatar sm">{session.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
             <div className="grow">
               <div className="me-name">{session.fullName}</div>
-              <div className="me-role">{session.subject || session.email}</div>
+              <div className="me-role">{session.subject || session.email || session.phone || session.className || roleLabel}</div>
             </div>
             <button className="btn ghost icon sm" title={t('sign_out')} onClick={() => setOut(true)}><IcLogout /></button>
           </div>

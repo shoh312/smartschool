@@ -1,7 +1,7 @@
 // Shapes as the school server returns them (snake_case kept on purpose: one
 // less place for a field name to drift from the API).
 
-export type Role = 'director' | 'teacher'
+export type Role = 'director' | 'teacher' | 'parent' | 'student'
 
 export interface Session {
   token: string
@@ -11,6 +11,9 @@ export interface Session {
   email: string
   subject?: string | null
   serverUrl: string
+  // parent / student only
+  phone?: string | null
+  className?: string | null
 }
 
 export interface TeacherDto { id: number; full_name: string; email: string; subject?: string | null; is_active?: boolean }
@@ -45,6 +48,16 @@ export interface GradeDto {
   quarter?: number | null
 }
 export interface AbsenceDto { student_id: number; subject: string; date: string; lesson_id: number }
+export interface AttendanceRowDto {
+  id: number
+  student_id: number
+  status: string
+  attendance_date: string
+  time_in?: string | null
+  time_out?: string | null
+  last_seen?: string | null
+  detected_at?: string | null
+}
 
 export interface CameraDto { id: number; class_id?: number | null; name: string; ip_address?: string | null; rtsp_url?: string | null; is_active?: boolean }
 export interface CameraStatusDto {
@@ -127,6 +140,8 @@ export interface AnalyticsDto {
   strongest_subject?: string | null
   weakest_subject?: string | null
   lesson_attendance_rate?: number | null
+  trend?: { quarter: number; overall_average?: number | null }[]
+  updated_at?: string | null
 }
 
 export interface AnnouncementDto { id: number; class_id?: number | null; title: string; body: string; created_at?: string | null }
@@ -142,6 +157,8 @@ export interface DiaryEntryDto {
   teacher_name?: string | null
   homework?: string | null
   teacher_comment?: string | null
+  grade?: number | null
+  log_date?: string | null
 }
 
 // ---------------------------------------------------------------- materials
@@ -205,3 +222,67 @@ export interface ResultRowDto {
   transferred: boolean
 }
 export interface AssignmentResultsDto { assignment: AssignmentDto; results_visible: boolean; rows: ResultRowDto[] }
+
+// ------------------------------------------------------------ family (parent / student)
+
+export interface NotificationDto {
+  id: number
+  parent_id?: number | null
+  student_id?: number | null
+  event_type: string
+  title: string
+  body: string
+  status: string
+  sent_at?: string | null
+  created_at?: string | null
+}
+
+export interface StudentAssignmentDto {
+  id: number
+  material_id: number
+  title: string
+  description?: string | null
+  subject: string
+  teacher_name?: string | null
+  class_name?: string | null
+  mode: string
+  due_at?: string | null
+  max_attempts?: number | null
+  question_count: number
+  max_score: number
+  attempts_used: number
+  attempts_left?: number | null
+  submitted_at?: string | null
+  is_overdue: boolean
+  can_start: boolean
+  score?: number | null
+  percent?: number | null
+  score_visible: boolean
+}
+
+export interface StudentBlockDto {
+  id: number
+  position: number
+  block_type: BlockType
+  body: string
+  question_type?: QuestionType | null
+  options?: unknown
+  points: number
+}
+
+export interface StudentAssignmentDetailDto extends StudentAssignmentDto {
+  blocks: StudentBlockDto[]
+  attempt_id?: number | null
+  saved_answers: Record<string, unknown>
+}
+
+export interface AnswerOutDto { saved: boolean; correct?: boolean | null }
+export interface AttemptResultDto {
+  attempt_id: number
+  submitted_at: string
+  score_visible: boolean
+  score?: number | null
+  max_score?: number | null
+  percent?: number | null
+  per_question?: Record<string, boolean> | null
+}

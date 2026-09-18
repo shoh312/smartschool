@@ -37,6 +37,21 @@ export function wsBase(): string {
   return apiBase().replace(/^http/, 'ws')
 }
 
+/**
+ * Where the public server is. Parents and pupils are internet users -- they
+ * hit the public server directly (the same box that serves this page), not
+ * the school relay. Directors and teachers keep using `apiBase()`.
+ */
+export function publicBase(): string {
+  const env = import.meta.env.VITE_PUBLIC_BASE as string | undefined
+  if (env) return env.endsWith('/') ? env : env + '/'
+  return `${location.origin}/`
+}
+
+export function publicWsBase(): string {
+  return publicBase().replace(/^http/, 'ws')
+}
+
 // ------------------------------------------------------------- session
 
 let session: Session | null = null
@@ -92,10 +107,17 @@ interface Options {
   query?: Record<string, string | number | boolean | null | undefined>
   timeoutMs?: number
   auth?: boolean
+  base?: string
+}
+
+/** Parents and pupils talk to the public server; staff to the school relay. */
+function baseForSession(): string {
+  const s = loadSession()
+  return s && (s.role === 'parent' || s.role === 'student') ? publicBase() : apiBase()
 }
 
 export async function request<T>(path: string, o: Options = {}): Promise<T> {
-  const url = new URL(path.replace(/^\//, ''), apiBase())
+  const url = new URL(path.replace(/^\//, ''), o.base ?? baseForSession())
   if (o.query) for (const [k, v] of Object.entries(o.query)) if (v !== undefined && v !== null) url.searchParams.set(k, String(v))
   const headers: Record<string, string> = { Accept: 'application/json' }
   const s = loadSession()

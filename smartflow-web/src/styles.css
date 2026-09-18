@@ -544,3 +544,21 @@ body { background: var(--page); background-image: radial-gradient(900px 500px at
 .ld-apk-art { display: grid; place-items: center; margin-bottom: 8px; }
 .ld-apk h2 { font-size: 22px; }
 .ld-apk .lead { font-size: 14px; line-height: 1.5; }
+
+/* family: 4-up login segment, coloured stat numbers */
+.seg-4 { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
+.seg-4 button { height: 34px; }
+.stat-n.mint { color: var(--mint); } .stat-n.amber { color: var(--amber); } .stat-n.rose { color: var(--rose); }
+@media (max-width: 520px) { .seg-4 { grid-template-columns: repeat(2, 1fr); } }
+
+/* take-test options, question number, calendar chip */
+.opt { display: flex; align-items: center; gap: 10px; text-align: left; padding: 13px 16px; border-radius: var(--r-md); border: 1.5px solid var(--border); background: var(--surface); font-weight: 600; font-size: 14px; transition: border-color .15s, background .15s; justify-content: center; }
+.col > .opt { justify-content: flex-start; }
+.opt:hover { border-color: var(--brand-soft); }
+.opt.on { border-color: var(--brand); background: var(--brand-tint); color: var(--brand); }
+.opt-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; flex: 0 0 auto; }
+.opt.on .opt-dot { border-color: var(--brand); background: var(--brand); color: #fff; }
+.opt-dot svg { width: 14px; height: 14px; }
+.q-no { width: 30px; height: 30px; border-radius: 9px; background: var(--brand-tint); color: var(--brand); font-weight: 800; display: grid; place-items: center; flex: 0 0 auto; }
+.cal-chip { width: 46px; height: 46px; border-radius: 13px; background: var(--surface-soft); display: grid; place-items: center; flex: 0 0 auto; line-height: 1; }
+.cal-chip b { font-size: 17px; font-weight: 800; } .cal-chip span { font-size: 10px; color: var(--ink-3); font-weight: 700; text-transform: uppercase; }

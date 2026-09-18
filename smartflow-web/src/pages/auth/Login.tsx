@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { apiBase, saveSession } from '../../api/client'
+import { apiBase, publicBase, saveSession } from '../../api/client'
 import { auth } from '../../api/endpoints'
 import type { Role } from '../../api/types'
 import { LangSwitch, useT } from '../../i18n'
@@ -8,14 +8,26 @@ import { errorText, Field, useErrorMessage } from '../../ui/kit'
 import { Ill } from '../../ui/illustrations'
 import { IcBack, IcBook, IcCamera, IcSparkles } from '../../ui/icons'
 
+const ROLES: { role: Role; label: string }[] = [
+  { role: 'director', label: 'role_director' },
+  { role: 'teacher', label: 'role_teacher' },
+  { role: 'parent', label: 'role_parent' },
+  { role: 'student', label: 'role_student' },
+]
+
 export function Login() {
   const { t } = useT()
   const msg = useErrorMessage()
   const [role, setRole] = useState<Role>('director')
-  const [email, setEmail] = useState('')
+  const [ident, setIdent] = useState('')   // email / phone / username
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isParent = role === 'parent'
+  const isStudent = role === 'student'
+  const identLabel = isParent ? t('phone') : isStudent ? t('username') : t('email')
+  const identType = isParent ? 'tel' : 'text'
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -23,15 +35,23 @@ export function Login() {
     setBusy(true); setError(null)
     try {
       if (role === 'director') {
-        const r = await auth.directorLogin(email.trim(), password)
-        saveSession({ token: r.access_token, role: 'director', id: r.director?.id ?? 0, fullName: r.director?.full_name ?? t('role_director'), email: email.trim(), serverUrl: apiBase() })
-      } else {
-        const r = await auth.teacherLogin(email.trim(), password)
+        const r = await auth.directorLogin(ident.trim(), password)
+        saveSession({ token: r.access_token, role: 'director', id: r.director?.id ?? 0, fullName: r.director?.full_name ?? t('role_director'), email: ident.trim(), serverUrl: apiBase() })
+      } else if (role === 'teacher') {
+        const r = await auth.teacherLogin(ident.trim(), password)
         saveSession({ token: r.access_token, role: 'teacher', id: r.teacher.id, fullName: r.teacher.full_name, email: r.teacher.email, subject: r.teacher.subject, serverUrl: apiBase() })
+      } else if (role === 'parent') {
+        const r = await auth.parentLogin(ident.trim(), password)
+        if (r.status === 'needs_password' || !r.access_token) { setError(t('err_needs_password')); return }
+        saveSession({ token: r.access_token, role: 'parent', id: r.parent_id ?? 0, fullName: r.full_name ?? t('role_parent'), email: '', phone: r.phone ?? ident.trim(), serverUrl: publicBase() })
+      } else {
+        const r = await auth.studentLogin(ident.trim(), password)
+        saveSession({ token: r.access_token, role: 'student', id: r.student_id, fullName: r.full_name, email: '', className: r.class_name, serverUrl: publicBase() })
       }
     } catch (err) {
       const code = errorText(err)
-      setError(code === 'http_401' ? t('err_login') : code)
+      setError(code === 'http_401' || code === 'invalid_credentials' ? t('err_login')
+        : code === 'phone_not_registered' ? t('err_phone_unknown') : code)
     } finally {
       setBusy(false)
     }
@@ -63,16 +83,23 @@ export function Login() {
           <Link to="/" className="ld-back"><IcBack /> {t('ld_back_home')}</Link>
           <h2>{t('login_title')}</h2>
           <p className="lead">{t('login_lead')}</p>
-          <div className="seg mb16">
-            <button type="button" className={role === 'director' ? 'active' : ''} onClick={() => setRole('director')}>{t('role_director')}</button>
-            <button type="button" className={role === 'teacher' ? 'active' : ''} onClick={() => setRole('teacher')}>{t('role_teacher')}</button>
+          <div className="seg seg-4 mb16">
+            {ROLES.map((r) => (
+              <button key={r.role} type="button" className={role === r.role ? 'active' : ''} onClick={() => { setRole(r.role); setError(null) }}>{t(r.label)}</button>
+            ))}
           </div>
           <div className="col" style={{ gap: 14 }}>
-            <Field label={t('email')}><input className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus /></Field>
+            <Field label={identLabel}>
+              <input className="input" type={identType} inputMode={isParent ? 'tel' : undefined}
+                autoComplete={isParent ? 'tel' : 'username'} value={ident}
+                onChange={(e) => setIdent(e.target.value)} required autoFocus
+                placeholder={isParent ? '+992…' : undefined} />
+            </Field>
             <Field label={t('password')}><input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></Field>
             {error && <div className="error-box">{msg(error)}</div>}
             <button className="btn primary" style={{ height: 46 }} disabled={busy}>{busy ? t('signing_in') : t('sign_in')}</button>
           </div>
+          {(isParent || isStudent) && <p className="small muted mt12" style={{ textAlign: 'center' }}>{t('family_login_hint')}</p>}
         </form>
       </div>
     </div>

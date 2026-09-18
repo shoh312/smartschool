@@ -1,9 +1,10 @@
-import { del, get, patch, post, put, request } from './client'
+import { del, get, patch, post, publicBase, put, request } from './client'
 import type {
-  AbsenceDto, AiGenerateResponse, AnalyticsDto, AnnouncementDto, AssignmentDto, AssignmentResultsDto, BlockDto,
-  CalendarEventDto, CameraDto, CameraPositionDto, CameraStatusDto, ClassAssignmentDto, ClassDto, ClassSubjectAverageDto,
-  ClassSubjectDto, DiaryEntryDto, DirectorDto, GradeDto, LeaderboardEntryDto, LiveStatusDto, MaterialFullDto,
-  MaterialSummaryDto, NeedsAttentionDto, SchoolSettingsDto, StudentDto, TeacherDto,
+  AbsenceDto, AiGenerateResponse, AnalyticsDto, AnnouncementDto, AnswerOutDto, AssignmentDto, AssignmentResultsDto,
+  AttemptResultDto, AttendanceRowDto, BlockDto, CalendarEventDto, CameraDto, CameraPositionDto, CameraStatusDto, ClassAssignmentDto,
+  ClassDto, ClassSubjectAverageDto, ClassSubjectDto, DiaryEntryDto, DirectorDto, GradeDto, LeaderboardEntryDto,
+  LiveStatusDto, MaterialFullDto, MaterialSummaryDto, NeedsAttentionDto, NotificationDto, SchoolSettingsDto,
+  StudentAssignmentDetailDto, StudentAssignmentDto, StudentDto, TeacherDto,
 } from './types'
 
 // ------------------------------------------------------------------ auth
@@ -12,6 +13,34 @@ export const auth = {
     post<{ access_token: string; teacher: TeacherDto }>('auth/teacher/login', { email, password }, { auth: false }),
   directorLogin: (email: string, password: string) =>
     post<{ access_token: string; director?: DirectorDto | null; must_change_password?: boolean }>('auth/director/login', { email, password }, { auth: false }),
+  // Parents and pupils authenticate on the public server, not the school.
+  parentLogin: (phone: string, password: string) =>
+    post<{ status: string; access_token?: string; parent_id?: number; full_name?: string; phone?: string }>(
+      'auth/login', { phone, password }, { auth: false, base: publicBase() }),
+  studentLogin: (username: string, password: string) =>
+    post<{ status: string; access_token: string; student_id: number; full_name: string; class_name?: string | null }>(
+      'auth/student/login', { username, password }, { auth: false, base: publicBase() }),
+}
+
+// --------------------------------------------------------------- family
+// One API for both parent and pupil; the token decides whose data comes back.
+export const family = {
+  children: () => get<StudentDto[]>('students/me'),
+  grades: (studentId: number) => get<GradeDto[]>('grades', { student_id: studentId, limit: 2000 }),
+  attendance: (studentId: number) => get<AttendanceRowDto[]>('attendance/history', { student_id: studentId, limit: 400 }),
+  diary: (studentId: number, on: string) => get<DiaryEntryDto[]>(`diary/${studentId}`, { on }),
+  analytics: (studentId: number, quarter?: number | null) => get<AnalyticsDto>(`analytics/student/${studentId}`, { quarter: quarter ?? undefined }),
+  announcements: (studentId: number) => get<AnnouncementDto[]>('announcements', { student_id: studentId }),
+  calendar: (studentId: number) => get<CalendarEventDto[]>('calendar/events', { student_id: studentId }),
+  notifications: (parentId: number) => get<NotificationDto[]>(`notifications/parent/${parentId}`, { limit: 100 }),
+
+  assignments: (studentId: number) => get<StudentAssignmentDto[]>('materials/assignments', { student_id: studentId }),
+  assignment: (id: number, studentId: number) => get<StudentAssignmentDetailDto>(`materials/assignments/${id}`, { student_id: studentId }),
+  startAttempt: (id: number, studentId: number) =>
+    request<StudentAssignmentDetailDto>(`materials/assignments/${id}/start`, { method: 'POST', query: { student_id: studentId } }),
+  answer: (attemptId: number, blockId: number, answer: unknown) =>
+    post<AnswerOutDto>(`materials/attempts/${attemptId}/answer`, { block_id: blockId, answer }),
+  submit: (attemptId: number) => post<AttemptResultDto>(`materials/attempts/${attemptId}/submit`),
 }
 
 // --------------------------------------------------------------- teacher
