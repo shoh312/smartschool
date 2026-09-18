@@ -23,6 +23,7 @@ from app.routers.school_router import router as school_router
 
 from app.routers.schools_admin_router import router as schools_admin_router
 from app.routers.student_router import router as student_router
+from app.routers.demo_seed_router import router as demo_seed_router
 from app.routers.student_router import parent_router as parent_student_router
 from app.routers.teacher_router import router as teacher_router
 from app.routers.journal_router import router as journal_router
@@ -94,6 +95,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(student_router)
+app.include_router(demo_seed_router)
 app.include_router(parent_student_router)
 app.include_router(attendance_router)
 app.include_router(notification_router)

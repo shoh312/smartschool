@@ -279,7 +279,7 @@ from datetime import datetime as _dt
 
 from app.models.school_model import School
 from app.realtime import broadcast_attendance_update
-from app.services.attendance_service import record_detection, ABSENT
+from app.services.attendance_service import record_detection, ABSENT, PRESENT, LATE
 from app.services.sync_outbox_service import enqueue_attendance_event
 
 
@@ -298,7 +298,14 @@ def mark_manually(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     if payload.status == "present":
-        return record_detection(db, student.id, camera_id=None, confidence=1.0)
+        row = record_detection(db, student.id, camera_id=None, confidence=1.0)
+        if row.status == LATE:
+            row.status = PRESENT
+            db.commit()
+            db.refresh(row)
+            enqueue_attendance_event(db, row, operation="upsert", notify=False)
+            db.commit()
+        return row
     if payload.status != "absent":
         raise HTTPException(status_code=422, detail="status must be present or absent")
     now = _dt.now()
@@ -310,6 +317,38 @@ def mark_manually(
     row.updated_at = now
     db.flush()
     enqueue_attendance_event(db, row, operation="upsert")
+    db.commit()
+    db.refresh(row)
+    broadcast_attendance_update()
+    return row
+
+
+class AttendanceStatusUpdate(BaseModel):
+    status: str
+
+
+@router.patch("/{attendance_id}", response_model=AttendanceResponse)
+def update_attendance_status(
+    attendance_id: int,
+    payload: AttendanceStatusUpdate,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    if payload.status not in (PRESENT, LATE, ABSENT):
+        raise HTTPException(status_code=422, detail="status must be present, late or absent")
+    row = (
+        db.query(Attendance).join(Student, Student.id == Attendance.student_id)
+        .filter(Attendance.id == attendance_id, Student.school_id == director.school_id).first()
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Attendance not found")
+    now = _dt.now()
+    row.status = payload.status
+    if payload.status != ABSENT and row.time_in is None:
+        row.time_in = row.detected_at or now
+    row.updated_at = now
+    db.flush()
+    enqueue_attendance_event(db, row, operation="upsert", notify=False)
     db.commit()
     db.refresh(row)
     broadcast_attendance_update()
