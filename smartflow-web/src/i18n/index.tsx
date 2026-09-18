@@ -47,6 +47,7 @@ export function useT() {
 }
 
 export const LOCALE: Record<Lang, string> = { tg: 'tg-TJ', ru: 'ru-RU', en: 'en-GB' }
+export const LANG_LABEL: Record<Lang, string> = { tg: 'TJ', ru: 'RU', en: 'EN' }
 
 export function LangSwitch({ light }: { light?: boolean }) {
   const { lang, setLang } = useT()
@@ -54,7 +55,7 @@ export function LangSwitch({ light }: { light?: boolean }) {
     <div className={'lang' + (light ? ' light' : '')}>
       {LANGS.map((l) => (
         <button key={l} className={l === lang ? 'active' : ''} onClick={() => setLang(l)}>
-          {l.toUpperCase()}
+          {LANG_LABEL[l]}
         </button>
       ))}
     </div>

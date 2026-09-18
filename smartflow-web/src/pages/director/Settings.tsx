@@ -49,7 +49,7 @@ export function Settings() {
             <div className="lang-cards">
               {LANGS.map((l) => (
                 <button key={l.code} className={'lang-card' + (lang === l.code ? ' active' : '')} onClick={() => { setLang(l.code); toast(t('saved')) }}>
-                  <span className="fl">{l.code.toUpperCase()}</span>
+                  <span className="fl">{l.code === 'tg' ? 'TJ' : l.code.toUpperCase()}</span>
                   <span><span className="nm" style={{ display: 'block' }}>{l.name}</span><span className="cd">{l.native}</span></span>
                 </button>
               ))}

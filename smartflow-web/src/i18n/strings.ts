@@ -381,7 +381,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
   ld_nav_roles: ['Барои кӣ', 'Для кого', 'For whom'],
   ld_nav_security: ['Амният', 'Безопасность', 'Security'],
   ld_eyebrow: ['Платформаи рақамӣ барои мактаб ва академияҳо', 'Цифровая платформа для школ и академий', 'A digital platform for schools and academies'],
-  ld_hero_title: ['Мактабе, ки худаш давомотро мегирад', 'Школа, которая сама ведёт посещаемость', 'A school that takes its own attendance'],
+  ld_hero_title: ['Платформае, ки худаш давомотро мегирад', 'Платформа, которая сама ведёт посещаемость', 'A platform that takes attendance on its own'],
   ld_hero_body: ['Камера хонандаро мешиносад, журнал худаш пур мешавад, волидон дар ҳамон дақиқа хабар мегиранд. Директор ва муаллим — дар як экран, бе коғаз.', 'Камера узнаёт ученика, журнал заполняется сам, родители получают уведомление в ту же минуту. Директор и учитель — на одном экране, без бумаги.', 'The camera recognises the pupil, the register fills itself in, parents hear about it the same minute. Director and teacher on one screen, no paper.'],
   ld_hero_cta: ['Ба система ворид шавед', 'Войти в систему', 'Sign in to the system'],
   ld_hero_note: ['Барои волидон — иловаи мобилии SmartFlow дар Android', 'Для родителей — мобильное приложение SmartFlow на Android', 'For parents — the SmartFlow Android app'],
