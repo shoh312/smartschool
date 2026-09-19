@@ -128,40 +128,43 @@ export function DirectorHome() {
         </div>
       </div>
 
-      {trendDays.length > 1 && (
-        <div className="card mb24">
-          <div className="row mb16" style={{ alignItems: 'flex-start' }}>
-            <div className="grow">
-              <div className="card-title" style={{ marginBottom: 2 }}>{t('att_trend_title')}</div>
-              <div className="small muted">{t('att_trend_sub')}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
-                <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.5px' }}>{lastPct}%</div>
-                <Delta value={lastPct - prevPct} unit="%" />
+      {(trendDays.length > 1 || classAvg.length > 0) && (
+        <div className="grid c2 mb24" style={{ alignItems: 'start' }}>
+          {trendDays.length > 1 && (
+            <div className="card">
+              <div className="row mb16" style={{ alignItems: 'flex-start' }}>
+                <div className="grow">
+                  <div className="card-title" style={{ marginBottom: 2 }}>{t('att_trend_title')}</div>
+                  <div className="small muted">{t('att_trend_sub')}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.5px' }}>{lastPct}%</div>
+                    <Delta value={lastPct - prevPct} unit="%" />
+                  </div>
+                  <div className="tiny faint">{t('att_trend_today')}</div>
+                </div>
               </div>
-              <div className="tiny faint">{t('att_trend_today')}</div>
+              <LineChart
+                labels={trendDays.map((r) => f.ddmm(r.day))}
+                unit="%" max={100} height={230}
+                series={[
+                  { label: t('att_present'), color: 'var(--brand)', values: trendDays.map((r) => r.came) },
+                  { label: t('att_absent'), color: 'var(--rose)', dashed: true, values: trendDays.map((r) => r.absent) },
+                ]}
+              />
+              <div className="legend" style={{ justifyContent: 'center' }}>
+                <span><i style={{ background: 'var(--brand)' }} /> {t('att_present')}</span>
+                <span><i style={{ background: 'var(--rose)', opacity: .7 }} /> {t('att_absent')}</span>
+              </div>
             </div>
-          </div>
-          <LineChart
-            labels={trendDays.map((r) => f.ddmm(r.day))}
-            unit="%" max={100} height={230}
-            series={[
-              { label: t('att_present'), color: 'var(--brand)', values: trendDays.map((r) => r.came) },
-              { label: t('att_absent'), color: 'var(--rose)', dashed: true, values: trendDays.map((r) => r.absent) },
-            ]}
-          />
-          <div className="legend" style={{ justifyContent: 'center' }}>
-            <span><i style={{ background: 'var(--brand)' }} /> {t('att_present')}</span>
-            <span><i style={{ background: 'var(--rose)', opacity: .7 }} /> {t('att_absent')}</span>
-          </div>
-        </div>
-      )}
-
-      {classAvg.length > 0 && (
-        <div className="card mb24">
-          <div className="card-title"><Ill name="trophy" size={30} /> {t('class_averages')}</div>
-          <BarChart data={classAvg.slice(0, 10).map((c) => ({ label: c.label.replace(/[^A-Za-z0-9# ]/g, '').slice(0, 6) || c.label, value: c.value }))} max={10} height={210} />
+          )}
+          {classAvg.length > 0 && (
+            <div className="card">
+              <div className="card-title"><Ill name="trophy" size={30} /> {t('class_averages')}</div>
+              <BarChart data={classAvg.slice(0, 8).map((c) => ({ label: c.label.replace(/[^A-Za-z0-9# ]/g, '').slice(0, 6) || c.label, value: c.value }))} max={10} height={272} />
+            </div>
+          )}
         </div>
       )}
 
