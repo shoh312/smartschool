@@ -186,7 +186,7 @@ function Role({ title, ill, items, web, app, t, delay = 0 }: { title: string; il
 function Mock() {
   const { t } = useT()
   const pupils: [string, 'mint' | 'amber' | 'rose', string][] = [
-    ['Исмоилов И.', 'mint', t('ld_mock_came')], ['Раҳимова Н.', 'mint', t('ld_mock_came')],
+    ['Тоҳиров Шукруллоҳ', 'mint', t('ld_mock_came')], ['Раҳимова Н.', 'mint', t('ld_mock_came')],
     ['Каримов С.', 'amber', t('ld_mock_late')], ['Назарова М.', 'rose', t('ld_mock_absent')],
   ]
   const grid = [[9, 8, 0, 10, 9], [7, 8, 9, 0, 8], [10, 9, 9, 8, 10], [6, 0, 7, 8, 7]]

@@ -400,7 +400,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
   ld_mock_journal: ['Журнал', 'Журнал', 'Register'],
   ld_mock_avg: ['Миёнаи гурӯҳ', 'Средний балл группы', 'Group average'],
   ld_mock_notify: ['Волидон хабардор шуданд', 'Родители уведомлены', 'Parents notified'],
-  ld_mock_notify_body: ['Исмоилов И. — омад, 08:57', 'Исмоилов И. — пришёл, 08:57', 'Ismoilov I. — arrived, 08:57'],
+  ld_mock_notify_body: ['Тоҳиров Ш. — омад, 08:57', 'Тоҳиров Ш. — пришёл, 08:57', 'Tohirov Sh. — arrived, 08:57'],
   ld_features_t: ['Ҳама чизе, ки мактаб ҳар рӯз мекунад', 'Всё, что школа делает каждый день', 'Everything a school does every day'],
   ld_features_sub: ['Шаш кор — як система. Бе ҷадвалҳои Excel, бе занг ба волидон, бе журнали гумшуда.', 'Шесть задач — одна система. Без таблиц Excel, без обзвона родителей, без потерянного журнала.', 'Six jobs, one system. No spreadsheets, no phoning parents, no lost register.'],
   ld_f1_t: ['Давомот аз камера', 'Посещаемость с камеры', 'Attendance from the camera'],
