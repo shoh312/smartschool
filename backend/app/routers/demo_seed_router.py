@@ -210,13 +210,13 @@ def _run_seed(db, student, class_id, teacher, since, until, present, rnd):
             "days": attendance, "lesson_rows": lesson_rows, "grades": grades, "homework": diary}
 
 
+
 # --------------------------------------------------------------------------
-# Bulk demo: many fake pupils across the school, each with marks and a month
-# of attendance, so every dashboard (ranking, class averages, attendance
-# donut and trend, needs-attention) fills with realistic numbers. Analytics
-# are computed on the fly from the grades table, so no rebuild is needed.
-# All demo pupils get a "demo_" username, grades carry "[demo]" and
-# attendance carries confidence -1, so bulk-wipe removes exactly them.
+# Filling the school with pupils, teachers and marks so every dashboard is
+# full. Seeded pupils carry no visible label: they get no username and a
+# hidden password_salt marker (SEED_MARK), so they read as ordinary pupils
+# but can still be found and removed. Analytics compute from the grades
+# table on the fly, so nothing needs a rebuild.
 
 _FIRST = ["Аҳмад", "Фарҳод", "Ҷамшед", "Сино", "Наврӯз", "Шукруллоҳ", "Комрон", "Диловар", "Бахтиёр", "Рустам",
           "Нозия", "Мадина", "Зарина", "Гулнора", "Фарзона", "Ситора", "Малика", "Нигина", "Шаҳноза", "Дилноза",
@@ -225,16 +225,22 @@ _LAST = ["Раҳимов", "Каримов", "Назаров", "Сафаров",
          "Шарипов", "Валиев", "Қосимов", "Раҷабов", "Одинаев", "Сатторов", "Холов", "Юсупов", "Нуров", "Амонов"]
 _LOW = ["Вазифаро иҷро накард", "Дар дарс фаъол набуд", "Мавзӯъро такрор кунад", "Диққат кам буд"]
 _HIGH = ["Хуб кор кард", "Фаъол буд", "Ҷавоби пурра", ""]
+_SUBJECTS = ["Математика", "Физика", "Химия", "Биология", "Забони тоҷикӣ", "Забони русӣ",
+             "Забони англисӣ", "Таърих", "География", "Информатика", "Адабиёт", "Тарбияи ҷисмонӣ"]
+
+SEED_MARK = "s33d"   # hidden marker kept in password_salt; never shown in the UI
 
 
-def _demo_student_ids(db: Session, school_id: int) -> list[int]:
+def _seeded_ids(db: Session, school_id: int) -> list[int]:
     return [r[0] for r in db.query(Student.id).filter(
-        Student.school_id == school_id, Student.username.like("demo\_%", escape="\\")).all()]
+        Student.school_id == school_id,
+        (Student.password_salt == SEED_MARK) | (Student.username.like("demo\\_%", escape="\\"))
+    ).all()]
 
 
 @router.post("/demo/bulk-wipe")
 def bulk_wipe(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
-    ids = _demo_student_ids(db, director.school_id)
+    ids = _seeded_ids(db, director.school_id)
     if ids:
         db.query(Grade).filter(Grade.student_id.in_(ids)).delete(synchronize_session=False)
         db.query(Attendance).filter(Attendance.student_id.in_(ids)).delete(synchronize_session=False)
@@ -244,76 +250,109 @@ def bulk_wipe(db: Session = Depends(get_db), director: Director = Depends(get_cu
     return {"removed_students": len(ids)}
 
 
-_SUBJECTS = ["Математика", "Физика", "Химия", "Биология", "Забони тоҷикӣ", "Забони русӣ",
-             "Забони англисӣ", "Таърих", "География", "Информатика", "Адабиёт", "Тарбияи ҷисмонӣ"]
+def _translit(name: str) -> str:
+    m = {"а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ж": "j", "з": "z", "и": "i", "й": "y",
+         "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+         "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "қ": "q", "ғ": "gh", "ҳ": "h", "ҷ": "j",
+         "ӯ": "u", "ӣ": "i", "э": "e", "ю": "yu", "я": "ya", "ъ": ""}
+    return "".join(m.get(ch, "") for ch in name.lower())
 
 
-@router.post("/demo/bulk-seed")
-def bulk_seed(
+@router.post("/demo/rebalance")
+def rebalance(
     per_class: int = 18,
-    grades: int = 11,
+    per_subject: int = 5,
+    grades_per_subject: int = 6,
     days: int = 25,
     present: float = 0.93,
     seed: int = 7,
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
-    """Fill the school like a real one: grades 1..N, sections A/B/C, at most
-    `per_class` pupils each, marks across real subjects (Math, Physics, …)."""
+    """Spread every pupil (none deleted) across grade/section classes at most
+    `per_class` each, creating classes as needed; make `per_subject` teachers
+    for each subject; and give each seeded pupil marks in ~8 subjects."""
+    import math
+    from app.utils.security import hash_password
+
     per_class = max(1, min(30, per_class))
-    grades = max(1, min(11, grades))
     rnd = random.Random(seed)
+    school_id = director.school_id
 
-    any_teacher = db.query(Teacher).filter(Teacher.school_id == director.school_id).first()
-    if not any_teacher:
-        raise HTTPException(status_code=400, detail="No teacher to sign the marks")
+    # normalise any earlier "demo_" pupils to the hidden marker, no visible label
+    for s in db.query(Student).filter(Student.school_id == school_id, Student.username.like("demo\\_%", escape="\\")).all():
+        s.username = None
+        s.password_salt = SEED_MARK
+        s.password_hash = None
+    db.commit()
 
-    # wipe previous demo pupils first (idempotent)
-    old = _demo_student_ids(db, director.school_id)
-    if old:
-        db.query(Grade).filter(Grade.student_id.in_(old)).delete(synchronize_session=False)
-        db.query(Attendance).filter(Attendance.student_id.in_(old)).delete(synchronize_session=False)
-        db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(old)).delete(synchronize_session=False)
-        db.query(Student).filter(Student.id.in_(old)).delete(synchronize_session=False)
-        db.commit()
+    # strip any leftover "[demo] " tag from every mark's comment, so nothing
+    # visible ever reads "demo"
+    db.query(Grade).filter(Grade.comment.like("[demo]%")).update(
+        {Grade.comment: func.replace(Grade.comment, "[demo] ", "")}, synchronize_session=False)
+    db.commit()
 
-    # ensure the class grid exists: 1A..{grades}C
-    existing = {c.name: c for c in db.query(Class).filter(Class.school_id == director.school_id).all()}
-    wanted: list[tuple[int, str]] = [(g, f"{g}{L}") for g in range(1, grades + 1) for L in ("A", "B", "C")]
+    # 1) teachers per subject (real-looking names and emails)
+    subj_teachers: dict[str, list[int]] = {}
+    created_teachers = 0
+    for subject in _SUBJECTS:
+        ids = [t.id for t in db.query(Teacher).filter(Teacher.school_id == school_id, Teacher.subject == subject).all()]
+        n = 0
+        while len(ids) < per_subject:
+            fn, ln = rnd.choice(_FIRST), rnd.choice(_LAST)
+            tln = _translit(ln)
+            email = f"{_translit(fn)[:1]}.{tln}{n}@maktab.tj"
+            n += 1
+            if not tln or db.query(Teacher).filter(Teacher.email == email).first():
+                continue
+            t = Teacher(school_id=school_id, full_name=f"{ln} {fn}", subject=subject,
+                        email=email, hashed_password=hash_password("1234"), is_active=True)
+            db.add(t); db.flush(); ids.append(t.id); created_teachers += 1
+        subj_teachers[subject] = ids
+    db.commit()
+
+    # 2) every pupil
+    students = db.query(Student).filter(Student.school_id == school_id, Student.is_active == True).all()
+    total = len(students)
+    if total == 0:
+        raise HTTPException(status_code=400, detail="No pupils to place")
+
+    # 3) enough classes: grades 1..11, sections A.. as needed
+    needed = max(33, math.ceil(total / per_class))
+    sections = max(3, math.ceil(needed / 11))
+    letters = [chr(ord("A") + i) for i in range(min(sections, 26))]
+    wanted = [(g, f"{g}{L}") for g in range(1, 12) for L in letters]
+    existing = {c.name: c for c in db.query(Class).filter(Class.school_id == school_id).all()}
     created_classes = 0
     for g, nm in wanted:
         if nm not in existing:
-            c = Class(school_id=director.school_id, name=nm, grade=g)
-            db.add(c); created_classes += 1
+            db.add(Class(school_id=school_id, name=nm, grade=g)); created_classes += 1
     if created_classes:
         db.commit()
-    all_classes = db.query(Class).filter(Class.school_id == director.school_id).all()
+    classes = db.query(Class).filter(Class.school_id == school_id).order_by(Class.grade, Class.name).all()
 
-    # how many demo pupils each class still needs to reach `per_class`
-    have = dict(
-        db.query(Student.class_id, func.count(Student.id))
-        .filter(Student.school_id == director.school_id, Student.is_active == True)
-        .group_by(Student.class_id).all()
-    )
-    base = int(datetime.now().timestamp())
-    rows = []
-    idx = 0
-    for c in all_classes:
-        need = max(0, per_class - int(have.get(c.id, 0)))
-        for _ in range(need):
-            rows.append(dict(
-                school_id=director.school_id, class_id=c.id, parent_id=None,
-                first_name=rnd.choice(_FIRST), last_name=rnd.choice(_LAST),
-                is_active=True, username=f"demo_{base}_{idx}",
-            ))
-            idx += 1
-    if rows:
-        db.bulk_insert_mappings(Student, rows)
+    # 4) distribute pupils evenly, capped at per_class
+    counts = {c.id: 0 for c in classes}
+    rnd.shuffle(students)
+    ci = 0
+    for s in students:
+        placed = False
+        for _ in range(len(classes)):
+            c = classes[ci % len(classes)]; ci += 1
+            if counts[c.id] < per_class:
+                s.class_id = c.id; counts[c.id] += 1; placed = True; break
+        if not placed:
+            c = classes[ci % len(classes)]; ci += 1
+            s.class_id = c.id; counts[c.id] += 1
+    db.commit()
+
+    # 5) (re)seed marks + attendance for seeded pupils only; real pupils untouched
+    seeded_ids = _seeded_ids(db, school_id)
+    if seeded_ids:
+        db.query(Grade).filter(Grade.student_id.in_(seeded_ids)).delete(synchronize_session=False)
+        db.query(Attendance).filter(Attendance.student_id.in_(seeded_ids), Attendance.confidence == DEMO_CONF).delete(synchronize_session=False)
         db.commit()
-
-    made = db.query(Student.id, Student.class_id).filter(
-        Student.school_id == director.school_id,
-        Student.username.like(f"demo\\_{base}\\_%", escape="\\")).all()
+    seeded = set(seeded_ids)
 
     today = date.today()
     school_days: list[date] = []
@@ -324,19 +363,20 @@ def bulk_seed(
         d -= timedelta(days=1)
     school_days.reverse()
 
-    weights = [3, 7, 14, 30, 30, 16]  # values 5..10
-    grade_rows = []
-    att_rows = []
-    for sid, cid in made:
-        # each pupil studies ~8 subjects, a handful of marks in each
-        subs = rnd.sample(_SUBJECTS, k=rnd.randint(6, 9))
+    weights = [3, 7, 14, 30, 30, 16]
+    grade_rows, att_rows = [], []
+    for s in students:
+        if s.id not in seeded:
+            continue
+        subs = rnd.sample(_SUBJECTS, k=rnd.randint(7, min(10, len(_SUBJECTS))))
         for subject in subs:
-            for _ in range(rnd.randint(2, 5)):
+            tid = rnd.choice(subj_teachers[subject])
+            for _ in range(rnd.randint(max(3, grades_per_subject - 1), grades_per_subject + 1)):
                 gd = rnd.choice(school_days)
                 v = rnd.choices([5, 6, 7, 8, 9, 10], weights=weights)[0]
                 grade_rows.append(dict(
-                    student_id=sid, class_id=cid, teacher_id=any_teacher.id, subject=subject,
-                    value=v, comment=MARK + " " + (rnd.choice(_LOW) if v < 6 else rnd.choice(_HIGH)),
+                    student_id=s.id, class_id=s.class_id, teacher_id=tid, subject=subject,
+                    value=v, comment=(rnd.choice(_LOW) if v < 6 else rnd.choice(_HIGH)) or None,
                     grade_date=gd, quarter=quarter_for_date(gd), school_year=school_year_for_date(gd),
                 ))
         for gd in school_days:
@@ -344,7 +384,7 @@ def bulk_seed(
             late = came and rnd.random() < 0.12
             status = "late" if late else ("present" if came else "absent")
             att_rows.append(dict(
-                student_id=sid, camera_id=None, status=status, confidence=DEMO_CONF,
+                student_id=s.id, camera_id=None, status=status, confidence=DEMO_CONF,
                 attendance_date=gd, detected_at=datetime.combine(gd, time(9, rnd.randint(0, 20))),
             ))
         if len(grade_rows) >= 6000:
@@ -356,7 +396,45 @@ def bulk_seed(
     if att_rows:
         db.bulk_insert_mappings(Attendance, att_rows); db.commit()
 
+    sizes = dict(db.query(Class.name, func.count(Student.id)).join(Student, Student.class_id == Class.id)
+                 .filter(Class.school_id == school_id, Student.is_active == True).group_by(Class.name).all())
     return {
-        "new_students": len(made), "created_classes": created_classes,
-        "total_classes": len(all_classes), "per_class": per_class, "days": len(school_days),
+        "pupils_placed": total, "created_classes": created_classes, "total_classes": len(classes),
+        "created_teachers": created_teachers, "teachers_total": db.query(Teacher).filter(Teacher.school_id == school_id).count(),
+        "max_class_size": max(sizes.values()) if sizes else 0, "per_class": per_class,
     }
+
+
+@router.post("/demo/bulk-seed")
+def bulk_seed(
+    per_class: int = 18,
+    per_subject: int = 5,
+    grades_per_subject: int = 6,
+    days: int = 25,
+    present: float = 0.93,
+    seed: int = 7,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """Create fresh seeded pupils to fill grades 1..11 A/B/C up to per_class,
+    then hand off to rebalance to place everyone, add teachers and seed marks."""
+    per_class = max(1, min(30, per_class))
+    rnd = random.Random(seed)
+    school_id = director.school_id
+
+    have = db.query(func.count(Student.id)).filter(Student.school_id == school_id, Student.is_active == True).scalar() or 0
+    need = max(0, 33 * per_class - int(have))
+    first_class = db.query(Class).filter(Class.school_id == school_id).first()
+    rows = []
+    for _ in range(need):
+        rows.append(dict(
+            school_id=school_id, class_id=(first_class.id if first_class else None), parent_id=None,
+            first_name=rnd.choice(_FIRST), last_name=rnd.choice(_LAST),
+            is_active=True, username=None, password_salt=SEED_MARK,
+        ))
+    if rows:
+        db.bulk_insert_mappings(Student, rows)
+        db.commit()
+
+    return rebalance(per_class=per_class, per_subject=per_subject, grades_per_subject=grades_per_subject,
+                     days=days, present=present, seed=seed, db=db, director=director)
