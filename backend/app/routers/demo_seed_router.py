@@ -225,8 +225,27 @@ _LAST = ["Раҳимов", "Каримов", "Назаров", "Сафаров",
          "Шарипов", "Валиев", "Қосимов", "Раҷабов", "Одинаев", "Сатторов", "Холов", "Юсупов", "Нуров", "Амонов"]
 _LOW = ["Вазифаро иҷро накард", "Дар дарс фаъол набуд", "Мавзӯъро такрор кунад", "Диққат кам буд"]
 _HIGH = ["Хуб кор кард", "Фаъол буд", "Ҷавоби пурра", ""]
-_SUBJECTS = ["Математика", "Физика", "Химия", "Биология", "Забони тоҷикӣ", "Забони русӣ",
-             "Забони англисӣ", "Таърих", "География", "Информатика", "Адабиёт", "Тарбияи ҷисмонӣ"]
+# 18 subjects; which ones a class studies depends on its grade.
+_SUBJECTS = [
+    "Математика", "Забони тоҷикӣ", "Забони русӣ", "Забони англисӣ", "Адабиёт", "Табиатшиносӣ",
+    "Информатика", "Таърих", "География", "Физика", "Химия", "Биология",
+    "Алгебра", "Геометрия", "Тарбияи ҷисмонӣ", "Санъат", "Мусиқӣ", "Технология",
+]
+_PRIMARY = ["Математика", "Забони тоҷикӣ", "Забони русӣ", "Забони англисӣ", "Табиатшиносӣ",
+            "Санъат", "Мусиқӣ", "Тарбияи ҷисмонӣ", "Технология"]
+_MIDDLE = ["Алгебра", "Геометрия", "Забони тоҷикӣ", "Забони русӣ", "Забони англисӣ", "Адабиёт",
+           "Физика", "Химия", "Биология", "Таърих", "География", "Информатика", "Тарбияи ҷисмонӣ"]
+_SENIOR = ["Алгебра", "Геометрия", "Физика", "Химия", "Биология", "Забони англисӣ", "Адабиёт",
+           "Таърих", "География", "Информатика", "Забони тоҷикӣ", "Тарбияи ҷисмонӣ"]
+
+
+def _subjects_for_grade(g: int) -> list[str]:
+    if g <= 4:
+        return _PRIMARY
+    if g <= 9:
+        return _MIDDLE
+    return _SENIOR
+
 
 SEED_MARK = "s33d"   # hidden marker kept in password_salt; never shown in the UI
 
@@ -364,11 +383,13 @@ def rebalance(
     school_days.reverse()
 
     weights = [3, 7, 14, 30, 30, 16]
+    grade_by_class = {c.id: (c.grade or 5) for c in classes}
     grade_rows, att_rows = [], []
     for s in students:
         if s.id not in seeded:
             continue
-        subs = rnd.sample(_SUBJECTS, k=rnd.randint(7, min(10, len(_SUBJECTS))))
+        # marks only in the subjects this class's grade actually studies
+        subs = _subjects_for_grade(int(grade_by_class.get(s.class_id, 5)))
         for subject in subs:
             tid = rnd.choice(subj_teachers[subject])
             for _ in range(rnd.randint(max(3, grades_per_subject - 1), grades_per_subject + 1)):
