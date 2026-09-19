@@ -28,6 +28,7 @@ from app.database import get_db
 from app.deps import get_current_director
 from app.models.attendance_model import Attendance
 from app.models.camera_position_model import CameraPosition
+from app.models.class_model import Class
 from app.models.director_model import Director
 from app.models.journal_model import Grade
 from app.models.lesson_attendance_model import LessonAttendance
@@ -206,3 +207,140 @@ def _run_seed(db, student, class_id, teacher, since, until, present, rnd):
 
     return {"student_id": student_id, "class_id": class_id, "since": since.isoformat(), "until": until.isoformat(),
             "days": attendance, "lesson_rows": lesson_rows, "grades": grades, "homework": diary}
+
+
+# --------------------------------------------------------------------------
+# Bulk demo: many fake pupils across the school, each with marks and a month
+# of attendance, so every dashboard (ranking, class averages, attendance
+# donut and trend, needs-attention) fills with realistic numbers. Analytics
+# are computed on the fly from the grades table, so no rebuild is needed.
+# All demo pupils get a "demo_" username, grades carry "[demo]" and
+# attendance carries confidence -1, so bulk-wipe removes exactly them.
+
+_FIRST = ["Аҳмад", "Фарҳод", "Ҷамшед", "Сино", "Наврӯз", "Шукруллоҳ", "Комрон", "Диловар", "Бахтиёр", "Рустам",
+          "Нозия", "Мадина", "Зарина", "Гулнора", "Фарзона", "Ситора", "Малика", "Нигина", "Шаҳноза", "Дилноза",
+          "Умед", "Парвиз", "Эмомалӣ", "Искандар", "Далер", "Сомон", "Меҳроҷ", "Фирдавс", "Ромиш", "Азиз"]
+_LAST = ["Раҳимов", "Каримов", "Назаров", "Сафаров", "Ҷӯраев", "Тоҳиров", "Икромов", "Ашуров", "Ҳакимов", "Мирзоев",
+         "Шарипов", "Валиев", "Қосимов", "Раҷабов", "Одинаев", "Сатторов", "Холов", "Юсупов", "Нуров", "Амонов"]
+_LOW = ["Вазифаро иҷро накард", "Дар дарс фаъол набуд", "Мавзӯъро такрор кунад", "Диққат кам буд"]
+_HIGH = ["Хуб кор кард", "Фаъол буд", "Ҷавоби пурра", ""]
+
+
+def _demo_student_ids(db: Session, school_id: int) -> list[int]:
+    return [r[0] for r in db.query(Student.id).filter(
+        Student.school_id == school_id, Student.username.like("demo\_%", escape="\\")).all()]
+
+
+@router.post("/demo/bulk-wipe")
+def bulk_wipe(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
+    ids = _demo_student_ids(db, director.school_id)
+    if ids:
+        db.query(Grade).filter(Grade.student_id.in_(ids)).delete(synchronize_session=False)
+        db.query(Attendance).filter(Attendance.student_id.in_(ids)).delete(synchronize_session=False)
+        db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(ids)).delete(synchronize_session=False)
+        db.query(Student).filter(Student.id.in_(ids)).delete(synchronize_session=False)
+        db.commit()
+    return {"removed_students": len(ids)}
+
+
+@router.post("/demo/bulk-seed")
+def bulk_seed(
+    students: int = 1000,
+    days: int = 25,
+    present: float = 0.93,
+    grades_per_student: int = 28,
+    seed: int = 7,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    students = max(1, min(5000, students))
+    rnd = random.Random(seed)
+    classes = db.query(Class).filter(Class.school_id == director.school_id).all()
+    if not classes:
+        raise HTTPException(status_code=400, detail="No classes to fill")
+
+    # a teacher + subject for each class (fallback: any teacher in the school)
+    any_teacher = db.query(Teacher).filter(Teacher.school_id == director.school_id).first()
+    if not any_teacher:
+        raise HTTPException(status_code=400, detail="No teacher to sign the marks")
+    class_meta: dict[int, tuple[int, str]] = {}
+    for c in classes:
+        tc = db.query(TeacherClass).filter(TeacherClass.class_id == c.id).first()
+        teacher_id = tc.teacher_id if tc else any_teacher.id
+        subject = (tc.subject if tc and tc.subject else c.name) or "Дарс"
+        class_meta[c.id] = (teacher_id, subject)
+
+    # wipe any previous demo pupils first (idempotent)
+    old = _demo_student_ids(db, director.school_id)
+    if old:
+        db.query(Grade).filter(Grade.student_id.in_(old)).delete(synchronize_session=False)
+        db.query(Attendance).filter(Attendance.student_id.in_(old)).delete(synchronize_session=False)
+        db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(old)).delete(synchronize_session=False)
+        db.query(Student).filter(Student.id.in_(old)).delete(synchronize_session=False)
+        db.commit()
+
+    # 1) create the pupils, spread round-robin across classes
+    base = int(datetime.now().timestamp())
+    rows = []
+    for i in range(students):
+        c = classes[i % len(classes)]
+        rows.append(dict(
+            school_id=director.school_id, class_id=c.id, parent_id=None,
+            first_name=rnd.choice(_FIRST), last_name=rnd.choice(_LAST),
+            is_active=True, username=f"demo_{base}_{i}",
+        ))
+    db.bulk_insert_mappings(Student, rows)
+    db.commit()
+
+    made = db.query(Student.id, Student.class_id).filter(
+        Student.school_id == director.school_id,
+        Student.username.like(f"demo\_{base}\_%", escape="\\")).all()
+
+    today = date.today()
+    year = school_year_for_date(today)
+    # school days = the last `days` weekdays (Mon-Sat)
+    school_days: list[date] = []
+    d = today
+    while len(school_days) < days:
+        if d.weekday() != 6:
+            school_days.append(d)
+        d -= timedelta(days=1)
+    school_days.reverse()
+
+    weights = [3, 7, 14, 30, 30, 16]  # values 5..10
+    grade_rows = []
+    att_rows = []
+    for sid, cid in made:
+        teacher_id, subject = class_meta.get(cid, (any_teacher.id, "Дарс"))
+        # marks spread over the term
+        for _ in range(rnd.randint(max(4, grades_per_student - 8), grades_per_student + 8)):
+            gd = rnd.choice(school_days)
+            v = rnd.choices([5, 6, 7, 8, 9, 10], weights=weights)[0]
+            grade_rows.append(dict(
+                student_id=sid, class_id=cid, teacher_id=teacher_id, subject=subject,
+                value=v, comment=MARK + " " + (rnd.choice(_LOW) if v < 6 else rnd.choice(_HIGH)),
+                grade_date=gd, quarter=quarter_for_date(gd), school_year=school_year_for_date(gd),
+            ))
+        # daily attendance
+        for gd in school_days:
+            came = rnd.random() < present
+            late = came and rnd.random() < 0.12
+            status = "late" if late else ("present" if came else "absent")
+            att_rows.append(dict(
+                student_id=sid, camera_id=None, status=status, confidence=DEMO_CONF,
+                attendance_date=gd,
+                detected_at=datetime.combine(gd, time(9, rnd.randint(0, 20))),
+            ))
+        if len(grade_rows) >= 5000:
+            db.bulk_insert_mappings(Grade, grade_rows); grade_rows = []; db.commit()
+        if len(att_rows) >= 8000:
+            db.bulk_insert_mappings(Attendance, att_rows); att_rows = []; db.commit()
+    if grade_rows:
+        db.bulk_insert_mappings(Grade, grade_rows); db.commit()
+    if att_rows:
+        db.bulk_insert_mappings(Attendance, att_rows); db.commit()
+
+    return {
+        "students": len(made), "classes": len(classes), "days": len(school_days),
+        "grades": db.query(Grade).filter(Grade.student_id.in_([s for s, _ in made])).count() if made else 0,
+    }
