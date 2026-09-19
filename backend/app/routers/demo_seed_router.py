@@ -308,7 +308,7 @@ def rebalance(
     # strip any leftover "[demo] " tag from every mark's comment, so nothing
     # visible ever reads "demo"
     db.query(Grade).filter(Grade.comment.like("[demo]%")).update(
-        {Grade.comment: func.replace(Grade.comment, "[demo] ", "")}, synchronize_session=False)
+        {Grade.comment: func.replace(func.replace(Grade.comment, "[demo] ", ""), "[demo]", "")}, synchronize_session=False)
     db.commit()
 
     # 1) teachers per subject (real-looking names and emails)
