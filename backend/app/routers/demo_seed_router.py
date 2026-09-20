@@ -35,6 +35,7 @@ from app.models.journal_model import Grade
 from app.models.lesson_attendance_model import LessonAttendance
 from app.models.lesson_log_model import LessonLog
 from app.models.lesson_model import Lesson
+from app.models.material_model import Material, MaterialAssignment
 from app.models.student import Student
 from app.models.teacher_model import Teacher, TeacherClass
 from app.services import analytics_service
@@ -459,3 +460,89 @@ def bulk_seed(
 
     return rebalance(per_class=per_class, per_subject=per_subject, grades_per_subject=grades_per_subject,
                      days=days, present=present, seed=seed, db=db, director=director)
+
+def _reassign_teacher_refs(db, ids, keeper_id):
+    """Move every row that points at these teachers onto the keeper, so the
+    teachers can be deleted without tripping a foreign key."""
+    db.query(Grade).filter(Grade.teacher_id.in_(ids)).update({Grade.teacher_id: keeper_id}, synchronize_session=False)
+    db.query(Lesson).filter(Lesson.teacher_id.in_(ids)).update({Lesson.teacher_id: keeper_id}, synchronize_session=False)
+    db.query(Material).filter(Material.teacher_id.in_(ids)).update({Material.teacher_id: keeper_id}, synchronize_session=False)
+    db.query(MaterialAssignment).filter(MaterialAssignment.teacher_id.in_(ids)).update({MaterialAssignment.teacher_id: keeper_id}, synchronize_session=False)
+    db.query(TeacherClass).filter(TeacherClass.teacher_id.in_(ids)).delete(synchronize_session=False)
+    db.query(Teacher).filter(Teacher.id.in_(ids)).delete(synchronize_session=False)
+
+
+@router.post("/demo/fix-teachers")
+def fix_teachers(
+    total: int = 100,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """Tidy the staff room: drop English-named and test teachers (moving their
+    marks to a real one first), keep the Tajik names, and make the count `total`
+    with proper Tajik-named teachers across the 18 subjects. The teacher login
+    s@cict.tj is kept."""
+    import re
+    from app.utils.security import hash_password
+
+    total = max(1, min(300, total))
+    rnd = random.Random(7)
+    school_id = director.school_id
+    latin = re.compile(r"[A-Za-z]")
+
+    teachers = db.query(Teacher).filter(Teacher.school_id == school_id).all()
+    # a keeper to inherit orphaned marks: a Tajik-named @maktab.tj teacher
+    keeper = next((t for t in teachers if (t.email or "").endswith("@maktab.tj")), None)
+    if keeper is None:
+        keeper = Teacher(school_id=school_id, full_name=f"{rnd.choice(_LAST)} {rnd.choice(_FIRST)}",
+                         subject=_SUBJECTS[0], email="teacher0@maktab.tj",
+                         hashed_password=hash_password("1234"), is_active=True)
+        db.add(keeper); db.commit()
+
+    # remove: English/latin names, or "sinov"/"test" accounts -- but never the
+    # working login s@cict.tj
+    junk = [t for t in teachers if t.id != keeper.id and t.email != "s@cict.tj"
+            and (bool(latin.search(t.full_name or "")) or "sinov" in (t.email or "").lower()
+                 or "test" in (t.email or "").lower())]
+    junk_ids = [t.id for t in junk]
+    if junk_ids:
+        _reassign_teacher_refs(db, junk_ids, keeper.id)
+        db.commit()
+    removed = len(junk_ids)
+
+    # fix the login teacher's subject if it is not a real one
+    nil = db.query(Teacher).filter(Teacher.email == "s@cict.tj").first()
+    if nil and (nil.subject or "") not in _SUBJECTS:
+        nil.subject = "Информатика"
+        db.commit()
+
+    # bring the count to `total` with Tajik-named teachers across subjects
+    cur = db.query(Teacher).filter(Teacher.school_id == school_id).count()
+    created = 0
+    si = 0
+    n = 0
+    while cur < total:
+        fn, ln = rnd.choice(_FIRST), rnd.choice(_LAST)
+        tln = _translit(ln)
+        email = f"{_translit(fn)[:1]}.{tln}{n}@maktab.tj"
+        n += 1
+        if not tln or db.query(Teacher).filter(Teacher.email == email).first():
+            continue
+        db.add(Teacher(school_id=school_id, full_name=f"{ln} {fn}", subject=_SUBJECTS[si % len(_SUBJECTS)],
+                       email=email, hashed_password=hash_password("1234"), is_active=True))
+        si += 1; cur += 1; created += 1
+    if created:
+        db.commit()
+
+    # trim extras (never s@cict.tj), moving their marks to the keeper
+    if cur > total:
+        extra = (db.query(Teacher).filter(Teacher.school_id == school_id, Teacher.id != keeper.id,
+                                          Teacher.email != "s@cict.tj")
+                 .order_by(Teacher.id.desc()).limit(cur - total).all())
+        eids = [t.id for t in extra]
+        if eids:
+            _reassign_teacher_refs(db, eids, keeper.id)
+            db.commit()
+
+    final = db.query(Teacher).filter(Teacher.school_id == school_id).count()
+    return {"removed": removed, "created": created, "teachers_total": final}
