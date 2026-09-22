@@ -31,7 +31,7 @@ _RESPONSE_SCHEMA = {
                     "options": {"type": "ARRAY", "items": {"type": "STRING"}},
                     "answer": {"type": "STRING"},
                 },
-                "required": ["block_type", "body"],
+                "required": ["block_type", "body", "options", "answer"],
             },
         },
     },
@@ -190,9 +190,23 @@ def _validate_block(raw: dict) -> dict | None:
         if len(set(options)) != len(options):
             return None
         folded = [_fold(o) for o in options]
-        try:
-            index = folded.index(_fold(answer))
-        except ValueError:
+        fa = _fold(answer)
+        raw_answer = answer.strip()
+        index = None
+        if fa in folded:                                   # exact option text
+            index = folded.index(fa)
+        elif len(raw_answer) == 1 and raw_answer.upper() in "ABCDEFGHIJ":  # "B"
+            i = ord(raw_answer.upper()) - 65
+            index = i if 0 <= i < len(options) else None
+        elif raw_answer.isdigit():                          # "2" (1-based)
+            i = int(raw_answer) - 1
+            index = i if 0 <= i < len(options) else None
+        else:                                               # paraphrase / contains
+            for k, o in enumerate(folded):
+                if fa and o and (fa in o or o in fa):
+                    index = k
+                    break
+        if index is None:
             return None
         block["options"] = options
         block["correct"] = {"index": index}
@@ -322,18 +336,22 @@ def generate_material(
         except GeminiError as exc:
             raise MaterialAiError(str(exc)) from exc
 
-    try:
-        result = _validate(call(prompt), kind)
-    except MaterialAiError:
-        result = _validate(
-            call(
-                prompt
-                + "\n\nDIQQAT: oldingi javobda savollarning javob maydonlari "
-                "noto'g'ri to'ldirilgan edi. Har bir savol uchun AYNAN o'z "
-                "turiga tegishli maydonlarni to'ldir va ularsiz savol yozma."
-            ),
-            kind,
-        )
+    # Gemini occasionally returns questions with the wrong answer fields, which
+    # `_validate` rejects. Try a few times, nudging harder each round, so a bad
+    # roll of the dice never reaches the teacher as an error.
+    hint = ("\n\nDIQQAT: oldingi javобда савولларнинг жавоб майдонлари "
+            "нотўғри тўлдирилган эди. Ҳар бир савол учун АЙНАН ўз турига "
+            "тегишли майдонларни тўлдир ва уларсиз савол ёзма.")
+    result = None
+    last_err: MaterialAiError | None = None
+    for attempt in range(3):
+        try:
+            result = _validate(call(prompt + (hint if attempt else "")), kind)
+            break
+        except MaterialAiError as exc:
+            last_err = exc
+    if result is None:
+        raise last_err or MaterialAiError("Gemini yaroqli savol qaytarmadi, qaytadan urinib ko'ring")
 
     questions = [b for b in result["blocks"] if b["block_type"] == "question"]
     missing = question_count - len(questions)
