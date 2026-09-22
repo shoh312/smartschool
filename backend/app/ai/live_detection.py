@@ -1,3 +1,12 @@
+import os
+
+# Open RTSP over TCP, not UDP. Many networks drop the UDP media packets, so the
+# stream "connects" but no frames ever arrive (the live view stays black and
+# detection sees nothing). TCP is a touch slower but reliable. `stimeout` (in
+# microseconds) makes a dead camera fail fast instead of hanging. Must be set
+# before the first cv2.VideoCapture.
+os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp|stimeout;5000000")
+
 import concurrent.futures
 import cv2
 import hashlib
