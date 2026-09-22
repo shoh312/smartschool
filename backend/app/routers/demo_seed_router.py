@@ -22,7 +22,7 @@ import random
 from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -603,3 +603,87 @@ def reset(db: Session = Depends(get_db), director: Director = Depends(get_curren
         "teachers_left": db.query(Teacher).filter(Teacher.school_id == school_id).count(),
         "classes_left": db.query(Class).filter(Class.school_id == school_id).count(),
     }
+
+
+@router.post("/demo/pack-classes")
+def pack_classes(
+    count: int = 15,
+    db: Session = Depends(get_db),
+    director: Director = Depends(get_current_director),
+):
+    """Gather every pupil into `count` tidy grade/section classes (1A..) of
+    roughly equal size and delete the leftover classes, so the register reads
+    like a normal school instead of many near-empty groups."""
+    import math
+    count = max(1, min(40, count))
+    school_id = director.school_id
+
+    all_classes = db.query(Class).filter(Class.school_id == school_id).all()
+    by_name = {c.name: c for c in all_classes}
+    grades_needed = math.ceil(count / 3)
+    target_names = [f"{g}{L}" for g in range(1, grades_needed + 1) for L in ("A", "B", "C")][:count]
+    targets = []
+    for nm in target_names:
+        c = by_name.get(nm)
+        if c is None:
+            grade = int("".join(ch for ch in nm if ch.isdigit()) or "1")
+            c = Class(school_id=school_id, name=nm, grade=grade)
+            db.add(c); db.flush()
+        targets.append(c)
+    db.commit()
+    target_ids = {c.id for c in targets}
+
+    # spread pupils evenly across the target classes
+    students = db.query(Student).filter(Student.school_id == school_id, Student.is_active == True).order_by(Student.id).all()
+    for i, s in enumerate(students):
+        s.class_id = targets[i % len(targets)].id
+    db.commit()
+
+    # keep each mark on the class its pupil now sits in
+    db.execute(text(
+        "UPDATE grades SET class_id = s.class_id FROM students s "
+        "WHERE s.id = grades.student_id AND s.school_id = :sid"
+    ), {"sid": school_id})
+    db.commit()
+
+    # drop the now-unused classes and everything that points at them
+    from app.models.announcement_model import Announcement
+    from app.models.school_event_model import SchoolEvent
+    from app.models.camera_model import Camera
+    from app.models.material_model import MaterialAssignment, MaterialAttempt
+
+    doomed = [c.id for c in all_classes if c.id not in target_ids]
+    # a legacy "room_positions" table lingers on some databases and has no ORM
+    # model; clear it directly so the class delete does not trip its foreign key.
+    if doomed:
+        try:
+            db.execute(text("DELETE FROM room_positions WHERE class_id = ANY(:ids)"), {"ids": doomed})
+            db.commit()
+        except Exception:
+            db.rollback()
+    removed = 0
+    for c in all_classes:
+        if c.id in target_ids:
+            continue
+        lids = [l.id for l in db.query(Lesson).filter(Lesson.class_id == c.id).all()]
+        if lids:
+            db.query(LessonAttendance).filter(LessonAttendance.lesson_id.in_(lids)).delete(synchronize_session=False)
+            db.query(LessonLog).filter(LessonLog.lesson_id.in_(lids)).delete(synchronize_session=False)
+            db.query(Lesson).filter(Lesson.class_id == c.id).delete(synchronize_session=False)
+        aids = [a.id for a in db.query(MaterialAssignment).filter(MaterialAssignment.class_id == c.id).all()]
+        if aids:
+            db.query(MaterialAttempt).filter(MaterialAttempt.assignment_id.in_(aids)).delete(synchronize_session=False)
+            db.query(MaterialAssignment).filter(MaterialAssignment.class_id == c.id).delete(synchronize_session=False)
+        db.query(CameraPosition).filter(CameraPosition.class_id == c.id).delete(synchronize_session=False)
+        db.query(TeacherClass).filter(TeacherClass.class_id == c.id).delete(synchronize_session=False)
+        db.query(Announcement).filter(Announcement.class_id == c.id).update({Announcement.class_id: None}, synchronize_session=False)
+        db.query(SchoolEvent).filter(SchoolEvent.class_id == c.id).update({SchoolEvent.class_id: None}, synchronize_session=False)
+        db.query(Camera).filter(Camera.class_id == c.id).update({Camera.class_id: None}, synchronize_session=False)
+        db.query(Class).filter(Class.id == c.id).delete(synchronize_session=False)
+        removed += 1
+    db.commit()
+
+    sizes = dict(db.query(Class.name, func.count(Student.id)).join(Student, Student.class_id == Class.id)
+                 .filter(Class.school_id == school_id, Student.is_active == True).group_by(Class.name).all())
+    return {"classes": len(targets), "removed_classes": removed, "pupils": len(students),
+            "sizes": dict(sorted(sizes.items()))}
