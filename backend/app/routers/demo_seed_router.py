@@ -258,15 +258,30 @@ def _seeded_ids(db: Session, school_id: int) -> list[int]:
     ).all()]
 
 
+def _delete_students(db, ids):
+    """Delete pupils and every row that points at them, in an order that keeps
+    foreign keys happy (notifications and attempts first)."""
+    from app.models.notification_model import NotificationEvent
+    from app.models.material_model import MaterialAttempt
+    for chunk_start in range(0, len(ids), 500):
+        chunk = ids[chunk_start:chunk_start + 500]
+        att_ids = [r[0] for r in db.query(Attendance.id).filter(Attendance.student_id.in_(chunk)).all()]
+        if att_ids:
+            db.query(NotificationEvent).filter(NotificationEvent.attendance_id.in_(att_ids)).delete(synchronize_session=False)
+        db.query(NotificationEvent).filter(NotificationEvent.student_id.in_(chunk)).delete(synchronize_session=False)
+        db.query(MaterialAttempt).filter(MaterialAttempt.student_id.in_(chunk)).delete(synchronize_session=False)
+        db.query(Grade).filter(Grade.student_id.in_(chunk)).delete(synchronize_session=False)
+        db.query(Attendance).filter(Attendance.student_id.in_(chunk)).delete(synchronize_session=False)
+        db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(chunk)).delete(synchronize_session=False)
+        db.query(Student).filter(Student.id.in_(chunk)).delete(synchronize_session=False)
+        db.commit()
+
+
 @router.post("/demo/bulk-wipe")
 def bulk_wipe(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
     ids = _seeded_ids(db, director.school_id)
     if ids:
-        db.query(Grade).filter(Grade.student_id.in_(ids)).delete(synchronize_session=False)
-        db.query(Attendance).filter(Attendance.student_id.in_(ids)).delete(synchronize_session=False)
-        db.query(LessonAttendance).filter(LessonAttendance.student_id.in_(ids)).delete(synchronize_session=False)
-        db.query(Student).filter(Student.id.in_(ids)).delete(synchronize_session=False)
-        db.commit()
+        _delete_students(db, ids)
     return {"removed_students": len(ids)}
 
 
@@ -546,3 +561,45 @@ def fix_teachers(
 
     final = db.query(Teacher).filter(Teacher.school_id == school_id).count()
     return {"removed": removed, "created": created, "teachers_total": final}
+
+
+@router.post("/demo/reset")
+def reset(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
+    """Undo the demo: remove all seeded pupils and demo teachers, and drop the
+    now-empty classes, leaving the school's real pupils, teachers and classes."""
+    school_id = director.school_id
+
+    ids = _seeded_ids(db, school_id)
+    if ids:
+        _delete_students(db, ids)
+    removed_students = len(ids)
+
+    # demo teachers (created with @maktab.tj); move any leftover refs to a real teacher
+    demo_teachers = db.query(Teacher).filter(Teacher.school_id == school_id, Teacher.email.like("%@maktab.tj")).all()
+    keeper = (db.query(Teacher).filter(Teacher.school_id == school_id, ~Teacher.email.like("%@maktab.tj"),
+                                       Teacher.email != None).first())
+    removed_teachers = 0
+    if demo_teachers and keeper:
+        tids = [t.id for t in demo_teachers if t.id != keeper.id]
+        if tids:
+            _reassign_teacher_refs(db, tids, keeper.id)
+            db.commit()
+            removed_teachers = len(tids)
+
+    # drop classes that are now empty and not wired to a camera or timetable
+    removed_classes = 0
+    for c in db.query(Class).filter(Class.school_id == school_id).all():
+        if (db.query(Student.id).filter(Student.class_id == c.id).first() is None
+                and db.query(CameraPosition.id).filter(CameraPosition.class_id == c.id).first() is None
+                and db.query(Lesson.id).filter(Lesson.class_id == c.id).first() is None):
+            db.delete(c); removed_classes += 1
+    if removed_classes:
+        db.commit()
+
+    return {
+        "removed_students": removed_students, "removed_teachers": removed_teachers,
+        "removed_classes": removed_classes,
+        "students_left": db.query(Student).filter(Student.school_id == school_id).count(),
+        "teachers_left": db.query(Teacher).filter(Teacher.school_id == school_id).count(),
+        "classes_left": db.query(Class).filter(Class.school_id == school_id).count(),
+    }
