@@ -21,16 +21,19 @@ pupil's real data stays untouched.
 import random
 from datetime import date, datetime, time, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_director
+from app.deps import get_current_director, get_current_superadmin
 from app.models.attendance_model import Attendance
 from app.models.camera_position_model import CameraPosition
 from app.models.class_model import Class
 from app.models.director_model import Director
+from app.models.parent_model import Parent
+from app.models.school_model import School
+from app.utils.security import hash_password
 from app.models.journal_model import Grade
 from app.models.lesson_attendance_model import LessonAttendance
 from app.models.lesson_log_model import LessonLog
@@ -687,3 +690,124 @@ def pack_classes(
                  .filter(Class.school_id == school_id, Student.is_active == True).group_by(Class.name).all())
     return {"classes": len(targets), "removed_classes": removed, "pupils": len(students),
             "sizes": dict(sorted(sizes.items()))}
+
+
+# ========================================================= Bulk roster import
+#
+# Create a whole school from a parsed payload: classes, teachers, students
+# (no face photos -- registered on-site later) and the lesson timetable.
+# Cameras are never touched here. Superadmin only.
+#
+#   POST /import/bulk-school
+#   { "school_name": str, "reset": bool,
+#     "classes":  [{"name","grade","timetable"?}],
+#     "teachers": [{"full_name","subject"?,"email","password"?,"phone"?}],
+#     "students": [{"first_name","last_name","class_name","parent_phone"?,"parent_name"?}],
+#     "lessons":  [{"class_name","subject","day_of_week","start_time","duration"?}] }
+
+@router.post("/import/bulk-school")
+def import_bulk_school(
+    payload: dict = Body(...),
+    db: Session = Depends(get_db),
+    _sa: Director = Depends(get_current_superadmin),
+):
+    name = (payload.get("school_name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="school_name required")
+
+    school = db.query(School).filter(School.name == name).first()
+    if school is None:
+        school = School(name=name, is_active=True)
+        db.add(school)
+        db.flush()
+    sid = school.id
+
+    if payload.get("reset"):
+        sids = [r[0] for r in db.query(Student.id).filter(Student.school_id == sid).all()]
+        if sids:
+            _delete_students(db, sids)
+        cls_ids = [r[0] for r in db.query(Class.id).filter(Class.school_id == sid).all()]
+        if cls_ids:
+            db.query(Lesson).filter(Lesson.class_id.in_(cls_ids)).delete(synchronize_session=False)
+        t_ids = [r[0] for r in db.query(Teacher.id).filter(Teacher.school_id == sid).all()]
+        if t_ids:
+            db.query(TeacherClass).filter(TeacherClass.teacher_id.in_(t_ids)).delete(synchronize_session=False)
+            db.query(Teacher).filter(Teacher.id.in_(t_ids)).delete(synchronize_session=False)
+        db.query(Parent).filter(Parent.school_id == sid).delete(synchronize_session=False)
+        db.query(Class).filter(Class.school_id == sid).delete(synchronize_session=False)
+        db.flush()
+
+    class_map: dict[str, int] = {}
+    for c in payload.get("classes", []):
+        cname = (c.get("name") or "").strip()
+        if not cname or cname in class_map:
+            continue
+        cls = Class(school_id=sid, name=cname, grade=c.get("grade"), timetable=c.get("timetable"))
+        db.add(cls)
+        db.flush()
+        class_map[cname] = cls.id
+
+    teachers_created = 0
+    for t in payload.get("teachers", []):
+        email = (t.get("email") or "").strip().lower()
+        if not email or db.query(Teacher.id).filter(Teacher.email == email).first():
+            continue
+        db.add(Teacher(
+            school_id=sid,
+            full_name=(t.get("full_name") or "").strip(),
+            subject=(t.get("subject") or None),
+            email=email,
+            hashed_password=hash_password(t.get("password") or "mxb12345"),
+            is_active=True,
+        ))
+        teachers_created += 1
+    db.flush()
+
+    parents_created = 0
+    students_created = 0
+    phone_cache: dict[str, int] = {}
+    for s in payload.get("students", []):
+        cid = class_map.get((s.get("class_name") or "").strip())
+        if cid is None:
+            continue
+        pid = None
+        phone = (s.get("parent_phone") or "").strip()
+        if phone:
+            pid = phone_cache.get(phone)
+            if pid is None:
+                par = Parent(school_id=sid, full_name=(s.get("parent_name") or ""), phone=phone)
+                db.add(par)
+                db.flush()
+                pid = par.id
+                phone_cache[phone] = pid
+                parents_created += 1
+        db.add(Student(
+            school_id=sid, class_id=cid, parent_id=pid,
+            first_name=(s.get("first_name") or "").strip(),
+            last_name=(s.get("last_name") or "").strip(),
+            is_active=True,
+        ))
+        students_created += 1
+    db.flush()
+
+    lessons_created = 0
+    for l in payload.get("lessons", []):
+        cid = class_map.get((l.get("class_name") or "").strip())
+        if cid is None or not l.get("subject"):
+            continue
+        db.add(Lesson(
+            class_id=cid,
+            subject=l["subject"],
+            day_of_week=int(l["day_of_week"]),
+            start_time=str(l["start_time"]),
+            duration_minutes=int(l.get("duration") or 45),
+        ))
+        lessons_created += 1
+
+    db.commit()
+    return {
+        "school_id": sid, "school_name": name,
+        "classes": len(class_map), "teachers": teachers_created,
+        "parents": parents_created, "students": students_created,
+        "lessons": lessons_created,
+    }
