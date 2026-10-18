@@ -36,6 +36,7 @@ import tj.cict.smartflow.data.dto.AbsenceDto
 import tj.cict.smartflow.data.dto.AttendanceMarkDto
 import tj.cict.smartflow.data.dto.DirectorLoginRequest
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
+import tj.cict.smartflow.data.dto.DailyTrendDto
 import tj.cict.smartflow.data.dto.LiveStatusDto
 import tj.cict.smartflow.data.dto.NeedsAttentionDto
 import tj.cict.smartflow.data.dto.SchoolAnnouncementDto
@@ -191,6 +192,7 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
     suspend fun studentAnalytics(studentId: Int, quarter: Int?): ApiResult<AnalyticsDto> = safeCall { api.studentAnalytics(studentId, quarter) }
     suspend fun schoolRanking(): ApiResult<List<LeaderboardEntryDto>> = safeCall { api.schoolRanking() }
     suspend fun classRanking(classId: Int): ApiResult<List<LeaderboardEntryDto>> = safeCall { api.classRanking(classId) }
+    suspend fun dailyTrend(days: Int = 14): ApiResult<List<DailyTrendDto>> = safeCall { api.dailyTrend(days) }
     suspend fun needsAttention(): ApiResult<NeedsAttentionDto> = safeCall { api.needsAttention() }
     suspend fun classSubjectAverages(classId: Int): ApiResult<List<ClassSubjectAverageDto>> = safeCall { api.classSubjectAverages(classId) }
 }

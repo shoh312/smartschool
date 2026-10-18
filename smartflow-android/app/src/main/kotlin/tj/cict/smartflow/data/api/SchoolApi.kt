@@ -35,6 +35,7 @@ import tj.cict.smartflow.data.dto.ClassSubjectDto
 import tj.cict.smartflow.data.dto.DirectorLoginRequest
 import tj.cict.smartflow.data.dto.DirectorTokenResponse
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
+import tj.cict.smartflow.data.dto.DailyTrendDto
 import tj.cict.smartflow.data.dto.LiveStatusDto
 import tj.cict.smartflow.data.dto.NeedsAttentionDto
 import tj.cict.smartflow.data.dto.SchoolSettingsDto
@@ -263,6 +264,9 @@ interface SchoolApi {
 
     @GET("analytics/class/{id}/ranking")
     suspend fun classRanking(@Path("id") classId: Int, @Query("quarter") quarter: Int? = null): List<LeaderboardEntryDto>
+
+    @GET("attendance/daily-trend")
+    suspend fun dailyTrend(@Query("days") days: Int = 14): List<DailyTrendDto>
 
     @GET("analytics/school/needs-attention")
     suspend fun needsAttention(@Query("quarter") quarter: Int? = null): NeedsAttentionDto

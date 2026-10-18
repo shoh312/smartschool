@@ -14,7 +14,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -307,15 +306,6 @@ private fun DirectorGraph(name: String, onSignOut: () -> Unit) {
                     onAnnouncements = { nav.navigate(DirectorAnnouncementsRoute) },
                     onCalendar = { nav.navigate(DirectorCalendarRoute) },
                     onSettings = { nav.navigate(SettingsRoute) },
-                    schoolVm = schoolVm,
-                    onAnalytics = {
-                        nav.navigate(AnalyticsRoute) {
-                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onOpenStudent = { id, n -> nav.navigate(StudentRatingRoute(id, n)) },
                 )
             }
             composable<LiveRoute> { LiveAttendanceScreen(liveVm, bottomPadding = padding) }

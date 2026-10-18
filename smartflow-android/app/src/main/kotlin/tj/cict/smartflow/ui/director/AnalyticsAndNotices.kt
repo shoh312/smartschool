@@ -52,11 +52,25 @@ import java.time.LocalDate
 import java.time.YearMonth
 import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlin.math.roundToInt
+import tj.cict.smartflow.data.dto.DailyTrendDto
+import tj.cict.smartflow.ui.components.GhostButton
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.currentLocale
 import tj.cict.smartflow.core.util.formatDateInput
 import tj.cict.smartflow.core.util.dayMonthTime
 import tj.cict.smartflow.core.util.formatAverage
+import tj.cict.smartflow.core.util.formatMetric
 import tj.cict.smartflow.core.util.message
 import tj.cict.smartflow.core.util.monthYear
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
@@ -77,7 +91,7 @@ import tj.cict.smartflow.ui.components.SegmentRow
 import tj.cict.smartflow.ui.components.SkeletonList
 import tj.cict.smartflow.ui.components.SoftCard
 import tj.cict.smartflow.ui.components.VSpace
-import tj.cict.smartflow.ui.grades.gradeColors
+import tj.cict.smartflow.ui.grades.metricColors
 import tj.cict.smartflow.ui.theme.Radius
 import tj.cict.smartflow.ui.theme.smart
 
@@ -94,11 +108,27 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpen
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(stringResource(R.string.analytics_title))
         SegmentRow(Modifier.padding(horizontal = 20.dp)) {
-            Segment(stringResource(R.string.action_ranking), tab == 0) { tab = 0 }
-            Segment(stringResource(R.string.attention_title), tab == 1) { tab = 1 }
+            Segment(stringResource(R.string.analytics_overview), tab == 0) { tab = 0 }
+            Segment(stringResource(R.string.action_ranking), tab == 1) { tab = 1 }
+            Segment(stringResource(R.string.attention_title), tab == 2) { tab = 2 }
         }
         VSpace(8.dp)
         if (tab == 0) {
+            val board = (ui.schoolRanking as? UiState.Ready)?.data.orEmpty()
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                when (val r = ui.schoolRanking) {
+                    UiState.Loading -> item { SkeletonList(rows = 3, rowHeight = 60.dp) }
+                    is UiState.Failed -> item { ErrorState(r.error.message(), onRetry = vm::reload) }
+                    is UiState.Ready -> if (board.isNotEmpty()) item {
+                        AnalyticsBlock(board, school.groupMode, onDetails = { if (ui.classId != null) vm.pickClass(null); tab = 1 }, onOpenStudent = onOpenStudent)
+                    }
+                }
+                (ui.trend as? UiState.Ready)?.data?.let { days -> item { AttendanceTrendCard(days) } }
+                val byClass = board.filter { it.overallAverage != null }.groupBy { it.className ?: "—" }
+                    .map { (k, v) -> k to v.mapNotNull { it.overallAverage }.average() }.sortedByDescending { it.second }
+                if (byClass.isNotEmpty()) item { ClassAveragesCard(byClass, school.groupMode) }
+            }
+        } else if (tab == 1) {
             LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { Pill(stringResource(R.string.ranking_school), ui.classId == null) { vm.pickClass(null) } }
                 items(school.classList, key = { it.id }) { cls -> Pill(cls.name, ui.classId == cls.id) { vm.pickClass(cls.id) } }
@@ -109,7 +139,7 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpen
                 is UiState.Failed -> ErrorState(s.error.message(), onRetry = { vm.pickClass(ui.classId) })
                 is UiState.Ready -> if (s.data.isEmpty()) EmptyState(R.drawable.ill_trophy, stringResource(R.string.rating_empty)) else {
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(s.data, key = { it.studentId }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }) }
+                        items(s.data, key = { it.studentId }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }, groupMode = school.groupMode) }
                     }
                 }
             }
@@ -141,7 +171,7 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpen
                         }
                         if (d.bottomPerformers.isNotEmpty()) {
                             item { Text(stringResource(R.string.attention_bottom), style = MaterialTheme.typography.titleMedium, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
-                            items(d.bottomPerformers, key = { "b${it.studentId}" }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }) }
+                            items(d.bottomPerformers, key = { "b${it.studentId}" }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }, groupMode = school.groupMode) }
                         }
                     }
                 }
@@ -159,7 +189,7 @@ private fun Pill(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RankRow(e: LeaderboardEntryDto, onClick: () -> Unit) {
+private fun RankRow(e: LeaderboardEntryDto, onClick: () -> Unit, groupMode: Boolean = false) {
     val c = MaterialTheme.smart
     val medal = when (e.position) { 1 -> c.amber; 2 -> Color(0xFF9CA3AF); 3 -> Color(0xFFC77B3F); else -> null }
     SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp, onClick = onClick) {
@@ -174,8 +204,180 @@ private fun RankRow(e: LeaderboardEntryDto, onClick: () -> Unit) {
                 e.className?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
             }
             e.overallAverage?.let { avg ->
-                val (gc, gs) = gradeColors(avg)
-                Box(Modifier.clip(RoundedCornerShape(999.dp)).background(gs).padding(horizontal = 10.dp, vertical = 5.dp)) { Text(formatAverage(avg), style = MaterialTheme.typography.titleSmall, color = gc) }
+                val (gc, gs) = metricColors(avg, groupMode)
+                Box(Modifier.clip(RoundedCornerShape(999.dp)).background(gs).padding(horizontal = 10.dp, vertical = 5.dp)) { Text(formatMetric(avg, groupMode), style = MaterialTheme.typography.titleSmall, color = gc) }
+            }
+        }
+    }
+}
+
+/** School-wide summary + the top three; "Details" opens the full ranking. */
+@Composable
+private fun AnalyticsBlock(
+    board: List<LeaderboardEntryDto>,
+    groupMode: Boolean,
+    onDetails: () -> Unit,
+    onOpenStudent: (Int, String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = MaterialTheme.smart
+    val scored = board.mapNotNull { it.overallAverage }
+    val avg = scored.takeIf { it.isNotEmpty() }?.average()
+    SoftCard(modifier, contentPadding = PaddingValues(16.dp), elevation = 6.dp, onClick = onDetails) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_analytics), style = MaterialTheme.typography.titleMedium, color = c.ink)
+                Text(stringResource(R.string.home_ranked, scored.size), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+            }
+            GhostButton(stringResource(R.string.action_details), onClick = onDetails)
+        }
+        VSpace(12.dp)
+        if (avg != null) {
+            val (gc, gs) = metricColors(avg, groupMode)
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(gs).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(if (groupMode) R.string.home_school_att else R.string.home_school_avg),
+                    style = MaterialTheme.typography.labelMedium, color = c.inkSecondary, modifier = Modifier.weight(1f),
+                )
+                Text(formatMetric(avg, groupMode), style = MaterialTheme.typography.titleLarge, color = gc)
+            }
+            VSpace(12.dp)
+        }
+        Text(stringResource(R.string.home_top3), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
+        VSpace(6.dp)
+        board.take(3).forEach { e ->
+            val medal = when (e.position) { 1 -> c.amber; 2 -> Color(0xFF9CA3AF); else -> Color(0xFFC77B3F) }
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).clickable { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }.padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(28.dp).clip(CircleShape).background(medal.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Text("${e.position}", style = MaterialTheme.typography.labelLarge, color = medal)
+                }
+                HSpace(10.dp)
+                ChildAvatar(Child(e.studentId, e.firstName, e.lastName, e.className), 32.dp); HSpace(10.dp)
+                Column(Modifier.weight(1f)) {
+                    Text("${e.lastName} ${e.firstName}", style = MaterialTheme.typography.titleSmall, color = c.ink, maxLines = 1)
+                    e.className?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
+                }
+                e.overallAverage?.let { v ->
+                    val (gc, gs) = metricColors(v, groupMode)
+                    Box(Modifier.clip(RoundedCornerShape(999.dp)).background(gs).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                        Text(formatMetric(v, groupMode), style = MaterialTheme.typography.labelLarge, color = gc)
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/** Share of pupils who came / were absent, day by day -- the director's pulse. */
+@Composable
+private fun AttendanceTrendCard(days: List<DailyTrendDto>) {
+    val c = MaterialTheme.smart
+    val pts = days.mapNotNull { d ->
+        val total = d.present + d.late + d.absent
+        if (total == 0) null else Triple(d.date, (d.present + d.late) * 100f / total, d.absent * 100f / total)
+    }
+    if (pts.size < 2) return
+    val last = pts.last().second
+    val delta = last - pts[pts.size - 2].second
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("dd.MM")
+    val brand = c.brand
+    val rose = c.rose
+    val grid = c.border
+    SoftCard(contentPadding = PaddingValues(16.dp), elevation = 6.dp) {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.att_trend_title), style = MaterialTheme.typography.titleMedium, color = c.ink)
+                Text(stringResource(R.string.att_trend_sub), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${last.roundToInt()}%", style = MaterialTheme.typography.headlineMedium, color = c.ink)
+                    HSpace(6.dp)
+                    val up = delta >= 0
+                    Box(Modifier.clip(RoundedCornerShape(999.dp)).background(if (up) c.mintSoft else c.roseSoft).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                        Text((if (up) "▲ +" else "▼ ") + "${delta.roundToInt()}%", style = MaterialTheme.typography.labelSmall, color = if (up) c.mint else c.rose)
+                    }
+                }
+                Text(stringResource(R.string.att_trend_last), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+            }
+        }
+        VSpace(14.dp)
+        Row(Modifier.fillMaxWidth().height(170.dp)) {
+            Column(Modifier.fillMaxHeight().padding(end = 6.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                listOf(100, 75, 50, 25, 0).forEach { Text("$it%", style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
+            }
+            Canvas(Modifier.weight(1f).fillMaxHeight().padding(vertical = 7.dp)) {
+                val w = size.width
+                val h = size.height
+                for (i in 0..4) {
+                    val y = h * i / 4f
+                    drawLine(grid, Offset(0f, y), Offset(w, y), strokeWidth = 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
+                }
+                fun xy(i: Int, v: Float) = Offset(w * i / (pts.size - 1), h - h * v / 100f)
+                fun smooth(values: List<Float>): Path = Path().apply {
+                    values.forEachIndexed { i, v ->
+                        val p = xy(i, v)
+                        if (i == 0) moveTo(p.x, p.y) else {
+                            val prev = xy(i - 1, values[i - 1])
+                            val mx = (prev.x + p.x) / 2
+                            cubicTo(mx, prev.y, mx, p.y, p.x, p.y)
+                        }
+                    }
+                }
+                val came = pts.map { it.second }
+                val line = smooth(came)
+                val area = Path().apply { addPath(line); lineTo(w, h); lineTo(0f, h); close() }
+                drawPath(area, Brush.verticalGradient(listOf(brand.copy(alpha = 0.22f), brand.copy(alpha = 0.02f))))
+                drawPath(line, brand, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(
+                    smooth(pts.map { it.third }), rose.copy(alpha = 0.75f),
+                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 9f))),
+                )
+                val end = xy(pts.size - 1, came.last())
+                drawCircle(Color.White, 6.dp.toPx(), end)
+                drawCircle(brand, 4.dp.toPx(), end)
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(start = 34.dp, top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            val step = ((pts.size - 1) / 4).coerceAtLeast(1)
+            pts.indices.filter { it % step == 0 || it == pts.size - 1 }.distinct().forEach { i ->
+                Text(pts[i].first.format(fmt), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+            }
+        }
+        VSpace(10.dp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(10.dp).clip(CircleShape).background(brand)); HSpace(6.dp)
+            Text(stringResource(R.string.legend_came), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
+            HSpace(18.dp)
+            Box(Modifier.size(10.dp).clip(CircleShape).background(rose)); HSpace(6.dp)
+            Text(stringResource(R.string.legend_absent), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
+        }
+    }
+}
+
+/** Every class (or group) by its average -- grade, or attendance % in group mode. */
+@Composable
+private fun ClassAveragesCard(rows: List<Pair<String, Double>>, groupMode: Boolean) {
+    val c = MaterialTheme.smart
+    val scale = if (groupMode) 100.0 else 10.0
+    SoftCard(contentPadding = PaddingValues(16.dp), elevation = 6.dp) {
+        Text(stringResource(R.string.class_averages), style = MaterialTheme.typography.titleMedium, color = c.ink)
+        VSpace(12.dp)
+        rows.take(12).forEach { (name, v) ->
+            val (gc, gs) = metricColors(v, groupMode)
+            Row(Modifier.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(name, style = MaterialTheme.typography.labelMedium, color = c.ink, maxLines = 1, modifier = Modifier.width(96.dp))
+                Box(Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(c.surfaceSoft)) {
+                    Box(Modifier.fillMaxWidth((v / scale).toFloat().coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(gc))
+                }
+                HSpace(10.dp)
+                Box(Modifier.width(52.dp).clip(RoundedCornerShape(999.dp)).background(gs).padding(vertical = 3.dp), contentAlignment = Alignment.Center) {
+                    Text(formatMetric(v, groupMode), style = MaterialTheme.typography.labelMedium, color = gc)
+                }
             }
         }
     }

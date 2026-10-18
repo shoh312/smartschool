@@ -480,4 +480,11 @@
     <string name="home_school_avg">Холи миёнаи мактаб</string>
     <string name="home_school_att">Ҳозиршавии миёна</string>
     <string name="home_ranked">%1$d хонанда дар рейтинг</string>
+    <string name="analytics_overview">Умумӣ</string>
+    <string name="att_trend_title">Давомот аз рӯи рӯзҳо</string>
+    <string name="att_trend_sub">14 рӯзи охир — фоизи омадагон ва ғоибон</string>
+    <string name="att_trend_last">дар рӯзи охир</string>
+    <string name="legend_came">Омад</string>
+    <string name="legend_absent">Ғоиб</string>
+    <string name="class_averages">Аз рӯи синфҳо</string>
 </resources>

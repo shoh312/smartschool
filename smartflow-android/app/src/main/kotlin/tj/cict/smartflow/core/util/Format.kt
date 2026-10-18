@@ -43,6 +43,10 @@ fun parseTime(raw: String): LocalTime? = runCatching { LocalTime.parse(raw.take(
 
 fun formatAverage(value: Double?): String = value?.let { String.format(Locale.US, "%.1f", it) } ?: "—"
 
+/** Group/training-centre mode shows the metric as an attendance percentage, not a 0-10 grade. */
+fun formatMetric(value: Double?, groupMode: Boolean): String =
+    if (groupMode) value?.let { "${Math.round(it)}%" } ?: "—" else formatAverage(value)
+
 @Composable
 fun ApiError.message(): String = when (this) {
     ApiError.Network -> stringResource(R.string.error_network)

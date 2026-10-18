@@ -69,10 +69,7 @@ import tj.cict.smartflow.R
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.currentLocale
 import tj.cict.smartflow.core.util.dayMonth
-import tj.cict.smartflow.core.util.formatMetric
 import tj.cict.smartflow.core.util.hhmm
-import tj.cict.smartflow.data.dto.LeaderboardEntryDto
-import tj.cict.smartflow.ui.grades.metricColors
 import tj.cict.smartflow.core.util.message
 import tj.cict.smartflow.core.util.weekdayLong
 import tj.cict.smartflow.data.dto.CameraStatusDto
@@ -114,15 +111,8 @@ fun DirectorHomeScreen(
     onAnnouncements: () -> Unit,
     onCalendar: () -> Unit,
     onSettings: () -> Unit,
-    schoolVm: SchoolViewModel? = null,
-    onAnalytics: () -> Unit = {},
-    onOpenStudent: (Int, String) -> Unit = { _, _ -> },
-    analyticsVm: DirectorAnalyticsViewModel = koinViewModel(),
 ) {
     DisposableEffect(Unit) { liveVm.start(); onDispose { liveVm.stop() } }
-    LaunchedEffect(Unit) { analyticsVm.load() }
-    val analytics by analyticsVm.ui.collectAsStateWithLifecycle()
-    val groupMode = schoolVm?.ui?.collectAsStateWithLifecycle()?.value?.groupMode ?: false
     val ui by liveVm.ui.collectAsStateWithLifecycle()
     var profileOpen by remember { mutableStateOf(false) }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -142,9 +132,6 @@ fun DirectorHomeScreen(
                 }
             }
             item { TodayCard(ui, "${today.weekdayLong(locale)}, ${today.dayMonth(locale)}", Modifier.padding(horizontal = 20.dp)) }
-            (analytics.ranking as? UiState.Ready)?.data?.takeIf { it.isNotEmpty() }?.let { board ->
-                item { AnalyticsBlock(board, groupMode, onAnalytics, onOpenStudent, Modifier.padding(horizontal = 20.dp)) }
-            }
             if (ui.cameras.isNotEmpty()) {
                 item { SectionTitle(stringResource(R.string.cameras_title), Modifier.padding(horizontal = 20.dp, vertical = 2.dp), trailing = { GhostButton(stringResource(R.string.action_live_video), onClick = onVideo) }) }
                 item {
@@ -176,66 +163,6 @@ fun DirectorHomeScreen(
         }
     }
     if (profileOpen) ProfileSheet(parentName = name, onDismiss = { profileOpen = false }, onSignOut = onSignOut)
-}
-
-/** School-wide summary + the top three; "Details" opens the full ranking. */
-@Composable
-private fun AnalyticsBlock(
-    board: List<LeaderboardEntryDto>,
-    groupMode: Boolean,
-    onDetails: () -> Unit,
-    onOpenStudent: (Int, String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val c = MaterialTheme.smart
-    val scored = board.mapNotNull { it.overallAverage }
-    val avg = scored.takeIf { it.isNotEmpty() }?.average()
-    SoftCard(modifier, contentPadding = PaddingValues(16.dp), elevation = 6.dp, onClick = onDetails) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.home_analytics), style = MaterialTheme.typography.titleMedium, color = c.ink)
-                Text(stringResource(R.string.home_ranked, scored.size), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
-            }
-            GhostButton(stringResource(R.string.action_details), onClick = onDetails)
-        }
-        VSpace(12.dp)
-        if (avg != null) {
-            val (gc, gs) = metricColors(avg, groupMode)
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(gs).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(if (groupMode) R.string.home_school_att else R.string.home_school_avg),
-                    style = MaterialTheme.typography.labelMedium, color = c.inkSecondary, modifier = Modifier.weight(1f),
-                )
-                Text(formatMetric(avg, groupMode), style = MaterialTheme.typography.titleLarge, color = gc)
-            }
-            VSpace(12.dp)
-        }
-        Text(stringResource(R.string.home_top3), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
-        VSpace(6.dp)
-        board.take(3).forEach { e ->
-            val medal = when (e.position) { 1 -> c.amber; 2 -> Color(0xFF9CA3AF); else -> Color(0xFFC77B3F) }
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).clickable { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }.padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.size(28.dp).clip(CircleShape).background(medal.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
-                    Text("${e.position}", style = MaterialTheme.typography.labelLarge, color = medal)
-                }
-                HSpace(10.dp)
-                ChildAvatar(Child(e.studentId, e.firstName, e.lastName, e.className), 32.dp); HSpace(10.dp)
-                Column(Modifier.weight(1f)) {
-                    Text("${e.lastName} ${e.firstName}", style = MaterialTheme.typography.titleSmall, color = c.ink, maxLines = 1)
-                    e.className?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
-                }
-                e.overallAverage?.let { v ->
-                    val (gc, gs) = metricColors(v, groupMode)
-                    Box(Modifier.clip(RoundedCornerShape(999.dp)).background(gs).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                        Text(formatMetric(v, groupMode), style = MaterialTheme.typography.labelLarge, color = gc)
-                    }
-                }
-            }
-        }
-    }
 }
 
 @Composable

@@ -43,6 +43,7 @@ import tj.cict.smartflow.data.dto.ClassSubjectDto
 import tj.cict.smartflow.data.dto.GradeDto
 import tj.cict.smartflow.data.dto.AbsenceDto
 import tj.cict.smartflow.data.dto.AttendanceMarkDto
+import tj.cict.smartflow.data.dto.DailyTrendDto
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
 import tj.cict.smartflow.data.dto.LiveStatusDto
 import tj.cict.smartflow.data.dto.NeedsAttentionDto
@@ -422,6 +423,9 @@ data class AnalyticsUi(
     val classId: Int? = null,
     val ranking: UiState<List<LeaderboardEntryDto>> = UiState.Loading,
     val attention: UiState<NeedsAttentionDto> = UiState.Loading,
+    val trend: UiState<List<DailyTrendDto>> = UiState.Loading,
+    /** The whole-school ranking, kept apart from `ranking` (which follows the class picker). */
+    val schoolRanking: UiState<List<LeaderboardEntryDto>> = UiState.Loading,
 )
 
 class DirectorAnalyticsViewModel(private val repo: DirectorRepository) : ViewModel() {
@@ -435,9 +439,13 @@ class DirectorAnalyticsViewModel(private val repo: DirectorRepository) : ViewMod
         viewModelScope.launch {
             val r = viewModelScope.async { repo.schoolRanking() }
             val a = viewModelScope.async { repo.needsAttention() }
-            _ui.update { it.copy(ranking = r.await().toUiState(), attention = a.await().toUiState()) }
+            val t = viewModelScope.async { repo.dailyTrend(14) }
+            val rr = r.await().toUiState()
+            _ui.update { it.copy(ranking = rr, schoolRanking = rr, attention = a.await().toUiState(), trend = t.await().toUiState()) }
         }
     }
+
+    fun reload() { loaded = false; _ui.update { AnalyticsUi() }; load() }
 
     fun pickClass(classId: Int?) {
         _ui.update { it.copy(classId = classId, ranking = UiState.Loading) }

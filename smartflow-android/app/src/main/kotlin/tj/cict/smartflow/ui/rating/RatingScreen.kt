@@ -57,6 +57,7 @@ import tj.cict.smartflow.core.network.ApiError
 import tj.cict.smartflow.core.network.ApiResult
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.formatAverage
+import tj.cict.smartflow.core.util.formatMetric
 import tj.cict.smartflow.core.util.message
 import tj.cict.smartflow.data.dto.AnalyticsDto
 import tj.cict.smartflow.data.dto.RankDto
@@ -73,6 +74,7 @@ import tj.cict.smartflow.ui.components.SoftCard
 import tj.cict.smartflow.ui.components.TintPanel
 import tj.cict.smartflow.ui.components.VSpace
 import tj.cict.smartflow.ui.grades.gradeColors
+import tj.cict.smartflow.ui.grades.metricColors
 import tj.cict.smartflow.ui.home.ChildrenViewModel
 import tj.cict.smartflow.ui.theme.Radius
 import tj.cict.smartflow.ui.theme.smart
@@ -156,12 +158,14 @@ fun RatingScreen(childrenVm: ChildrenViewModel, bottomPadding: Dp, vm: RatingVie
 @Composable
 fun RatingBody(a: AnalyticsDto, bottomPadding: Dp) {
     val c = MaterialTheme.smart
+    // Group/training-centre mode: no grades, so the metric is an attendance %.
+    val gm = a.subjects.isEmpty() && a.overallAverage != null
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 6.dp, bottom = bottomPadding + 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { HeroCard(a) }
+        item { HeroCard(a, gm) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 RankCard(stringResource(R.string.rank_class), a.classRank, Modifier.weight(1f))
@@ -174,9 +178,9 @@ fun RatingBody(a: AnalyticsDto, bottomPadding: Dp) {
                 SoftCard {
                     Text(stringResource(R.string.compare_title), style = MaterialTheme.typography.titleMedium, color = c.ink)
                     VSpace(12.dp)
-                    CompareRow(stringResource(R.string.compare_class), a.overallAverage, a.classAverage)
-                    CompareRow(stringResource(R.string.compare_parallel), a.overallAverage, a.parallelAverage)
-                    CompareRow(stringResource(R.string.compare_school), a.overallAverage, a.schoolAverage)
+                    CompareRow(stringResource(R.string.compare_class), a.overallAverage, a.classAverage, gm)
+                    CompareRow(stringResource(R.string.compare_parallel), a.overallAverage, a.parallelAverage, gm)
+                    CompareRow(stringResource(R.string.compare_school), a.overallAverage, a.schoolAverage, gm)
                 }
             }
         }
@@ -224,11 +228,11 @@ fun RatingBody(a: AnalyticsDto, bottomPadding: Dp) {
 
 /** Big number in a ring, badges underneath. */
 @Composable
-private fun HeroCard(a: AnalyticsDto) {
+private fun HeroCard(a: AnalyticsDto, gm: Boolean = false) {
     val c = MaterialTheme.smart
     val avg = a.overallAverage
-    val (color, soft) = gradeColors(avg ?: 0.0)
-    val progress by animateFloatAsState(if (avg == null) 0f else (avg / 10f).toFloat().coerceIn(0f, 1f), tween(900), label = "ring")
+    val (color, soft) = metricColors(avg ?: 0.0, gm)
+    val progress by animateFloatAsState(if (avg == null) 0f else (avg / (if (gm) 100f else 10f)).toFloat().coerceIn(0f, 1f), tween(900), label = "ring")
     SoftCard(contentPadding = PaddingValues(20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(120.dp), contentAlignment = Alignment.Center) {
@@ -239,8 +243,8 @@ private fun HeroCard(a: AnalyticsDto) {
                     drawArc(color, -90f, 360f * progress, false, Offset(inset, inset), Size(size.width - stroke, size.height - stroke), style = Stroke(stroke, cap = StrokeCap.Round))
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(formatAverage(avg), style = MaterialTheme.typography.displayMedium, color = color)
-                    Text("/ 10", style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+                    Text(formatMetric(avg, gm), style = MaterialTheme.typography.displayMedium, color = color)
+                    if (!gm) Text("/ 10", style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
                 }
             }
             HSpace(18.dp)
@@ -294,13 +298,14 @@ private fun RankCard(label: String, rank: RankDto, modifier: Modifier = Modifier
 
 /** Delta with an arrow -- an icon and a sign, so it survives colour-blindness. */
 @Composable
-private fun CompareRow(label: String, mine: Double, theirs: Double?) {
+private fun CompareRow(label: String, mine: Double, theirs: Double?, gm: Boolean = false) {
     val c = MaterialTheme.smart
+    val scale = if (gm) 100.0 else 10.0
     Row(Modifier.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = c.inkSecondary, modifier = Modifier.width(88.dp))
         Box(Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)).background(c.surfaceSoft)) {
-            if (theirs != null) Box(Modifier.fillMaxWidth((theirs / 10).toFloat().coerceIn(0f, 1f)).fillMaxSize().background(c.border))
-            Box(Modifier.fillMaxWidth((mine / 10).toFloat().coerceIn(0f, 1f)).fillMaxSize().background(c.brand))
+            if (theirs != null) Box(Modifier.fillMaxWidth((theirs / scale).toFloat().coerceIn(0f, 1f)).fillMaxSize().background(c.border))
+            Box(Modifier.fillMaxWidth((mine / scale).toFloat().coerceIn(0f, 1f)).fillMaxSize().background(c.brand))
         }
         HSpace(10.dp)
         if (theirs == null) {

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -282,11 +284,19 @@ fun ClassDetailScreen(cls: ClassDto, schoolVm: SchoolViewModel, onBack: () -> Un
 
 // ================================================================== Students
 
+/** How many pupils to reveal per scroll step in the students list. */
+private const val STUDENTS_PAGE = 10
+
 @Composable
 fun StudentsScreen(vm: SchoolViewModel, onBack: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val c = MaterialTheme.smart
     var query by remember { mutableStateOf("") }
+    // Show a window of pupils and grow it as the list is scrolled, so opening
+    // the screen never lays out hundreds of rows at once.
+    val listState = rememberLazyListState()
+    var shown by remember { mutableStateOf(STUDENTS_PAGE) }
+    LaunchedEffect(query) { shown = STUDENTS_PAGE }
     var adding by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<StudentDto?>(null) }
     var deleting by remember { mutableStateOf<StudentDto?>(null) }
@@ -302,8 +312,15 @@ fun StudentsScreen(vm: SchoolViewModel, onBack: () -> Unit) {
                     val q = query.trim().lowercase()
                     val rows = s.data.filter { q.isEmpty() || "${it.firstName} ${it.lastName} ${it.className}".lowercase().contains(q) }.sortedWith(compareBy({ it.className }, { it.lastName }))
                     if (rows.isEmpty()) { EmptyState(R.drawable.ill_backpack, stringResource(R.string.no_students)); return@Column }
-                    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(rows, key = { it.id }) { st ->
+                    val paged = rows.take(shown)
+                    // Load 10 more once the tail of the current window scrolls into view.
+                    val total = rows.size
+                    LaunchedEffect(listState, total) {
+                        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1 }
+                            .collect { last -> if (last >= shown - 3 && shown < total) shown = (shown + STUDENTS_PAGE).coerceAtMost(total) }
+                    }
+                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(paged, key = { it.id }) { st ->
                             SoftCard(contentPadding = PaddingValues(10.dp), elevation = 4.dp, onClick = { editing = st }) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ChildAvatar(Child(st.id, st.firstName, st.lastName, st.className), 38.dp); HSpace(12.dp)

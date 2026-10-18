@@ -191,3 +191,12 @@ data class CameraPositionCreateRequest(
     val subject: String? = null,
     @SerialName("day_of_week") val dayOfWeek: Int? = null,
 )
+
+/** One day of the school's attendance trend (counts, not percentages). */
+@Serializable
+data class DailyTrendDto(
+    @Serializable(LocalDateSerializer::class) val date: LocalDate,
+    val present: Int = 0,
+    val late: Int = 0,
+    val absent: Int = 0,
+)

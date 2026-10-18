@@ -70,6 +70,18 @@ fun gradeColors(value: Double): Pair<Color, Color> {
     }
 }
 
+/** Colour tiers for a metric: a 0-10 grade, or a 0-100 attendance % in group mode. */
+@Composable
+fun metricColors(value: Double, groupMode: Boolean): Pair<Color, Color> {
+    if (!groupMode) return gradeColors(value)
+    val c = MaterialTheme.smart
+    return when {
+        value >= 90 -> c.mint to c.mintSoft
+        value >= 75 -> c.amber to c.amberSoft
+        else -> c.rose to c.roseSoft
+    }
+}
+
 @Composable
 fun GradesScreen(childId: Int, childrenVm: ChildrenViewModel, onBack: () -> Unit, vm: GradesViewModel = koinViewModel()) {
     LaunchedEffect(childId) { vm.load(childId) }

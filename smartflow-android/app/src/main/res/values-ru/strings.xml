@@ -480,4 +480,11 @@
     <string name="home_school_avg">Средний балл школы</string>
     <string name="home_school_att">Средняя посещаемость</string>
     <string name="home_ranked">%1$d учеников в рейтинге</string>
+    <string name="analytics_overview">Обзор</string>
+    <string name="att_trend_title">Посещаемость по дням</string>
+    <string name="att_trend_sub">Последние 14 дней — доля пришедших и отсутствующих</string>
+    <string name="att_trend_last">в последний день</string>
+    <string name="legend_came">Пришли</string>
+    <string name="legend_absent">Отсутствовали</string>
+    <string name="class_averages">По классам</string>
 </resources>

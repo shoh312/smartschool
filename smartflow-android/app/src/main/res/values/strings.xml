@@ -505,4 +505,11 @@
     <string name="home_school_avg">School average</string>
     <string name="home_school_att">Average attendance</string>
     <string name="home_ranked">%1$d pupils in the rating</string>
+    <string name="analytics_overview">Overview</string>
+    <string name="att_trend_title">Daily attendance</string>
+    <string name="att_trend_sub">Last 14 days — share present and absent</string>
+    <string name="att_trend_last">on the last day</string>
+    <string name="legend_came">Present</string>
+    <string name="legend_absent">Absent</string>
+    <string name="class_averages">By class</string>
 </resources>
