@@ -426,6 +426,8 @@ data class AnalyticsUi(
     val trend: UiState<List<DailyTrendDto>> = UiState.Loading,
     /** The whole-school ranking, kept apart from `ranking` (which follows the class picker). */
     val schoolRanking: UiState<List<LeaderboardEntryDto>> = UiState.Loading,
+    /** This school's group (training-centre) flag, fetched with the ranking. */
+    val groupMode: Boolean = false,
 )
 
 class DirectorAnalyticsViewModel(private val repo: DirectorRepository) : ViewModel() {
@@ -440,8 +442,10 @@ class DirectorAnalyticsViewModel(private val repo: DirectorRepository) : ViewMod
             val r = viewModelScope.async { repo.schoolRanking() }
             val a = viewModelScope.async { repo.needsAttention() }
             val t = viewModelScope.async { repo.dailyTrend(14) }
+            val g = viewModelScope.async { repo.settings() }
+            val gm = (g.await() as? ApiResult.Ok<SchoolSettingsDto>)?.value?.groupMode ?: false
             val rr = r.await().toUiState()
-            _ui.update { it.copy(ranking = rr, schoolRanking = rr, attention = a.await().toUiState(), trend = t.await().toUiState()) }
+            _ui.update { it.copy(ranking = rr, schoolRanking = rr, attention = a.await().toUiState(), trend = t.await().toUiState(), groupMode = gm) }
         }
     }
 

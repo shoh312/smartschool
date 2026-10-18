@@ -121,15 +121,15 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpen
                 is UiState.Failed -> item { ErrorState(r.error.message(), onRetry = vm::reload) }
                 is UiState.Ready -> if (board.isNotEmpty()) {
                     board.mapNotNull { it.overallAverage }.takeIf { it.isNotEmpty() }?.average()?.let { avg ->
-                        item { SchoolAverageCard(avg, school.groupMode) }
+                        item { SchoolAverageCard(avg, ui.groupMode) }
                     }
-                    item { AnalyticsBlock(board, school.groupMode, onDetails = onOpenRanking, onOpenStudent = onOpenStudent) }
+                    item { AnalyticsBlock(board, ui.groupMode, onDetails = onOpenRanking, onOpenStudent = onOpenStudent) }
                 }
             }
             (ui.trend as? UiState.Ready)?.data?.let { days -> item { AttendanceTrendCard(days) } }
             val byClass = board.filter { it.overallAverage != null }.groupBy { it.className ?: "—" }
                 .map { (k, v) -> k to v.mapNotNull { it.overallAverage }.average() }.sortedByDescending { it.second }
-            if (byClass.isNotEmpty()) item { ClassAveragesCard(byClass, school.groupMode) }
+            if (byClass.isNotEmpty()) item { ClassAveragesCard(byClass, ui.groupMode) }
         }
     }
 }
@@ -162,7 +162,7 @@ fun DirectorRankingScreen(schoolVm: SchoolViewModel, onBack: () -> Unit, onOpenS
                 is UiState.Failed -> ErrorState(s.error.message(), onRetry = { vm.pickClass(ui.classId) })
                 is UiState.Ready -> if (s.data.isEmpty()) EmptyState(R.drawable.ill_trophy, stringResource(R.string.rating_empty)) else {
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(s.data, key = { it.studentId }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }, groupMode = school.groupMode) }
+                        items(s.data, key = { it.studentId }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }, groupMode = ui.groupMode) }
                     }
                 }
             }
@@ -194,7 +194,7 @@ fun DirectorRankingScreen(schoolVm: SchoolViewModel, onBack: () -> Unit, onOpenS
                         }
                         if (d.bottomPerformers.isNotEmpty()) {
                             item { Text(stringResource(R.string.attention_bottom), style = MaterialTheme.typography.titleMedium, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
-                            items(d.bottomPerformers, key = { "b${it.studentId}" }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }, groupMode = school.groupMode) }
+                            items(d.bottomPerformers, key = { "b${it.studentId}" }) { e -> RankRow(e, onClick = { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }, groupMode = ui.groupMode) }
                         }
                     }
                 }

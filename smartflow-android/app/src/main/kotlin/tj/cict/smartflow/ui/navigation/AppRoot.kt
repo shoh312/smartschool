@@ -285,6 +285,10 @@ private fun DirectorGraph(name: String, onSignOut: () -> Unit) {
     val nav = rememberNavController()
     val liveVm: LiveViewModel = koinViewModel()
     val schoolVm: SchoolViewModel = koinViewModel()
+    // The view models outlive a sign-out (they belong to the activity), so after
+    // switching accounts they would still hold the previous school -- including
+    // its group-mode flag. Reload whenever the director area is entered.
+    LaunchedEffect(Unit) { schoolVm.loadAll() }
 
     MainShell(nav, directorTabs) { padding ->
         NavHost(
