@@ -892,3 +892,38 @@ def seed_school_academics(
         "next_offset": next_offset,
         "done": next_offset >= total,
     }
+
+
+# --------------------------------------------------------------------------
+# Toggle the is_superadmin flag on a director by email (superadmin-only). Used
+# to move the superadmin role off a real school onto a dedicated admin account.
+# Refuses to remove the last remaining superadmin unless force=true.
+
+@router.post("/demo/set-superadmin")
+def set_superadmin(
+    email: str = Body(..., embed=True),
+    value: bool = Body(..., embed=True),
+    force: bool = Body(False, embed=True),
+    db: Session = Depends(get_db),
+    _sa: Director = Depends(get_current_superadmin),
+):
+    target = db.query(Director).filter(Director.email == email.strip().lower()).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="director not found")
+    if value is False and target.is_superadmin:
+        others = db.query(Director).filter(
+            Director.is_superadmin == True, Director.id != target.id  # noqa: E712
+        ).count()
+        if others == 0 and not force:
+            raise HTTPException(
+                status_code=400,
+                detail="refusing to remove the last superadmin; create another first or pass force=true",
+            )
+    target.is_superadmin = bool(value)
+    db.commit()
+    db.refresh(target)
+    remaining = db.query(Director).filter(Director.is_superadmin == True).count()  # noqa: E712
+    return {
+        "id": target.id, "email": target.email, "school_id": target.school_id,
+        "is_superadmin": target.is_superadmin, "superadmins_remaining": remaining,
+    }
