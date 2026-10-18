@@ -124,21 +124,32 @@ fun DirectorJournalScreen(classId: Int, className: String, schoolVm: SchoolViewM
                         }
                     }
                     VSpace(12.dp)
+                    val gm = school.groupMode
                     val grades = s.data.grades.filter { it.subject == subject }
                     val absences = s.data.absences.filter { it.subject == subject }
-                    val dates = (grades.map { it.date } + absences.map { it.date }).distinct().sorted()
+                    val attend = s.data.attendance.filter { it.subject == subject }
+                    val dates = if (gm) attend.map { it.date }.distinct().sorted()
+                                else (grades.map { it.date } + absences.map { it.date }).distinct().sorted()
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 32.dp)) {
-                        SummaryCard(grades.map { it.value }, absences.size)
-                        VSpace(12.dp)
+                        if (!gm) { SummaryCard(grades.map { it.value }, absences.size); VSpace(12.dp) }
                         if (dates.isEmpty() || pupils.isEmpty()) {
                             EmptyState(R.drawable.ill_notebook, stringResource(R.string.journal_empty), stringResource(R.string.journal_empty_body))
                         } else {
                             val byStudent = grades.groupBy { it.studentId }
                             val absentBy = absences.groupBy { it.studentId }
+                            val attBy = attend.groupBy { it.studentId }
                             JournalGrid(
                                 rows = pupils.map { p -> JournalRowSpec(p.id, p.lastName, p.firstName) { ChildAvatar(Child(p.id, p.firstName, p.lastName, p.className), 28.dp) } },
                                 dates = dates,
-                                cellOf = { id, d -> JournalCell(byStudent[id].orEmpty().filter { it.date == d }, absentBy[id].orEmpty().any { it.date == d }) },
+                                cellOf = { id, d ->
+                                    if (gm) {
+                                        val m = attBy[id].orEmpty().firstOrNull { it.date == d }
+                                        val came = m != null && (m.status == "present" || m.status == "late")
+                                        JournalCell(present = came, absent = m != null && !came)
+                                    } else {
+                                        JournalCell(byStudent[id].orEmpty().filter { it.date == d }, absentBy[id].orEmpty().any { it.date == d })
+                                    }
+                                },
                                 onCell = { id, _, cell -> if (cell.grades.isNotEmpty()) info = cell.grades to pupils.first { it.id == id }.let { "${it.lastName} ${it.firstName}" } },
                                 onRow = { id -> pupils.first { it.id == id }.let { onOpenStudent(it.id, "${it.lastName} ${it.firstName}") } },
                             )

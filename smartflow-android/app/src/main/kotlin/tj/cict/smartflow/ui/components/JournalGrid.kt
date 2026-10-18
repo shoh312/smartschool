@@ -55,7 +55,7 @@ data class JournalRowSpec<K>(
 )
 
 /** What sits in one cell: the marks given that day and whether the pupil was absent. */
-data class JournalCell(val grades: List<GradeDto> = emptyList(), val absent: Boolean = false)
+data class JournalCell(val grades: List<GradeDto> = emptyList(), val absent: Boolean = false, val present: Boolean = false)
 
 /**
  * The register as a grid: rows down the side, lesson dates across the top,
@@ -146,7 +146,10 @@ fun <K : Any> JournalGrid(
                                         }
                                     }
                                     cell.absent -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).background(c.roseSoft), contentAlignment = Alignment.Center) {
-                                        Text(stringResource(R.string.journal_absent_short), style = MaterialTheme.typography.labelMedium, color = c.rose, fontWeight = FontWeight.Bold)
+                                        Text(if (cell.present) "✕" else stringResource(R.string.journal_absent_short), style = MaterialTheme.typography.labelMedium, color = c.rose, fontWeight = FontWeight.Bold)
+                                    }
+                                    cell.present -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).background(c.mintSoft), contentAlignment = Alignment.Center) {
+                                        Text("✓", style = MaterialTheme.typography.labelMedium, color = c.mint, fontWeight = FontWeight.Bold)
                                     }
                                     todayEditable && isToday -> Box(Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).border(1.5.dp, c.brandSoft, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                                         Text("+", style = MaterialTheme.typography.labelMedium, color = c.brand)

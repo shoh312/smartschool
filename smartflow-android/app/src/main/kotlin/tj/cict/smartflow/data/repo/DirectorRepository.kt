@@ -33,6 +33,7 @@ import tj.cict.smartflow.data.dto.ClassSubjectAverageDto
 import tj.cict.smartflow.data.dto.ClassSubjectDto
 import tj.cict.smartflow.data.dto.GradeDto
 import tj.cict.smartflow.data.dto.AbsenceDto
+import tj.cict.smartflow.data.dto.AttendanceMarkDto
 import tj.cict.smartflow.data.dto.DirectorLoginRequest
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
 import tj.cict.smartflow.data.dto.LiveStatusDto
@@ -109,6 +110,7 @@ class DirectorRepository(private val api: SchoolApi, private val session: Sessio
     // ------------------------------------------------------ journal (read-only for a director)
     suspend fun grades(classId: Int): ApiResult<List<GradeDto>> = safeCall { api.grades(classId, null, limit = 3000) }
     suspend fun absences(classId: Int): ApiResult<List<AbsenceDto>> = safeCall { api.absences(classId, null) }
+    suspend fun journalAttendance(classId: Int): ApiResult<List<AttendanceMarkDto>> = safeCall { api.journalAttendance(classId, null) }
 
     // ------------------------------------------------------ students
 

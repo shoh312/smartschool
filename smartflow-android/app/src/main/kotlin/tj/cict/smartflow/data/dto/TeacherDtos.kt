@@ -51,6 +51,16 @@ data class AbsenceDto(
     @SerialName("lesson_id") val lessonId: Int,
 )
 
+/** A lesson-attendance mark (present/late/absent) -- group-mode journal. */
+@Serializable
+data class AttendanceMarkDto(
+    @SerialName("student_id") val studentId: Int,
+    val subject: String,
+    @Serializable(LocalDateSerializer::class) val date: LocalDate,
+    @SerialName("lesson_id") val lessonId: Int,
+    val status: String,
+)
+
 /** The class diary as the school server returns it (teacher id included). */
 @Serializable
 data class TeacherDiaryEntryDto(

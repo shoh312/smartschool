@@ -13,6 +13,7 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import tj.cict.smartflow.data.dto.AbsenceDto
+import tj.cict.smartflow.data.dto.AttendanceMarkDto
 import tj.cict.smartflow.data.dto.AiGenerateResponse
 import tj.cict.smartflow.data.dto.AssignmentCreateRequest
 import tj.cict.smartflow.data.dto.MaterialCreateRequest
@@ -86,6 +87,9 @@ interface SchoolApi {
 
     @GET("journal/absences")
     suspend fun absences(@Query("class_id") classId: Int, @Query("subject") subject: String?): List<AbsenceDto>
+
+    @GET("journal/attendance")
+    suspend fun journalAttendance(@Query("class_id") classId: Int, @Query("subject") subject: String?): List<AttendanceMarkDto>
 
     @Multipart
     @Headers("X-Long-Timeout: 1")

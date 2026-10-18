@@ -42,6 +42,7 @@ import tj.cict.smartflow.data.dto.ClassSubjectAverageDto
 import tj.cict.smartflow.data.dto.ClassSubjectDto
 import tj.cict.smartflow.data.dto.GradeDto
 import tj.cict.smartflow.data.dto.AbsenceDto
+import tj.cict.smartflow.data.dto.AttendanceMarkDto
 import tj.cict.smartflow.data.dto.LeaderboardEntryDto
 import tj.cict.smartflow.data.dto.LiveStatusDto
 import tj.cict.smartflow.data.dto.NeedsAttentionDto
@@ -219,6 +220,7 @@ data class SchoolUi(
     val students: UiState<List<StudentDto>> = UiState.Loading,
     val teachers: UiState<List<TeacherDto>> = UiState.Loading,
     val cameras: UiState<List<CameraDto>> = UiState.Loading,
+    val groupMode: Boolean = false,
     val busy: Boolean = false,
     val error: ApiError? = null,
 ) {
@@ -237,7 +239,9 @@ class SchoolViewModel(private val repo: DirectorRepository) : ViewModel() {
             val s = viewModelScope.async { repo.students() }
             val t = viewModelScope.async { repo.teachers() }
             val k = viewModelScope.async { repo.cameras() }
-            _ui.update { it.copy(classes = c.await().toUiState(), students = s.await().toUiState(), teachers = t.await().toUiState(), cameras = k.await().toUiState()) }
+            val g = viewModelScope.async { repo.settings() }
+            val gm = (g.await() as? ApiResult.Ok<SchoolSettingsDto>)?.value?.groupMode ?: false
+            _ui.update { it.copy(classes = c.await().toUiState(), students = s.await().toUiState(), teachers = t.await().toUiState(), cameras = k.await().toUiState(), groupMode = gm) }
         }
     }
 
@@ -345,7 +349,7 @@ class ClassDetailViewModel(private val repo: DirectorRepository) : ViewModel() {
 
 // ----------------------------------------------------------- journal
 
-data class JournalData(val subjects: List<String>, val grades: List<GradeDto>, val absences: List<AbsenceDto>)
+data class JournalData(val subjects: List<String>, val grades: List<GradeDto>, val absences: List<AbsenceDto>, val attendance: List<AttendanceMarkDto> = emptyList())
 
 data class DirectorJournalUi(
     val data: UiState<JournalData> = UiState.Loading,
@@ -366,17 +370,19 @@ class DirectorJournalViewModel(private val repo: DirectorRepository) : ViewModel
             val g = viewModelScope.async { repo.grades(classId) }
             val a = viewModelScope.async { repo.absences(classId) }
             val t = viewModelScope.async { repo.classSubjects(classId) }
-            val grades = g.await(); val absences = a.await(); val taught = t.await()
+            val at = viewModelScope.async { repo.journalAttendance(classId) }
+            val grades = g.await(); val absences = a.await(); val taught = t.await(); val attend = at.await()
             val data = when {
                 grades is ApiResult.Err -> UiState.Failed(grades.error)
                 else -> {
                     val gl = (grades as ApiResult.Ok).value
                     // The marks are the journal; a failed absence lookup only loses the "absent" cells.
                     val al = (absences as? ApiResult.Ok)?.value.orEmpty()
-                    // Subjects that have marks first (most useful), then the rest of the timetable.
+                    val atl = (attend as? ApiResult.Ok)?.value.orEmpty()
+                    // Subjects that have marks first (most useful), then the rest (attendance / timetable).
                     val withMarks = gl.map { it.subject }.distinct()
-                    val rest = (al.map { it.subject } + (taught as? ApiResult.Ok)?.value.orEmpty().mapNotNull { it.subject }).distinct().filter { it !in withMarks }.sorted()
-                    UiState.Ready(JournalData(withMarks + rest, gl, al))
+                    val rest = (al.map { it.subject } + atl.map { it.subject } + (taught as? ApiResult.Ok)?.value.orEmpty().mapNotNull { it.subject }).distinct().filter { it !in withMarks }.sorted()
+                    UiState.Ready(JournalData(withMarks + rest, gl, al, atl))
                 }
             }
             _ui.update { it.copy(data = data) }
