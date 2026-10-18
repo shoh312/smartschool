@@ -811,3 +811,84 @@ def import_bulk_school(
         "parents": parents_created, "students": students_created,
         "lessons": lessons_created,
     }
+
+
+# --------------------------------------------------------------------------
+# Seed a whole school's existing pupils with a term of attendance + marks so
+# every analytics dashboard comes alive (no cameras, no SMS/push). Reuses the
+# per-pupil _run_seed, which writes straight to the DB and re-running first
+# wipes its own previous demo rows. Call in batches via limit/offset to keep
+# each request short.
+
+@router.post("/demo/seed-school-academics")
+def seed_school_academics(
+    school_id: int = Body(..., embed=True),
+    since: date = Body(date(2026, 9, 1), embed=True),
+    present: float = Body(0.93, embed=True),
+    seed: int = Body(7, embed=True),
+    limit: int = Body(200, embed=True),
+    offset: int = Body(0, embed=True),
+    db: Session = Depends(get_db),
+    _sa: Director = Depends(get_current_superadmin),
+):
+    school = db.query(School).filter(School.id == school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="school not found")
+
+    until = date.today() - timedelta(days=1)
+
+    base = (
+        db.query(Student)
+        .filter(Student.school_id == school_id, Student.class_id.isnot(None))
+        .order_by(Student.id)
+    )
+    total = base.count()
+    students = base.offset(offset).limit(limit).all()
+
+    teacher_fallback = db.query(Teacher).filter(Teacher.school_id == school_id).first()
+    tcache: dict[int, Teacher | None] = {}
+
+    done = skipped = grades = att_days = lesson_rows = homework = 0
+    for st in students:
+        cid = st.class_id
+        if cid not in tcache:
+            tcache[cid] = (
+                db.query(Teacher)
+                .join(TeacherClass, TeacherClass.teacher_id == Teacher.id)
+                .filter(TeacherClass.class_id == cid)
+                .first()
+                or teacher_fallback
+            )
+        teacher = tcache[cid]
+        if teacher is None:
+            skipped += 1
+            continue
+        rnd = random.Random(seed * 1000 + st.id)
+        try:
+            r = _run_seed(db, st, cid, teacher, since, until, present, rnd)
+        except Exception:
+            db.rollback()
+            skipped += 1
+            continue
+        done += 1
+        grades += r["grades"]
+        att_days += r["days"]
+        lesson_rows += r["lesson_rows"]
+        homework += r["homework"]
+
+    next_offset = offset + len(students)
+    return {
+        "school_id": school_id,
+        "since": since.isoformat(),
+        "until": until.isoformat(),
+        "total_students": total,
+        "processed": len(students),
+        "seeded": done,
+        "skipped": skipped,
+        "grades": grades,
+        "attendance_days": att_days,
+        "lesson_rows": lesson_rows,
+        "homework": homework,
+        "next_offset": next_offset,
+        "done": next_offset >= total,
+    }
