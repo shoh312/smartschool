@@ -445,7 +445,23 @@ def _run_camera_once(camera_id: int, camera_source: str):
     def _load_roster(cid: int | None):
         return ([], []) if cid is None else load_students(db, cid)
 
+    def _roster_signature(cid: int | None):
+        """Cheap fingerprint of who can be recognised in a class: the ids of
+        its pupils that have a face. Changes when a pupil is added, removed,
+        moved or gets a photo -- so the camera can pick them up mid-lesson."""
+        if cid is None:
+            return None
+        s = SessionLocal()
+        try:
+            rows = s.query(Student.id).filter(
+                Student.class_id == cid, Student.face_encoding != None  # noqa: E711
+            ).order_by(Student.id).all()
+            return tuple(r[0] for r in rows)
+        finally:
+            s.close()
+
     known_encodings, known_students = _load_roster(class_id)
+    roster_sig = _roster_signature(class_id)
     print(f"[+] Camera {camera_id}: loaded {len(known_students)} students for class_id={class_id}, source={camera_source}")
 
     def _load_active_lesson(cid: int | None):
@@ -559,6 +575,17 @@ def _run_camera_once(camera_id: int, camera_source: str):
                 elif class_id is None:
                     detection_enabled = False
                     next_detection_time = 0.0
+                roster_sig = _roster_signature(class_id)
+            elif class_id is not None:
+                # Same class, but a pupil may have been added (or got a photo)
+                # since the lesson started: reload and look right away.
+                sig = _roster_signature(class_id)
+                if sig != roster_sig:
+                    known_encodings, known_students = _load_roster(class_id)
+                    roster_sig = sig
+                    print(f"[+] Camera {camera_id}: roster changed -> {len(known_students)} students, scanning now")
+                    if not detection_enabled:
+                        next_detection_time = now
             _refresh_lesson(class_id)
             last_refresh = now
 
