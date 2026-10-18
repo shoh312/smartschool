@@ -27,6 +27,45 @@ from app.services.attendance_service import (
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
 
+@router.get("/daily-trend")
+def daily_trend(
+    days: int = 14,
+    db: Session = Depends(get_db),
+    actor: AuthActor = Depends(get_current_actor),
+):
+    """Per-day present/late/absent counts for the actor's school over the last
+    `days` days -- one small aggregate instead of shipping every row."""
+    from datetime import timedelta
+    from sqlalchemy import func
+
+    if actor.role == "director":
+        school_id = actor.director.school_id
+    elif actor.role == "teacher":
+        school_id = actor.teacher.school_id
+    else:
+        raise HTTPException(status_code=403, detail="Director or teacher access required")
+
+    days = max(1, min(days, 120))
+    since = date.today() - timedelta(days=days - 1)
+    rows = (
+        db.query(Attendance.attendance_date, Attendance.status, func.count(Attendance.id))
+        .join(Student, Student.id == Attendance.student_id)
+        .filter(Student.school_id == school_id, Attendance.attendance_date >= since)
+        .group_by(Attendance.attendance_date, Attendance.status)
+        .all()
+    )
+    per: dict[date, dict[str, int]] = {}
+    for d, status, n in rows:
+        bucket = per.setdefault(d, {"present": 0, "late": 0, "absent": 0})
+        if status in ("present", "left_school"):
+            bucket["present"] += n
+        elif status == "late":
+            bucket["late"] += n
+        elif status == "absent":
+            bucket["absent"] += n
+    return [{"date": d.isoformat(), **per[d]} for d in sorted(per)]
+
+
 @router.get("/history", response_model=list[AttendanceResponse])
 def get_attendance_history(
     student_id: int | None = None,
