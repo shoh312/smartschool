@@ -928,3 +928,48 @@ def set_superadmin(
         "id": target.id, "email": target.email, "school_id": target.school_id,
         "is_superadmin": target.is_superadmin, "superadmins_remaining": remaining,
     }
+
+
+# --------------------------------------------------------------------------
+# Remove leftover empty classes (0 students) from a school -- e.g. the old
+# default classes still sitting next to a training centre's real groups.
+# Keeps any class that still has a camera attached. Superadmin-only.
+
+@router.post("/demo/delete-empty-classes")
+def delete_empty_classes(
+    school_id: int = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    _sa: Director = Depends(get_current_superadmin),
+):
+    from app.models.camera_model import Camera
+
+    class_ids = [r[0] for r in db.query(Class.id).filter(Class.school_id == school_id).all()]
+    if not class_ids:
+        return {"school_id": school_id, "deleted": 0, "kept_with_students": 0, "kept_with_camera": 0}
+
+    with_students = {
+        r[0] for r in db.query(Student.class_id).filter(
+            Student.class_id.in_(class_ids), Student.class_id.isnot(None)
+        ).distinct().all()
+    }
+    with_camera = {r[0] for r in db.query(Camera.class_id).filter(Camera.class_id.in_(class_ids)).distinct().all()}
+
+    empty = [cid for cid in class_ids if cid not in with_students and cid not in with_camera]
+    deleted = 0
+    if empty:
+        lesson_ids = [r[0] for r in db.query(Lesson.id).filter(Lesson.class_id.in_(empty)).all()]
+        if lesson_ids:
+            db.query(LessonAttendance).filter(LessonAttendance.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
+            db.query(LessonLog).filter(LessonLog.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
+            db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).delete(synchronize_session=False)
+        db.query(TeacherClass).filter(TeacherClass.class_id.in_(empty)).delete(synchronize_session=False)
+        deleted = db.query(Class).filter(Class.id.in_(empty)).delete(synchronize_session=False)
+        db.commit()
+
+    return {
+        "school_id": school_id,
+        "deleted": deleted,
+        "kept_with_students": len(with_students),
+        "kept_with_camera": len(with_camera),
+        "remaining": db.query(Class).filter(Class.school_id == school_id).count(),
+    }
