@@ -48,6 +48,7 @@ import tj.cict.smartflow.ui.director.ClassDetailScreen
 import tj.cict.smartflow.ui.director.DirectorJournalScreen
 import tj.cict.smartflow.ui.director.ClassesScreen
 import tj.cict.smartflow.ui.director.DirectorAnalyticsScreen
+import tj.cict.smartflow.ui.director.DirectorRankingScreen
 import tj.cict.smartflow.ui.director.DirectorAnnouncementsScreen
 import tj.cict.smartflow.ui.director.DirectorCalendarScreen
 import tj.cict.smartflow.ui.director.DirectorHomeScreen
@@ -316,7 +317,8 @@ private fun DirectorGraph(name: String, onSignOut: () -> Unit) {
                     onTeachers = { nav.navigate(TeachersRoute) }, onCameras = { nav.navigate(CamerasRoute) },
                 )
             }
-            composable<AnalyticsRoute> { DirectorAnalyticsScreen(schoolVm, bottomPadding = padding, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) }) }
+            composable<AnalyticsRoute> { DirectorAnalyticsScreen(schoolVm, bottomPadding = padding, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) }, onOpenRanking = { nav.navigate(AnalyticsRankingRoute) }) }
+            composable<AnalyticsRankingRoute> { DirectorRankingScreen(schoolVm, onBack = { nav.popBackStack() }, onOpenStudent = { id, name -> nav.navigate(StudentRatingRoute(id, name)) }) }
             composable<StudentRatingRoute> { e ->
                 val r = e.toRoute<StudentRatingRoute>()
                 StudentRatingScreen(r.studentId, r.name, onBack = { nav.popBackStack() })

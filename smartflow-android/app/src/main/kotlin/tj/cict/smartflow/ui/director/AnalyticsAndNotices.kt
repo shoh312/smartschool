@@ -52,6 +52,13 @@ import java.time.LocalDate
 import java.time.YearMonth
 import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
@@ -97,38 +104,49 @@ import tj.cict.smartflow.ui.theme.smart
 
 // ================================================================= Analytics
 
+/** The analytics tab: school summary + top three, the attendance trend, classes. */
 @Composable
-fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpenStudent: (Int, String) -> Unit, vm: DirectorAnalyticsViewModel = koinViewModel()) {
+fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpenStudent: (Int, String) -> Unit, onOpenRanking: () -> Unit, vm: DirectorAnalyticsViewModel = koinViewModel()) {
+    LaunchedEffect(Unit) { vm.reload() }
+    val ui by vm.ui.collectAsStateWithLifecycle()
+    val school by schoolVm.ui.collectAsStateWithLifecycle()
+    Column(Modifier.fillMaxSize()) {
+        ScreenHeader(stringResource(R.string.analytics_title))
+        val board = (ui.schoolRanking as? UiState.Ready)?.data.orEmpty()
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            when (val r = ui.schoolRanking) {
+                UiState.Loading -> item { SkeletonList(rows = 3, rowHeight = 60.dp) }
+                is UiState.Failed -> item { ErrorState(r.error.message(), onRetry = vm::reload) }
+                is UiState.Ready -> if (board.isNotEmpty()) item {
+                    AnalyticsBlock(board, school.groupMode, onDetails = onOpenRanking, onOpenStudent = onOpenStudent)
+                }
+            }
+            (ui.trend as? UiState.Ready)?.data?.let { days -> item { AttendanceTrendCard(days) } }
+            val byClass = board.filter { it.overallAverage != null }.groupBy { it.className ?: "—" }
+                .map { (k, v) -> k to v.mapNotNull { it.overallAverage }.average() }.sortedByDescending { it.second }
+            if (byClass.isNotEmpty()) item { ClassAveragesCard(byClass, school.groupMode) }
+        }
+    }
+}
+
+/** "Details": the full ranking and the needs-attention list, two tabs. */
+@Composable
+fun DirectorRankingScreen(schoolVm: SchoolViewModel, onBack: () -> Unit, onOpenStudent: (Int, String) -> Unit, vm: DirectorAnalyticsViewModel = koinViewModel()) {
     LaunchedEffect(Unit) { vm.load() }
     val ui by vm.ui.collectAsStateWithLifecycle()
     val school by schoolVm.ui.collectAsStateWithLifecycle()
     val c = MaterialTheme.smart
+    val bottomPadding = 0.dp
     var tab by rememberSaveable { mutableStateOf(0) }
 
-    Column(Modifier.fillMaxSize()) {
-        ScreenHeader(stringResource(R.string.analytics_title))
+    PageBackground { Column(Modifier.fillMaxSize()) {
+        ScreenHeader(stringResource(R.string.action_ranking), onBack = onBack)
         SegmentRow(Modifier.padding(horizontal = 20.dp)) {
-            Segment(stringResource(R.string.analytics_overview), tab == 0) { tab = 0 }
-            Segment(stringResource(R.string.action_ranking), tab == 1) { tab = 1 }
-            Segment(stringResource(R.string.attention_title), tab == 2) { tab = 2 }
+            Segment(stringResource(R.string.action_ranking), tab == 0) { tab = 0 }
+            Segment(stringResource(R.string.attention_title), tab == 1) { tab = 1 }
         }
         VSpace(8.dp)
         if (tab == 0) {
-            val board = (ui.schoolRanking as? UiState.Ready)?.data.orEmpty()
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                when (val r = ui.schoolRanking) {
-                    UiState.Loading -> item { SkeletonList(rows = 3, rowHeight = 60.dp) }
-                    is UiState.Failed -> item { ErrorState(r.error.message(), onRetry = vm::reload) }
-                    is UiState.Ready -> if (board.isNotEmpty()) item {
-                        AnalyticsBlock(board, school.groupMode, onDetails = { if (ui.classId != null) vm.pickClass(null); tab = 1 }, onOpenStudent = onOpenStudent)
-                    }
-                }
-                (ui.trend as? UiState.Ready)?.data?.let { days -> item { AttendanceTrendCard(days) } }
-                val byClass = board.filter { it.overallAverage != null }.groupBy { it.className ?: "—" }
-                    .map { (k, v) -> k to v.mapNotNull { it.overallAverage }.average() }.sortedByDescending { it.second }
-                if (byClass.isNotEmpty()) item { ClassAveragesCard(byClass, school.groupMode) }
-            }
-        } else if (tab == 1) {
             LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { Pill(stringResource(R.string.ranking_school), ui.classId == null) { vm.pickClass(null) } }
                 items(school.classList, key = { it.id }) { cls -> Pill(cls.name, ui.classId == cls.id) { vm.pickClass(cls.id) } }
@@ -177,7 +195,7 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpen
                 }
             }
         }
-    }
+    } }
 }
 
 @Composable
@@ -287,6 +305,7 @@ private fun AttendanceTrendCard(days: List<DailyTrendDto>) {
     val brand = c.brand
     val rose = c.rose
     val grid = c.border
+    val measurer = rememberTextMeasurer()
     SoftCard(contentPadding = PaddingValues(16.dp), elevation = 6.dp) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
@@ -338,8 +357,17 @@ private fun AttendanceTrendCard(days: List<DailyTrendDto>) {
                     style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 9f))),
                 )
                 val end = xy(pts.size - 1, came.last())
+                // marker: dashed drop line, the dot, and a dark bubble with today's value
+                drawLine(brand.copy(alpha = 0.45f), Offset(end.x, end.y), Offset(end.x, h), strokeWidth = 1.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
                 drawCircle(Color.White, 6.dp.toPx(), end)
                 drawCircle(brand, 4.dp.toPx(), end)
+                val label = measurer.measure("${last.roundToInt()}%", TextStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                val bw = label.size.width + 14.dp.toPx()
+                val bh = label.size.height + 6.dp.toPx()
+                val bx = (end.x - bw / 2).coerceIn(0f, w - bw)
+                val by = (end.y - bh - 10.dp.toPx()).coerceAtLeast(0f)
+                drawRoundRect(Color(0xFF1F2937), Offset(bx, by), Size(bw, bh), CornerRadius(bh / 2, bh / 2))
+                drawText(label, topLeft = Offset(bx + (bw - label.size.width) / 2, by + (bh - label.size.height) / 2))
             }
         }
         Row(Modifier.fillMaxWidth().padding(start = 34.dp, top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
