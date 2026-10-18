@@ -474,4 +474,10 @@
     <string name="live_now_count">Присутствуют %1$d из %2$d</string>
     <string name="setting_attn">Уведомления пришёл / не пришёл</string>
     <string name="setting_attn_hint">Push и SMS родителям, когда ребёнок пришёл или отсутствует.</string>
+    <string name="home_analytics">Аналитика школы</string>
+    <string name="home_top3">Топ-3 учеников</string>
+    <string name="action_details">Подробнее</string>
+    <string name="home_school_avg">Средний балл школы</string>
+    <string name="home_school_att">Средняя посещаемость</string>
+    <string name="home_ranked">%1$d учеников в рейтинге</string>
 </resources>

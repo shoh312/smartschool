@@ -474,4 +474,10 @@
     <string name="live_now_count">%1$d аз %2$d ҳозир</string>
     <string name="setting_attn">Огоҳии омад / наомад</string>
     <string name="setting_attn_hint">Push ва SMS ба волидон ҳангоми омадан ё ғоиб будан.</string>
+    <string name="home_analytics">Таҳлили мактаб</string>
+    <string name="home_top3">3 хонандаи беҳтарин</string>
+    <string name="action_details">Муфассал</string>
+    <string name="home_school_avg">Холи миёнаи мактаб</string>
+    <string name="home_school_att">Ҳозиршавии миёна</string>
+    <string name="home_ranked">%1$d хонанда дар рейтинг</string>
 </resources>

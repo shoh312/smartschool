@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,7 +69,10 @@ import tj.cict.smartflow.R
 import tj.cict.smartflow.core.util.UiState
 import tj.cict.smartflow.core.util.currentLocale
 import tj.cict.smartflow.core.util.dayMonth
+import tj.cict.smartflow.core.util.formatMetric
 import tj.cict.smartflow.core.util.hhmm
+import tj.cict.smartflow.data.dto.LeaderboardEntryDto
+import tj.cict.smartflow.ui.grades.metricColors
 import tj.cict.smartflow.core.util.message
 import tj.cict.smartflow.core.util.weekdayLong
 import tj.cict.smartflow.data.dto.CameraStatusDto
@@ -109,8 +114,15 @@ fun DirectorHomeScreen(
     onAnnouncements: () -> Unit,
     onCalendar: () -> Unit,
     onSettings: () -> Unit,
+    schoolVm: SchoolViewModel? = null,
+    onAnalytics: () -> Unit = {},
+    onOpenStudent: (Int, String) -> Unit = { _, _ -> },
+    analyticsVm: DirectorAnalyticsViewModel = koinViewModel(),
 ) {
     DisposableEffect(Unit) { liveVm.start(); onDispose { liveVm.stop() } }
+    LaunchedEffect(Unit) { analyticsVm.load() }
+    val analytics by analyticsVm.ui.collectAsStateWithLifecycle()
+    val groupMode = schoolVm?.ui?.collectAsStateWithLifecycle()?.value?.groupMode ?: false
     val ui by liveVm.ui.collectAsStateWithLifecycle()
     var profileOpen by remember { mutableStateOf(false) }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -130,6 +142,9 @@ fun DirectorHomeScreen(
                 }
             }
             item { TodayCard(ui, "${today.weekdayLong(locale)}, ${today.dayMonth(locale)}", Modifier.padding(horizontal = 20.dp)) }
+            (analytics.ranking as? UiState.Ready)?.data?.takeIf { it.isNotEmpty() }?.let { board ->
+                item { AnalyticsBlock(board, groupMode, onAnalytics, onOpenStudent, Modifier.padding(horizontal = 20.dp)) }
+            }
             if (ui.cameras.isNotEmpty()) {
                 item { SectionTitle(stringResource(R.string.cameras_title), Modifier.padding(horizontal = 20.dp, vertical = 2.dp), trailing = { GhostButton(stringResource(R.string.action_live_video), onClick = onVideo) }) }
                 item {
@@ -161,6 +176,66 @@ fun DirectorHomeScreen(
         }
     }
     if (profileOpen) ProfileSheet(parentName = name, onDismiss = { profileOpen = false }, onSignOut = onSignOut)
+}
+
+/** School-wide summary + the top three; "Details" opens the full ranking. */
+@Composable
+private fun AnalyticsBlock(
+    board: List<LeaderboardEntryDto>,
+    groupMode: Boolean,
+    onDetails: () -> Unit,
+    onOpenStudent: (Int, String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = MaterialTheme.smart
+    val scored = board.mapNotNull { it.overallAverage }
+    val avg = scored.takeIf { it.isNotEmpty() }?.average()
+    SoftCard(modifier, contentPadding = PaddingValues(16.dp), elevation = 6.dp, onClick = onDetails) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_analytics), style = MaterialTheme.typography.titleMedium, color = c.ink)
+                Text(stringResource(R.string.home_ranked, scored.size), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+            }
+            GhostButton(stringResource(R.string.action_details), onClick = onDetails)
+        }
+        VSpace(12.dp)
+        if (avg != null) {
+            val (gc, gs) = metricColors(avg, groupMode)
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(gs).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(if (groupMode) R.string.home_school_att else R.string.home_school_avg),
+                    style = MaterialTheme.typography.labelMedium, color = c.inkSecondary, modifier = Modifier.weight(1f),
+                )
+                Text(formatMetric(avg, groupMode), style = MaterialTheme.typography.titleLarge, color = gc)
+            }
+            VSpace(12.dp)
+        }
+        Text(stringResource(R.string.home_top3), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
+        VSpace(6.dp)
+        board.take(3).forEach { e ->
+            val medal = when (e.position) { 1 -> c.amber; 2 -> Color(0xFF9CA3AF); else -> Color(0xFFC77B3F) }
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.sm)).clickable { onOpenStudent(e.studentId, "${e.lastName} ${e.firstName}") }.padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(28.dp).clip(CircleShape).background(medal.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Text("${e.position}", style = MaterialTheme.typography.labelLarge, color = medal)
+                }
+                HSpace(10.dp)
+                ChildAvatar(Child(e.studentId, e.firstName, e.lastName, e.className), 32.dp); HSpace(10.dp)
+                Column(Modifier.weight(1f)) {
+                    Text("${e.lastName} ${e.firstName}", style = MaterialTheme.typography.titleSmall, color = c.ink, maxLines = 1)
+                    e.className?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
+                }
+                e.overallAverage?.let { v ->
+                    val (gc, gs) = metricColors(v, groupMode)
+                    Box(Modifier.clip(RoundedCornerShape(999.dp)).background(gs).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                        Text(formatMetric(v, groupMode), style = MaterialTheme.typography.labelLarge, color = gc)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -259,7 +334,21 @@ fun cameraLook(cam: CameraStatusDto): Pair<String, Color> {
     }
 }
 
+/** The server sends the phase as a raw string ("ro'yxat", "kutish", ...);
+ *  never show it directly -- always resolve it to a translated label. */
+@Composable
+fun phaseLabel(phase: String?): String = when (phase) {
+    "ro'yxat" -> stringResource(R.string.cam_roll_call)
+    "qidirilmoqda" -> stringResource(R.string.cam_detecting)
+    "kutish" -> stringResource(R.string.waiting_short)
+    "dars vaqti emas", "idle" -> stringResource(R.string.cam_idle)
+    else -> stringResource(R.string.cam_connected)
+}
+
 // ========================================================= Live attendance
+
+/** How many pupils to reveal per scroll step on the live attendance list. */
+private const val LIVE_PAGE = 12
 
 @Composable
 fun LiveAttendanceScreen(liveVm: LiveViewModel, bottomPadding: Dp) {
@@ -268,6 +357,11 @@ fun LiveAttendanceScreen(liveVm: LiveViewModel, bottomPadding: Dp) {
     val c = MaterialTheme.smart
     var filter by remember { mutableStateOf<Int?>(null) }
     val classes = remember(ui.list) { ui.list.mapNotNull { r -> r.classId?.let { it to (r.className ?: "?") } }.distinct().sortedBy { it.second } }
+    // Reveal pupils in windows and grow as the list is scrolled -- "Все" no
+    // longer lays out every pupil of every class at once.
+    val listState = rememberLazyListState()
+    var shown by remember { mutableStateOf(LIVE_PAGE) }
+    LaunchedEffect(filter) { shown = LIVE_PAGE }
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(stringResource(R.string.live_title), subtitle = ui.updatedAt?.let { stringResource(R.string.live_updated, it.hhmm()) })
@@ -283,9 +377,17 @@ fun LiveAttendanceScreen(liveVm: LiveViewModel, bottomPadding: Dp) {
                 val rows = s.data.filter { filter == null || it.classId == filter }
                 if (rows.isEmpty()) { EmptyState(R.drawable.ill_door_check, stringResource(R.string.no_students)); return@Column }
                 val grouped = rows.groupBy { it.className ?: "—" }.toSortedMap()
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val total = rows.size
+                LaunchedEffect(listState, total) {
+                    snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1 }
+                        .collect { last -> if (last >= shown - 3 && shown < total) shown = (shown + LIVE_PAGE).coerceAtMost(total) }
+                }
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = bottomPadding + 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    var budget = shown  // total pupil rows still allowed in this window
                     grouped.forEach { (cls, list) ->
+                        if (budget <= 0) return@forEach
                         item(key = "h$cls") {
+                            // Counts come from the FULL group, not the shown window.
                             val state = list.firstOrNull()?.classLessonState
                             val arrived = list.count { AttendanceStatus.fromApi(it.status).arrived }
                             Row(Modifier.padding(top = 10.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -299,7 +401,9 @@ fun LiveAttendanceScreen(liveVm: LiveViewModel, bottomPadding: Dp) {
                                 }
                             }
                         }
-                        items(list.sortedWith(compareBy({ statusOrder(it.status) }, { it.lastName })), key = { it.studentId }) { r -> LiveRow(r) }
+                        val take = list.sortedWith(compareBy({ statusOrder(it.status) }, { it.lastName })).take(budget)
+                        budget -= take.size
+                        items(take, key = { it.studentId }) { r -> LiveRow(r) }
                     }
                 }
             }
@@ -328,7 +432,7 @@ private fun LiveRow(r: LiveStatusDto) {
             HSpace(12.dp)
             Column(Modifier.weight(1f)) {
                 Text("${r.lastName} ${r.firstName}", style = MaterialTheme.typography.titleSmall, color = c.ink, maxLines = 1)
-                (r.timeIn ?: r.lastSeen)?.let { Text(stringResource(R.string.arrived_at, it.hhmm()), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
+                r.timeIn?.let { Text(stringResource(R.string.arrived_at, it.hhmm()), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
             }
             if (upcoming) Chip(stringResource(R.string.waiting_short), c.inkTertiary, c.surfaceSoft) else StatusPill(status, compact = true)
         }
@@ -401,9 +505,11 @@ fun LiveVideoScreen(onBack: () -> Unit, vm: LiveVideoViewModel = koinViewModel()
             }
             VSpace(12.dp)
             list.firstOrNull { it.id == selected }?.let { cam ->
+                // Show only the camera name and its lesson -- never the RTSP/IP,
+                // which is a device credential and does not belong on screen.
                 Column(Modifier.padding(horizontal = 20.dp)) {
                     Text(cam.name, style = MaterialTheme.typography.titleMedium, color = c.ink)
-                    Text(listOfNotNull(cam.ipAddress, cam.rtspUrl).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary)
+                    lesson[selected]?.status?.className?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.inkTertiary) }
                 }
             }
             VSpace(12.dp)
@@ -435,14 +541,20 @@ private fun LessonNowPanel(now: LiveVideoViewModel.LessonNow?) {
             }
         }
         items(now.pupils, key = { it.id }) { p ->
-            val status = AttendanceStatus.fromApi(now.live[p.id]?.status)
+            val live = now.live[p.id]
+            val status = AttendanceStatus.fromApi(live?.status)
             val ok = status.arrived
             Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if (ok) c.mintSoft else c.surface).padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 ChildAvatar(Child(p.id, p.firstName, p.lastName, p.className), 28.dp); HSpace(10.dp)
-                Text("${p.lastName} ${p.firstName}", style = MaterialTheme.typography.labelMedium, color = c.ink, modifier = Modifier.weight(1f), maxLines = 1)
+                Column(Modifier.weight(1f)) {
+                    Text("${p.lastName} ${p.firstName}", style = MaterialTheme.typography.labelMedium, color = c.ink, maxLines = 1)
+                    // Only the FIRST time seen (time_in), never last_seen -- the
+                    // moment the pupil was first recognised during the arrival window.
+                    if (ok) live?.timeIn?.let { Text(stringResource(R.string.arrived_at, it.hhmm()), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary) }
+                }
                 val label = when (status) {
                     AttendanceStatus.PRESENT -> stringResource(R.string.status_present)
                     AttendanceStatus.LATE -> stringResource(R.string.status_late)
@@ -477,7 +589,7 @@ fun VideoSurface(state: VideoState, onReconnect: () -> Unit, modifier: Modifier 
             is VideoState.Silent -> Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Rounded.Videocam, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(36.dp)); VSpace(8.dp)
                 Text(stringResource(R.string.video_silent), color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                state.phase?.let { Text(it, color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall) }
+                state.phase?.let { Text(phaseLabel(it), color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall) }
             }
             VideoState.Idle -> Text(emptyHint, color = Color.White.copy(alpha = 0.7f))
         }
