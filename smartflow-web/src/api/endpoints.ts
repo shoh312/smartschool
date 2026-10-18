@@ -1,6 +1,6 @@
 import { del, get, patch, post, publicBase, put, request } from './client'
 import type {
-  AbsenceDto, AiGenerateResponse, AnalyticsDto, AnnouncementDto, AnswerOutDto, AssignmentDto, AssignmentResultsDto,
+  AbsenceDto, AttendanceMarkDto, AiGenerateResponse, AnalyticsDto, AnnouncementDto, AnswerOutDto, AssignmentDto, AssignmentResultsDto,
   AttemptResultDto, AttendanceRowDto, BlockDto, CalendarEventDto, CameraDto, CameraPositionDto, CameraStatusDto, ClassAssignmentDto,
   ClassDto, ClassSubjectAverageDto, ClassSubjectDto, DiaryEntryDto, DirectorDto, GradeDto, LeaderboardEntryDto,
   LiveStatusDto, MaterialFullDto, MaterialSummaryDto, NeedsAttentionDto, NotificationDto, SchoolSettingsDto,
@@ -52,6 +52,7 @@ export const teacher = {
   updateGrade: (id: number, b: { value?: number; comment?: string | null }) => patch<GradeDto>(`grades/${id}`, b),
   deleteGrade: (id: number) => del<void>(`grades/${id}`),
   absences: (classId: number, subject?: string | null) => get<AbsenceDto[]>('journal/absences', { class_id: classId, subject: subject ?? undefined }),
+  attendanceMarks: (classId: number, subject?: string | null) => get<AttendanceMarkDto[]>('journal/attendance', { class_id: classId, subject: subject ?? undefined }),
   diary: (classId: number, on: string) => get<DiaryEntryDto[]>('diary', { class_id: classId, on }),
   updateDiary: (lessonId: number, on: string, b: { homework?: string | null; teacher_comment?: string | null }) =>
     request<DiaryEntryDto>(`diary/${lessonId}`, { method: 'PATCH', body: b, query: { on } }),
@@ -114,6 +115,7 @@ export const director = {
 
   grades: (classId: number, subject?: string | null) => get<GradeDto[]>('grades', { class_id: classId, subject: subject ?? undefined, limit: 3000 }),
   absences: (classId: number) => get<AbsenceDto[]>('journal/absences', { class_id: classId }),
+  attendanceMarks: (classId: number) => get<AttendanceMarkDto[]>('journal/attendance', { class_id: classId }),
 
   studentAnalytics: (id: number, quarter?: number | null) => get<AnalyticsDto>(`analytics/student/${id}`, { quarter: quarter ?? undefined }),
   schoolRanking: (quarter?: number | null) => get<LeaderboardEntryDto[]>('analytics/school/ranking', { quarter: quarter ?? undefined }),

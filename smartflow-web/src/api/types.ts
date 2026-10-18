@@ -48,6 +48,7 @@ export interface GradeDto {
   quarter?: number | null
 }
 export interface AbsenceDto { student_id: number; subject: string; date: string; lesson_id: number }
+export interface AttendanceMarkDto { student_id: number; subject: string; date: string; lesson_id: number; status: string }
 export interface AttendanceRowDto {
   id: number
   student_id: number

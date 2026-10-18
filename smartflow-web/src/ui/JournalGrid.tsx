@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { AbsenceDto, GradeDto, StudentDto } from '../api/types'
+import type { AbsenceDto, AttendanceMarkDto, GradeDto, StudentDto } from '../api/types'
 import { useT } from '../i18n'
 import { Ill } from './illustrations'
 import { addDays, Avatar, fmtAvg, gradeClass, todayIso, useFmt } from './kit'
@@ -120,6 +120,96 @@ export function JournalGrid({ pupils, grades, absences, editable, onCell, onName
         <span><i className="sw absent">{t('absent_short')}</i> {t('absent_from_lesson')}</span>
         <span><i className="sw note-sw" /> {t('has_comment')}</span>
         {editable && <span><i className="sw today-sw" /> {t('today_click')}</span>}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Group/training-centre register: no grades, just "came" (✓) or "did not
+ * come" (✗) per session date. Fed by every lesson-attendance mark.
+ */
+export function AttendanceJournalGrid({ pupils, marks, onName }: {
+  pupils: StudentDto[]
+  marks: AttendanceMarkDto[]
+  onName?: (s: StudentDto) => void
+}) {
+  const { t } = useT()
+  const f = useFmt()
+  const today = todayIso()
+  const dates = useMemo(() => [...new Set(marks.map((m) => m.date))].sort(), [marks])
+  const byCell = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const a of marks) m.set(`${a.student_id}|${a.date}`, a.status)
+    return m
+  }, [marks])
+
+  if (dates.length === 0 || pupils.length === 0) return <div className="empty"><div className="ill"><Ill name="notebook" size={150} /></div><h3>{t('no_marks_yet')}</h3><p className="small">{t('journal_empty_body')}</p></div>
+
+  return (
+    <div className="journal-wrap">
+      <div className="journal">
+        <table>
+          <thead>
+            <tr>
+              <th className="name"><span>{t('pupils')}</span><span className="th-sub">{t('pupils_n', pupils.length)}</span></th>
+              {dates.map((d) => {
+                const wd = new Date(d + 'T00:00:00').getDay()
+                return (
+                  <th key={d} className={(d === today ? 'today' : '') + (wd === 0 || wd === 6 ? ' weekend' : '')}>
+                    <div className="th-d">{f.ddmm(d)}</div>
+                    <div className="th-w">{f.weekday(d)}</div>
+                  </th>
+                )
+              })}
+              <th className="avg"><span>{t('attendance_rate')}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pupils.map((p) => {
+              let came = 0, total = 0
+              for (const d of dates) {
+                const st = byCell.get(`${p.id}|${d}`)
+                if (!st) continue
+                total++
+                if (st === 'present' || st === 'late') came++
+              }
+              const rate = total ? Math.round((came / total) * 100) : null
+              return (
+                <tr key={p.id}>
+                  <td className="name">
+                    <div className="pupil" style={{ cursor: onName ? 'pointer' : 'default' }} onClick={() => onName?.(p)}>
+                      <Avatar first={p.first_name} last={p.last_name} id={p.id} size="sm" />
+                      <div className="grow ellipsis">
+                        <div className="bold small ellipsis">{p.last_name} {p.first_name}</div>
+                        <div className="tiny faint">{t('present_now', came)} / {total}</div>
+                      </div>
+                    </div>
+                  </td>
+                  {dates.map((d) => {
+                    const st = byCell.get(`${p.id}|${d}`)
+                    const came = st === 'present' || st === 'late'
+                    const cls = 'cell ' + (st ? (came ? 'g-hi' : 'absent') : 'blank')
+                    return (
+                      <td key={d} className={d === today ? 'today' : ''}>
+                        <div className={cls}>{st ? (came ? '✓' : '✕') : ''}</div>
+                      </td>
+                    )
+                  })}
+                  <td className="avg">
+                    <div className="avg-box">
+                      <span className={'grade ' + (rate == null ? 'g-none' : rate >= 90 ? 'g-hi' : rate >= 75 ? 'g-mid' : 'g-lo')}>{rate == null ? '—' : rate + '%'}</span>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="legend">
+        <span><i className="sw g-hi">✓</i> {t('came')}</span>
+        <span><i className="sw absent">✕</i> {t('did_not_come')}</span>
       </div>
     </div>
   )

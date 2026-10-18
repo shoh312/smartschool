@@ -231,6 +231,48 @@ def list_absences(
     ]
 
 
+@router.get("/journal/attendance")
+def list_attendance(
+    class_id: int,
+    subject: str | None = None,
+    db: Session = Depends(get_db),
+    actor: AuthActor = Depends(get_current_actor),
+):
+    """Every lesson-attendance mark (present/late/absent) for a class -- used by
+    the journal in group mode, where there are no grades and 'came / did not
+    come' is the whole register."""
+    if actor.role == "teacher":
+        if not teacher_can_grade_class(db, actor.teacher.id, class_id, subject):
+            raise HTTPException(status_code=403, detail="You are not assigned to teach this class")
+    elif actor.role == "director":
+        school_class = db.query(Class).filter(
+            Class.id == class_id, Class.school_id == actor.director.school_id,
+        ).first()
+        if not school_class:
+            raise HTTPException(status_code=404, detail="Class not found")
+    else:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    query = (
+        db.query(LessonAttendance, Lesson.subject)
+        .join(Lesson, Lesson.id == LessonAttendance.lesson_id)
+        .filter(Lesson.class_id == class_id)
+    )
+    if subject is not None:
+        query = query.filter(Lesson.subject == subject)
+
+    return [
+        {
+            "student_id": row.LessonAttendance.student_id,
+            "subject": row.subject,
+            "date": row.LessonAttendance.attendance_date.isoformat(),
+            "lesson_id": row.LessonAttendance.lesson_id,
+            "status": row.LessonAttendance.status,
+        }
+        for row in query.order_by(LessonAttendance.attendance_date.desc()).limit(4000).all()
+    ]
+
+
 @router.patch("/grades/{grade_id}", response_model=GradeResponse)
 def update_grade(
     grade_id: int,
