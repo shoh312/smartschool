@@ -957,11 +957,19 @@ def delete_empty_classes(
     empty = [cid for cid in class_ids if cid not in with_students and cid not in with_camera]
     deleted = 0
     if empty:
+        from app.models.announcement_model import Announcement
+        from app.models.school_event_model import SchoolEvent
+
         lesson_ids = [r[0] for r in db.query(Lesson.id).filter(Lesson.class_id.in_(empty)).all()]
         if lesson_ids:
             db.query(LessonAttendance).filter(LessonAttendance.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
             db.query(LessonLog).filter(LessonLog.lesson_id.in_(lesson_ids)).delete(synchronize_session=False)
             db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).delete(synchronize_session=False)
+        # other tables that point at a class
+        db.query(Grade).filter(Grade.class_id.in_(empty)).delete(synchronize_session=False)
+        db.query(MaterialAssignment).filter(MaterialAssignment.class_id.in_(empty)).delete(synchronize_session=False)
+        db.query(Announcement).filter(Announcement.class_id.in_(empty)).delete(synchronize_session=False)
+        db.query(SchoolEvent).filter(SchoolEvent.class_id.in_(empty)).delete(synchronize_session=False)
         db.query(TeacherClass).filter(TeacherClass.class_id.in_(empty)).delete(synchronize_session=False)
         deleted = db.query(Class).filter(Class.id.in_(empty)).delete(synchronize_session=False)
         db.commit()
