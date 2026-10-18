@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { director } from '../../api/endpoints'
 import type { ClassDto, StudentDto } from '../../api/types'
@@ -26,6 +26,21 @@ export function Students() {
       .sort((a, b) => a.last_name.localeCompare(b.last_name))
   }, [students.data, q, cls])
 
+  // Render only a window of rows and grow it as the user scrolls to the bottom,
+  // so opening the list never mounts hundreds of rows at once.
+  const PAGE = 12
+  const [shown, setShown] = useState(PAGE)
+  useEffect(() => { setShown(PAGE) }, [q, cls])
+  const paged = list.slice(0, shown)
+  const sentinel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = sentinel.current
+    if (!el || shown >= list.length) return
+    const io = new IntersectionObserver((e) => { if (e[0].isIntersecting) setShown((n) => Math.min(n + PAGE, list.length)) })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [shown, list.length])
+
   async function remove() {
     if (!deleting) return
     try { await director.deleteStudent(deleting.id); toast(t('deleted')); students.reload() } catch (e) { toast(errorText(e)) }
@@ -52,7 +67,7 @@ export function Students() {
           <table className="table">
             <thead><tr><th style={{ width: 56 }}></th><th>{t('name')}</th><th>{t('class')}</th><th>{t('parent')}</th><th>{t('login')}</th><th></th></tr></thead>
             <tbody>
-              {list.map((s) => (
+              {paged.map((s) => (
                 <tr key={s.id} className="clickable" onClick={() => nav(`/students/${s.id}`)}>
                   <td><Avatar first={s.first_name} last={s.last_name} id={s.id} /></td>
                   <td className="bold">{s.last_name} {s.first_name}</td>
@@ -67,6 +82,11 @@ export function Students() {
               ))}
             </tbody>
           </table>
+          {shown < list.length && (
+            <div ref={sentinel} className="row center muted small" style={{ padding: 12, justifyContent: 'center' }}>
+              {t('loading_more', list.length - shown)}
+            </div>
+          )}
         </div>
       )}
       {editing && <StudentForm student={editing === 'new' ? null : editing} classes={classes.data ?? []} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); students.reload() }} />}

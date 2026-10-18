@@ -169,6 +169,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
 
   // ---- students
   students_n: ['{0} хонанда', '{0} учеников', '{0} pupils'],
+  loading_more: ['Боз {0} нафар… (поён кашед)', 'Ещё {0}… (прокрутите вниз)', 'Load {0} more…'],
   add_student: ['Хонандаи нав', 'Новый ученик', 'New pupil'],
   add_student_lead: ['Акс лозим аст — камераҳо аз рӯи он мешиносанд.', 'Нужна фотография — по ней камеры узнают ученика.', 'A photo is required — the cameras recognise the pupil by it.'],
   edit_student: ['Таҳрири хонанда', 'Изменить ученика', 'Edit pupil'],
