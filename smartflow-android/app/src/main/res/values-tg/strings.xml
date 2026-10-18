@@ -487,4 +487,6 @@
     <string name="legend_came">Омад</string>
     <string name="legend_absent">Ғоиб</string>
     <string name="class_averages">Аз рӯи синфҳо</string>
+    <string name="avg_all_pupils">Аз рӯи ҳамаи хонандагон</string>
+    <string name="avg_ring_label">Бали миёна</string>
 </resources>

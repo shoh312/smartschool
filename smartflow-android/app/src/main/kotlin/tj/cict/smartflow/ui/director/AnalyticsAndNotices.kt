@@ -52,6 +52,8 @@ import java.time.LocalDate
 import java.time.YearMonth
 import org.koin.androidx.compose.koinViewModel
 import tj.cict.smartflow.R
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -117,8 +119,11 @@ fun DirectorAnalyticsScreen(schoolVm: SchoolViewModel, bottomPadding: Dp, onOpen
             when (val r = ui.schoolRanking) {
                 UiState.Loading -> item { SkeletonList(rows = 3, rowHeight = 60.dp) }
                 is UiState.Failed -> item { ErrorState(r.error.message(), onRetry = vm::reload) }
-                is UiState.Ready -> if (board.isNotEmpty()) item {
-                    AnalyticsBlock(board, school.groupMode, onDetails = onOpenRanking, onOpenStudent = onOpenStudent)
+                is UiState.Ready -> if (board.isNotEmpty()) {
+                    board.mapNotNull { it.overallAverage }.takeIf { it.isNotEmpty() }?.average()?.let { avg ->
+                        item { SchoolAverageCard(avg, school.groupMode) }
+                    }
+                    item { AnalyticsBlock(board, school.groupMode, onDetails = onOpenRanking, onOpenStudent = onOpenStudent) }
                 }
             }
             (ui.trend as? UiState.Ready)?.data?.let { days -> item { AttendanceTrendCard(days) } }
@@ -240,7 +245,6 @@ private fun AnalyticsBlock(
 ) {
     val c = MaterialTheme.smart
     val scored = board.mapNotNull { it.overallAverage }
-    val avg = scored.takeIf { it.isNotEmpty() }?.average()
     SoftCard(modifier, contentPadding = PaddingValues(16.dp), elevation = 6.dp, onClick = onDetails) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -250,17 +254,6 @@ private fun AnalyticsBlock(
             GhostButton(stringResource(R.string.action_details), onClick = onDetails)
         }
         VSpace(12.dp)
-        if (avg != null) {
-            val (gc, gs) = metricColors(avg, groupMode)
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.md)).background(gs).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(if (groupMode) R.string.home_school_att else R.string.home_school_avg),
-                    style = MaterialTheme.typography.labelMedium, color = c.inkSecondary, modifier = Modifier.weight(1f),
-                )
-                Text(formatMetric(avg, groupMode), style = MaterialTheme.typography.titleLarge, color = gc)
-            }
-            VSpace(12.dp)
-        }
         Text(stringResource(R.string.home_top3), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary)
         VSpace(6.dp)
         board.take(3).forEach { e ->
@@ -289,6 +282,40 @@ private fun AnalyticsBlock(
     }
 }
 
+
+/** The one number: the school average in a ring (attendance % in group mode). */
+@Composable
+private fun SchoolAverageCard(avg: Double, groupMode: Boolean) {
+    val c = MaterialTheme.smart
+    val brand = c.brand
+    val track = c.brandTint
+    val progress by animateFloatAsState((avg / (if (groupMode) 100.0 else 10.0)).toFloat().coerceIn(0f, 1f), tween(900), label = "avgRing")
+    SoftCard(contentPadding = PaddingValues(18.dp), elevation = 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val stroke = 11.dp.toPx()
+                    val inset = stroke / 2
+                    val arcSize = Size(size.width - stroke, size.height - stroke)
+                    drawArc(track, -90f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+                    drawArc(brand, -90f, 360f * progress, false, Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(formatMetric(avg, groupMode), style = MaterialTheme.typography.headlineSmall, color = c.ink, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.avg_ring_label), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+                }
+            }
+            HSpace(18.dp)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(if (groupMode) R.string.home_school_att else R.string.home_school_avg),
+                    style = MaterialTheme.typography.titleLarge, color = c.ink, fontWeight = FontWeight.Bold,
+                )
+                Text(stringResource(R.string.avg_all_pupils), style = MaterialTheme.typography.bodyMedium, color = c.inkSecondary)
+            }
+        }
+    }
+}
 
 /** Share of pupils who came / were absent, day by day -- the director's pulse. */
 @Composable

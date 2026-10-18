@@ -512,4 +512,6 @@
     <string name="legend_came">Present</string>
     <string name="legend_absent">Absent</string>
     <string name="class_averages">By class</string>
+    <string name="avg_all_pupils">Across all pupils</string>
+    <string name="avg_ring_label">Average</string>
 </resources>

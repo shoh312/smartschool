@@ -487,4 +487,6 @@
     <string name="legend_came">Пришли</string>
     <string name="legend_absent">Отсутствовали</string>
     <string name="class_averages">По классам</string>
+    <string name="avg_all_pupils">По всем ученикам</string>
+    <string name="avg_ring_label">Средний</string>
 </resources>
