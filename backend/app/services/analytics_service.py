@@ -1,9 +1,11 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.models.attendance_model import Attendance
 from app.models.class_model import Class
 from app.models.journal_model import Grade
 from app.models.lesson_attendance_model import LessonAttendance
+from app.models.school_model import School
 from app.models.student import Student
 from app.utils.academic_calendar import current_quarter, current_school_year, quarter_date_range
 
@@ -73,6 +75,49 @@ def overall_averages_for_students(
     return {student_id: round(float(avg), 2) for student_id, avg in rows}
 
 
+# --- group mode (training centre): rank by attendance %, not by grades ------
+def _school_group_mode(db: Session, student_ids: list[int]) -> bool:
+    """Group mode is a per-school flag; all ids in one ranking call share a school."""
+    if not student_ids:
+        return False
+    sid = db.query(Student.school_id).filter(Student.id == student_ids[0]).scalar()
+    if sid is None:
+        return False
+    return bool(db.query(School.group_mode).filter(School.id == sid).scalar())
+
+
+def attendance_averages_for_students(
+    db: Session, student_ids: list[int], quarter: int, school_year: int
+) -> dict[int, float]:
+    """Each student's attendance rate (%) over the quarter, from daily Attendance."""
+    if not student_ids:
+        return {}
+    since, until = quarter_date_range(quarter, school_year)
+    rows = db.query(Attendance.student_id, Attendance.status).filter(
+        Attendance.student_id.in_(student_ids),
+        Attendance.attendance_date >= since,
+        Attendance.attendance_date <= until,
+    ).all()
+    agg: dict[int, list[int]] = {}
+    for sid, status in rows:
+        tp = agg.setdefault(sid, [0, 0])
+        tp[0] += 1
+        if status in ("present", "late"):
+            tp[1] += 1
+    return {sid: round(present / total * 100, 1) for sid, (total, present) in agg.items() if total > 0}
+
+
+def scores_for_students(
+    db: Session, student_ids: list[int], quarter: int, school_year: int, group_mode: bool | None = None
+) -> dict[int, float]:
+    """The ranking metric: grade average normally, attendance % in group mode."""
+    if group_mode is None:
+        group_mode = _school_group_mode(db, student_ids)
+    if group_mode:
+        return attendance_averages_for_students(db, student_ids, quarter, school_year)
+    return overall_averages_for_students(db, student_ids, quarter, school_year)
+
+
 def _ranked_ids(student_ids: list[int], averages: dict[int, float]) -> list[int]:
     return sorted(
         student_ids,
@@ -86,9 +131,10 @@ def _group_average_from(averages: dict[int, float]) -> float | None:
 
 
 def rank_and_group_average(
-    db: Session, student_ids: list[int], student_id: int, quarter: int, school_year: int
+    db: Session, student_ids: list[int], student_id: int, quarter: int, school_year: int,
+    group_mode: bool | None = None,
 ) -> tuple[int | None, int, float | None]:
-    averages = overall_averages_for_students(db, student_ids, quarter, school_year)
+    averages = scores_for_students(db, student_ids, quarter, school_year, group_mode)
     ranked = _ranked_ids(student_ids, averages)
     out_of = len(student_ids)
     try:
@@ -98,10 +144,12 @@ def rank_and_group_average(
     return position, out_of, _group_average_from(averages)
 
 
-def leaderboard(db: Session, student_ids: list[int], quarter: int, school_year: int) -> list[dict]:
+def leaderboard(
+    db: Session, student_ids: list[int], quarter: int, school_year: int, group_mode: bool | None = None
+) -> list[dict]:
     if not student_ids:
         return []
-    averages = overall_averages_for_students(db, student_ids, quarter, school_year)
+    averages = scores_for_students(db, student_ids, quarter, school_year, group_mode)
     students = {s.id: s for s in db.query(Student).filter(Student.id.in_(student_ids)).all()}
     class_ids = {s.class_id for s in students.values() if s.class_id is not None}
     class_names = {c.id: c.name for c in db.query(Class).filter(Class.id.in_(class_ids)).all()}
@@ -217,15 +265,21 @@ def build_student_overview(
     quarter = quarter or current_quarter()
     school_year = school_year if school_year is not None else current_school_year()
 
-    subject_rows = subject_averages(db, student.id, quarter, school_year)
-    subject_breakdown = sorted(
-        (
-            {"subject": subject, "average": avg, "grade_count": count}
-            for subject, avg, count in subject_rows
-        ),
-        key=lambda entry: entry["average"],
-        reverse=True,
-    )
+    group_mode = bool(db.query(School.group_mode).filter(School.id == student.school_id).scalar()) if student.school_id else False
+
+    if group_mode:
+        # training centre: no grades -- attendance is the whole story
+        subject_breakdown: list[dict] = []
+    else:
+        subject_rows = subject_averages(db, student.id, quarter, school_year)
+        subject_breakdown = sorted(
+            (
+                {"subject": subject, "average": avg, "grade_count": count}
+                for subject, avg, count in subject_rows
+            ),
+            key=lambda entry: entry["average"],
+            reverse=True,
+        )
 
     school_class = db.query(Class).filter(Class.id == student.class_id).first() if student.class_id else None
 
@@ -237,9 +291,11 @@ def build_student_overview(
     )
     school_ids = school_student_ids(db, student.school_id) if student.school_id else []
 
-    class_pos, class_out, class_avg = rank_and_group_average(db, class_ids, student.id, quarter, school_year)
-    parallel_pos, parallel_out, parallel_avg = rank_and_group_average(db, parallel_ids, student.id, quarter, school_year)
-    school_pos, school_out, school_avg = rank_and_group_average(db, school_ids, student.id, quarter, school_year)
+    class_pos, class_out, class_avg = rank_and_group_average(db, class_ids, student.id, quarter, school_year, group_mode)
+    parallel_pos, parallel_out, parallel_avg = rank_and_group_average(db, parallel_ids, student.id, quarter, school_year, group_mode)
+    school_pos, school_out, school_avg = rank_and_group_average(db, school_ids, student.id, quarter, school_year, group_mode)
+
+    overall = scores_for_students(db, [student.id], quarter, school_year, group_mode).get(student.id)
 
     return {
         "student_id": student.id,
@@ -247,7 +303,7 @@ def build_student_overview(
         "last_name": student.last_name,
         "quarter": quarter,
         "school_year": school_year,
-        "overall_average": overall_average(db, student.id, quarter, school_year),
+        "overall_average": overall,
         "class_rank": {"position": class_pos, "out_of": class_out},
         "parallel_rank": {"position": parallel_pos, "out_of": parallel_out},
         "school_rank": {"position": school_pos, "out_of": school_out},

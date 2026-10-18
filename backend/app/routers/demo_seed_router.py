@@ -123,7 +123,7 @@ def seed_demo(
         raise HTTPException(status_code=400, detail=f"seed failed: {type(exc).__name__}: {exc}\n{traceback.format_exc()[-1200:]}")
 
 
-def _run_seed(db, student, class_id, teacher, since, until, present, rnd):
+def _run_seed(db, student, class_id, teacher, since, until, present, rnd, marks=True):
     student_id = student.id
     _wipe_previous(db, student_id)
 
@@ -190,8 +190,8 @@ def _run_seed(db, student, class_id, teacher, since, until, present, rnd):
                                     int(lesson.day_of_week), lesson.start_time, lesson.duration_minutes or 60, log.homework, None)
                 diary += 1
 
-        # a mark on about half the lessons the pupil attended
-        if came and rnd.random() < 0.55:
+        # a mark on about half the lessons the pupil attended (skipped in group mode)
+        if marks and came and rnd.random() < 0.55:
             value = rnd.choices([5, 6, 7, 8, 9, 10], weights=[3, 7, 14, 30, 30, 16])[0]
             comment = MARK + " " + (rnd.choice(LOW_COMMENTS) if value < 6 else rnd.choice(HIGH_COMMENTS))
             g = Grade(student_id=student_id, class_id=class_id, teacher_id=teacher.id, subject=lesson.subject or "",
@@ -828,6 +828,7 @@ def seed_school_academics(
     seed: int = Body(7, embed=True),
     limit: int = Body(200, embed=True),
     offset: int = Body(0, embed=True),
+    marks: bool = Body(True, embed=True),
     db: Session = Depends(get_db),
     _sa: Director = Depends(get_current_superadmin),
 ):
@@ -865,7 +866,7 @@ def seed_school_academics(
             continue
         rnd = random.Random(seed * 1000 + st.id)
         try:
-            r = _run_seed(db, st, cid, teacher, since, until, present, rnd)
+            r = _run_seed(db, st, cid, teacher, since, until, present, rnd, marks)
         except Exception:
             db.rollback()
             skipped += 1
