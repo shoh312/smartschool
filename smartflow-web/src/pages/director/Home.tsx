@@ -19,6 +19,8 @@ export function DirectorHome() {
   const teachers = useAsync(() => director.teachers(), [])
   const attention = useAsync(() => director.needsAttention(), [])
   const ranking = useAsync(() => director.schoolRanking(), [])
+  const settings = useAsync(() => director.settings(), [])
+  const gm = settings.data?.group_mode ?? false
   const events = useAsync(() => director.calendar(), [])
   const history = useAsync(() => director.attendanceHistory(), [])
   const [cams, setCams] = useState<CameraStatusDto[]>([])
@@ -116,8 +118,8 @@ export function DirectorHome() {
         </div>
         <div className="col" style={{ gap: 16 }}>
           <div className="card kpi">
-            <Ring value={schoolAvg} max={10} size={104} color="var(--brand)"
-              center={<b style={{ fontSize: 24 }}>{fmtAvg(schoolAvg)}</b>} sub={t('avg_overall')} />
+            <Ring value={schoolAvg} max={gm ? 100 : 10} size={104} color="var(--brand)"
+              center={<b style={{ fontSize: 24 }}>{fmtAvg(schoolAvg, gm)}</b>} sub={t('avg_overall')} />
             <div className="kpi-txt"><div className="kpi-v">{t('school_avg_title')}</div><div className="kpi-l">{t('school_avg_sub')}</div></div>
           </div>
           <div className="card kpi">
@@ -162,7 +164,7 @@ export function DirectorHome() {
           {classAvg.length > 0 && (
             <div className="card">
               <div className="card-title"><Ill name="trophy" size={30} /> {t('class_averages')}</div>
-              <BarChart data={classAvg.slice(0, 8).map((c) => ({ label: c.label.replace(/[^A-Za-z0-9# ]/g, '').slice(0, 6) || c.label, value: c.value }))} max={10} height={272} />
+              <BarChart data={classAvg.slice(0, 8).map((c) => ({ label: c.label.replace(/[^A-Za-z0-9# ]/g, '').slice(0, 6) || c.label, value: c.value }))} max={gm ? 100 : 10} height={272} />
             </div>
           )}
         </div>
@@ -182,7 +184,7 @@ export function DirectorHome() {
                     <div className="bold small">{s.last_name} {s.first_name}</div>
                     <div className="tiny faint">{s.class_name}</div>
                   </div>
-                  <Grade v={s.overall_average} />
+                  <Grade v={s.overall_average} pct={gm} />
                 </Link>
               ))}
               {attention.data.biggest_decliners.slice(0, 3).map((s) => (
@@ -213,7 +215,7 @@ export function DirectorHome() {
                     <div className="bold small">{s.last_name} {s.first_name}</div>
                     <div className="tiny faint">{s.class_name}</div>
                   </div>
-                  <Grade v={s.overall_average} />
+                  <Grade v={s.overall_average} pct={gm} />
                 </Link>
               ))}
             </div>
@@ -259,8 +261,20 @@ export function phaseText(c: CameraStatusDto, t: (k: string, ...a: (string | num
   if (!c.connected) return t('cam_offline')
   if (c.roll_call) return t('cam_roll_call')
   if (c.detecting) return t('cam_detecting')
-  if (c.phase === 'dars vaqti emas' || c.phase === 'idle') return t('cam_no_lesson')
-  return c.phase ?? t('cam_ready')
+  return phaseLabel(c.phase, t)
+}
+
+// The server reports the phase as a raw string ("ro'yxat", "kutish", ...).
+// Never surface it directly -- always map it to a translated label.
+export function phaseLabel(phase: string | null | undefined, t: (k: string, ...a: (string | number)[]) => string): string {
+  switch (phase) {
+    case "ro'yxat": return t('cam_roll_call')
+    case 'qidirilmoqda': return t('cam_detecting')
+    case 'dars vaqti emas':
+    case 'idle': return t('cam_no_lesson')
+    case 'kutish':
+    default: return t('cam_ready')
+  }
 }
 
 function Stat({ ill, v, l, tone, to }: { ill: IllName; v?: number | string; l: string; tone: string; to: string }) {

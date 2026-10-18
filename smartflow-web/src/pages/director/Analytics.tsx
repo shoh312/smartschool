@@ -14,6 +14,8 @@ export function Analytics() {
   const [tab, setTab] = useState<'ranking' | 'attention'>('ranking')
   const ranking = useAsync(() => director.schoolRanking(quarter), [quarter])
   const attention = useAsync(() => director.needsAttention(quarter), [quarter])
+  const settings = useAsync(() => director.settings(), [])
+  const gm = settings.data?.group_mode ?? false
   return (
     <>
       <TopBar title={t('nav_analytics')} sub={t('analytics_sub')}>
@@ -38,7 +40,7 @@ export function Analytics() {
                   <td style={{ width: 48 }}><Avatar first={s.first_name} last={s.last_name} id={s.student_id} size="sm" /></td>
                   <td className="bold">{s.last_name} {s.first_name}</td>
                   <td><span className="chip">{s.class_name}</span></td>
-                  <td style={{ textAlign: 'right' }}><Grade v={s.overall_average} /></td>
+                  <td style={{ textAlign: 'right' }}><Grade v={s.overall_average} pct={gm} /></td>
                 </tr>
               ))}
             </tbody>
@@ -56,7 +58,7 @@ export function Analytics() {
                 <div key={s.student_id} className="row" style={{ cursor: 'pointer', padding: '6px 0' }} onClick={() => nav(`/students/${s.student_id}`)}>
                   <Avatar first={s.first_name} last={s.last_name} id={s.student_id} size="sm" />
                   <div className="grow"><div className="bold small">{s.last_name} {s.first_name}</div><div className="tiny faint">{s.class_name} · #{s.position}/{s.out_of}</div></div>
-                  <Grade v={s.overall_average} />
+                  <Grade v={s.overall_average} pct={gm} />
                 </div>
               ))}
             </div>

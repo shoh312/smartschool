@@ -135,14 +135,17 @@ export function Avatar({ first, last, id, size }: { first: string; last: string;
   return <div className={cls}>{(last[0] ?? '') + (first[0] ?? '')}</div>
 }
 
-export function gradeClass(v?: number | null): string {
+export function gradeClass(v?: number | null, pct = false): string {
   if (v == null) return 'g-none'
+  if (pct) return v >= 90 ? 'g-hi' : v >= 75 ? 'g-mid' : 'g-lo'
   return v >= 8 ? 'g-hi' : v >= 6 ? 'g-mid' : 'g-lo'
 }
-export function Grade({ v, className }: { v?: number | null; className?: string }) {
-  return <span className={'grade ' + gradeClass(v) + (className ? ' ' + className : '')}>{v == null ? '—' : Number.isInteger(v) ? v : v.toFixed(1)}</span>
+// `pct` = group/training-centre mode: the metric is an attendance percentage, not a 0-10 grade.
+export function Grade({ v, className, pct }: { v?: number | null; className?: string; pct?: boolean }) {
+  const txt = v == null ? '—' : pct ? Math.round(v) + '%' : (Number.isInteger(v) ? String(v) : v.toFixed(1))
+  return <span className={'grade ' + gradeClass(v, pct) + (className ? ' ' + className : '')}>{txt}</span>
 }
-export const fmtAvg = (v?: number | null) => (v == null ? '—' : v.toFixed(1))
+export const fmtAvg = (v?: number | null, pct = false) => (v == null ? '—' : pct ? Math.round(v) + '%' : v.toFixed(1))
 
 export function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return <button type="button" className={'toggle' + (on ? ' on' : '')} onClick={() => onChange(!on)} aria-pressed={on} />

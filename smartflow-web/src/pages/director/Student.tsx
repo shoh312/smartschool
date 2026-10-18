@@ -15,6 +15,8 @@ export function StudentPage() {
   const students = useAsync(() => director.students(), [])
   const me = students.data?.find((s) => s.id === id)
   const grades = useAsync(async () => (me?.class_id ? (await director.grades(me.class_id)).filter((g) => g.student_id === id) : []), [me?.class_id, id])
+  const settings = useAsync(() => director.settings(), [])
+  const gm = settings.data?.group_mode ?? false
   const d = a.data
 
   return (
@@ -36,15 +38,15 @@ export function StudentPage() {
                 <p>{t('quarter_n', d.quarter)}{d.school_year ? ` · ${d.school_year}` : ''}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: -1, lineHeight: 1 }}>{fmtAvg(d.overall_average)}</div>
-                <div className="small" style={{ opacity: .8 }}>{t('overall_average')}</div>
+                <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: -1, lineHeight: 1 }}>{fmtAvg(d.overall_average, gm)}</div>
+                <div className="small" style={{ opacity: .8 }}>{gm ? t('attendance_rate') : t('overall_average')}</div>
               </div>
             </div>
           </div>
           <div className="grid c3 mb24">
-            <Rank label={t('rank_class')} pos={d.class_rank.position} of={d.class_rank.out_of} avg={d.class_average} t={t} />
-            <Rank label={t('rank_parallel')} pos={d.parallel_rank.position} of={d.parallel_rank.out_of} avg={d.parallel_average} t={t} />
-            <Rank label={t('rank_school')} pos={d.school_rank.position} of={d.school_rank.out_of} avg={d.school_average} t={t} />
+            <Rank label={t('rank_class')} pos={d.class_rank.position} of={d.class_rank.out_of} avg={d.class_average} t={t} gm={gm} />
+            <Rank label={t('rank_parallel')} pos={d.parallel_rank.position} of={d.parallel_rank.out_of} avg={d.parallel_average} t={t} gm={gm} />
+            <Rank label={t('rank_school')} pos={d.school_rank.position} of={d.school_rank.out_of} avg={d.school_average} t={t} gm={gm} />
           </div>
           <div className="grid c2">
             <div className="card">
@@ -63,7 +65,7 @@ export function StudentPage() {
               {d.lesson_attendance_rate != null && (
                 <div className="row mt16">
                   <div className="small bold grow">{t('attendance_rate')}</div>
-                  <span className={'chip ' + (d.lesson_attendance_rate >= 0.9 ? 'mint' : d.lesson_attendance_rate >= 0.75 ? 'amber' : 'rose')}>{Math.round(d.lesson_attendance_rate * 100)}%</span>
+                  <span className={'chip ' + (d.lesson_attendance_rate >= 90 ? 'mint' : d.lesson_attendance_rate >= 75 ? 'amber' : 'rose')}>{Math.round(d.lesson_attendance_rate)}%</span>
                 </div>
               )}
             </div>
@@ -89,14 +91,14 @@ export function StudentPage() {
   )
 }
 
-function Rank({ label, pos, of, avg, t }: { label: string; pos?: number | null; of: number; avg?: number | null; t: (k: string) => string }) {
+function Rank({ label, pos, of, avg, t, gm }: { label: string; pos?: number | null; of: number; avg?: number | null; t: (k: string) => string; gm?: boolean }) {
   return (
     <div className="card tight">
       <div className="stat">
         <div className="stat-ic" style={{ background: 'var(--brand-tint)', color: 'var(--brand)', fontWeight: 800, fontSize: 18 }}>{pos ?? '—'}</div>
         <div>
           <div className="stat-v" style={{ fontSize: 18 }}>{pos != null ? `${pos} / ${of}` : '—'}</div>
-          <div className="stat-l">{label}{avg != null && <span className={'grade ' + gradeClass(avg)} style={{ marginLeft: 8, height: 22, minWidth: 30, fontSize: 11 }}>{t('avg_short')} {fmtAvg(avg)}</span>}</div>
+          <div className="stat-l">{label}{avg != null && <span className={'grade ' + gradeClass(avg, gm)} style={{ marginLeft: 8, height: 22, minWidth: 30, fontSize: 11 }}>{gm ? '' : t('avg_short') + ' '}{fmtAvg(avg, gm)}</span>}</div>
         </div>
       </div>
     </div>
