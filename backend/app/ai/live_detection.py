@@ -378,15 +378,26 @@ def save_attendance(
 
 _detection_threads: list[threading.Thread] = []
 
-def _run_camera(camera_id: int, camera_source: str):
+# Watchdog bookkeeping. Each camera thread bumps its heartbeat every loop; a
+# thread that stops beating (stuck in a blocking RTSP call) is replaced. The
+# generation number retires the old thread if it ever wakes up again, so two
+# threads never drive the same camera.
+_cam_generation: dict[int, int] = {}
+_cam_heartbeat: dict[int, float] = {}
+HUNG_AFTER_SECONDS = 120
+
+
+def _run_camera(camera_id: int, camera_source: str, gen: int = 0):
     try:
-        _run_camera_once(camera_id, camera_source)
+        _run_camera_once(camera_id, camera_source, gen)
     finally:
-        _active_camera_ids.discard(camera_id)
+        if _cam_generation.get(camera_id, 0) == gen:
+            _active_camera_ids.discard(camera_id)
 
 
-def _run_camera_once(camera_id: int, camera_source: str):
+def _run_camera_once(camera_id: int, camera_source: str, gen: int = 0):
     db = SessionLocal()
+    _cam_heartbeat[camera_id] = time.time()
 
     def _class_from_positions(s, cam):
         now = datetime.now()
@@ -528,12 +539,16 @@ def _run_camera_once(camera_id: int, camera_source: str):
         return c
 
     def _connect():
-        with concurrent.futures.ThreadPoolExecutor() as ex:
-            try:
-                c = ex.submit(_open).result(timeout=35)
-            except concurrent.futures.TimeoutError:
-                print(f"[-] Camera {camera_id}: timeout connecting ({camera_source})")
-                return None
+        # Not a `with` block: leaving one waits for the worker, so a camera
+        # that never answers would hang this thread forever despite the timeout.
+        ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            c = ex.submit(_open).result(timeout=35)
+        except concurrent.futures.TimeoutError:
+            print(f"[-] Camera {camera_id}: timeout connecting ({camera_source})")
+            return None
+        finally:
+            ex.shutdown(wait=False, cancel_futures=True)
         if not c.isOpened():
             print(f"[-] Camera {camera_id}: cannot open {camera_source}")
             return None
@@ -558,6 +573,13 @@ def _run_camera_once(camera_id: int, camera_source: str):
     last_frame_hash = None
     same_frame_count = 0
     while True:
+        if _cam_generation.get(camera_id, 0) != gen:
+            # the watchdog replaced this thread while it was stuck
+            print(f"[-] Camera {camera_id}: superseded thread (gen {gen}) exiting")
+            if cap is not None:
+                cap.release()
+            return
+        _cam_heartbeat[camera_id] = time.time()
         db.rollback()
 
         now = time.time()
@@ -849,7 +871,10 @@ def _ensure_cameras():
         if cam.id in _active_camera_ids:
             continue
         src = cam.rtsp_url or CAMERA_SOURCE
-        t = threading.Thread(target=_run_camera, args=(cam.id, src), daemon=True)
+        gen = _cam_generation.get(cam.id, 0) + 1
+        _cam_generation[cam.id] = gen
+        _cam_heartbeat[cam.id] = time.time()
+        t = threading.Thread(target=_run_camera, args=(cam.id, src, gen), daemon=True)
         t.start()
         _detection_threads.append(t)
         _active_camera_ids.add(cam.id)
@@ -875,6 +900,13 @@ def start_detection_background():
     def _camera_watcher():
         while True:
             time.sleep(10)
+            now = time.time()
+            for cid in list(_active_camera_ids):
+                beat = _cam_heartbeat.get(cid)
+                if cid != 0 and beat is not None and now - beat > HUNG_AFTER_SECONDS:
+                    print(f"[-] Camera {cid}: no heartbeat for {int(now - beat)}s, restarting thread")
+                    _cam_generation[cid] = _cam_generation.get(cid, 0) + 1  # retire the stuck one
+                    _active_camera_ids.discard(cid)
             _ensure_cameras()
 
     threading.Thread(target=_camera_watcher, daemon=True).start()
