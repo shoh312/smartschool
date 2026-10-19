@@ -546,11 +546,14 @@ def _run_camera_once(camera_id: int, camera_source: str, gen: int = 0):
             c = ex.submit(_open).result(timeout=35)
         except concurrent.futures.TimeoutError:
             print(f"[-] Camera {camera_id}: timeout connecting ({camera_source})")
+            # say so: otherwise the apps keep showing the last phase ("no lesson")
+            set_camera_status(camera_id, connected=False, detecting=False, phase="ulanib bo'lmadi")
             return None
         finally:
             ex.shutdown(wait=False, cancel_futures=True)
         if not c.isOpened():
             print(f"[-] Camera {camera_id}: cannot open {camera_source}")
+            set_camera_status(camera_id, connected=False, detecting=False, phase="ulanib bo'lmadi")
             return None
         return c
 
