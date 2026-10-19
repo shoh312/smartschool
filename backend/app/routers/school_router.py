@@ -287,6 +287,61 @@ def _minutes_between(start: str, end: str) -> int:
     return max(5, (eh * 60 + em) - (sh * 60 + sm))
 
 
+@router.get("/cameras/{camera_id}/diagnose")
+def diagnose_camera(camera_id: int, db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
+    """Can the school server reach this camera right now? Tries a plain TCP
+    connect to the RTSP port, then an actual RTSP open, from the server itself.
+    Never returns the credentials."""
+    import socket
+    import time as _time
+    from urllib.parse import urlparse
+
+    camera = _require_camera(db, camera_id, director)
+    url = camera.rtsp_url or ""
+    parsed = urlparse(url)
+    host, port = parsed.hostname, parsed.port or 554
+    out = {"camera_id": camera.id, "host": host, "port": port, "path": parsed.path or None}
+    if not host:
+        out["error"] = "no host in rtsp_url"
+        return out
+
+    t0 = _time.time()
+    try:
+        with socket.create_connection((host, port), timeout=5):
+            out["tcp_ok"] = True
+    except Exception as e:  # noqa: BLE001 -- we want the reason, whatever it is
+        out["tcp_ok"] = False
+        out["tcp_error"] = f"{type(e).__name__}: {e}"
+    out["tcp_seconds"] = round(_time.time() - t0, 2)
+
+    if out["tcp_ok"]:
+        import concurrent.futures
+        import cv2
+
+        def _open():
+            c = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+            ok = c.isOpened()
+            got = False
+            if ok:
+                got, _ = c.read()
+            c.release()
+            return ok, bool(got)
+
+        t1 = _time.time()
+        ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            opened, frame = ex.submit(_open).result(timeout=20)
+            out["rtsp_opened"] = opened
+            out["rtsp_frame"] = frame
+        except concurrent.futures.TimeoutError:
+            out["rtsp_opened"] = False
+            out["rtsp_error"] = "timeout after 20s"
+        finally:
+            ex.shutdown(wait=False, cancel_futures=True)
+        out["rtsp_seconds"] = round(_time.time() - t1, 2)
+    return out
+
+
 def _require_camera(db: Session, camera_id: int, director: Director) -> Camera:
     camera = db.query(Camera).filter(
         Camera.id == camera_id,
