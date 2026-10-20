@@ -2,7 +2,7 @@
 # Vaqtinchalik masofaviy kirish (tmate). Hisob, kalit, port ochish kerak emas.
 #
 # Kompyuter oldidagi odam yozadi:
-#   bash ~/smartschool/tools/ssh-ochish.sh
+#   bash /opt/smartschool/tools/ssh-ochish.sh
 #
 # Ekranda "ssh XXXX@...tmate.io" qatori chiqadi -- shuni administratorga
 # SHAXSIY xabarda yuboradi. Oyna ochiq turguncha kirish ishlaydi;

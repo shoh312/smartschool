@@ -2,7 +2,7 @@
 # Maktab serverini Tailscale'ga ulash (masofadan SSH uchun).
 #
 # Ishlatish (kompyuter oldidagi odam bitta qator yozadi):
-#   sudo bash ~/smartschool/tools/tailscale-ulash.sh tskey-auth-XXXXXXXX
+#   sudo bash /opt/smartschool/tools/tailscale-ulash.sh tskey-auth-XXXXXXXX
 #
 # Kalit (tskey-auth-...) Tailscale admin panelidan olinadi va bu faylga
 # YOZILMAYDI -- faqat buyruqqa argument sifatida beriladi.
