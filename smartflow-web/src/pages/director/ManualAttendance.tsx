@@ -20,6 +20,7 @@ export function ManualAttendance() {
   const students = useAsync(() => director.students(), [])
   const [live, setLive] = useState<Map<number, LiveStatusDto>>(new Map())
   const [busy, setBusy] = useState<number | null>(null)
+  const [times, setTimes] = useState<Record<number, string>>({})
 
   async function refreshLive() {
     try { const l = await director.liveStatus(); setLive(new Map(l.map((x) => [x.student_id, x]))) } catch {}
@@ -29,7 +30,7 @@ export function ManualAttendance() {
   async function mark(studentId: number, status: 'present' | 'absent') {
     if (busy) return
     setBusy(studentId)
-    try { await director.markAttendance(studentId, status); await refreshLive(); toast(status === 'present' ? t('marked_present') : t('marked_absent')) } catch (e) { toast(errorText(e)) } finally { setBusy(null) }
+    try { await director.markAttendance(studentId, status, status === 'present' ? times[studentId] : undefined); await refreshLive(); toast(status === 'present' ? t('marked_present') : t('marked_absent')) } catch (e) { toast(errorText(e)) } finally { setBusy(null) }
   }
 
   if (classId == null) {
@@ -84,7 +85,9 @@ export function ManualAttendance() {
                     <td className="bold">{s.last_name} {s.first_name}<div className="tiny faint" style={{ fontWeight: 500 }}>{came && live.get(s.id)?.time_in ? f.time(live.get(s.id)!.time_in) : ''}</div></td>
                     <td><span className={'chip ' + tone}>{t('st_' + st)}</span></td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button className={'btn sm ' + (came ? 'ghost' : 'primary')} disabled={busy === s.id || came} onClick={() => mark(s.id, 'present')}><IcCheck /> {t('came')}</button>{' '}
+                      <input type="time" className="input" title={t('arrival_time')} aria-label={t('arrival_time')} style={{ width: 110, padding: '6px 8px', display: 'inline-block', verticalAlign: 'middle' }}
+                        value={times[s.id] ?? ''} onChange={(e) => setTimes((m) => ({ ...m, [s.id]: e.target.value }))} />{' '}
+                      <button className={'btn sm ' + (came && !times[s.id] ? 'ghost' : 'primary')} disabled={busy === s.id || (came && !times[s.id])} onClick={() => mark(s.id, 'present')}><IcCheck /> {t('came')}</button>{' '}
                       <button className={'btn sm ' + (st === 'absent' ? 'ghost' : 'danger')} disabled={busy === s.id || st === 'absent'} onClick={() => mark(s.id, 'absent')}><IcX /> {t('did_not_come')}</button>
                     </td>
                   </tr>

@@ -325,6 +325,8 @@ from app.services.sync_outbox_service import enqueue_attendance_event
 class ManualAttendanceRequest(BaseModel):
     student_id: int
     status: str = "present"
+    # "HH:MM" -- when the pupil actually came; empty means now.
+    time: str | None = None
 
 
 @router.post("/manual", response_model=AttendanceResponse)
@@ -337,9 +339,18 @@ def mark_manually(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     if payload.status == "present":
-        row = record_detection(db, student.id, camera_id=None, confidence=1.0)
-        if row.status == LATE:
+        came_at = None
+        if payload.time:
+            try:
+                hh, mm = map(int, payload.time.split(":")[:2])
+                came_at = _dt.now().replace(hour=hh, minute=mm, second=0, microsecond=0)
+            except ValueError:
+                raise HTTPException(status_code=422, detail="time must be HH:MM")
+        row = record_detection(db, student.id, camera_id=None, confidence=1.0, detected_at=came_at)
+        if row.status == LATE or came_at is not None:
             row.status = PRESENT
+            if came_at is not None:
+                row.time_in = came_at
             db.commit()
             db.refresh(row)
             enqueue_attendance_event(db, row, operation="upsert", notify=False)

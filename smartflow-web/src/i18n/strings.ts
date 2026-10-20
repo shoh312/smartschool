@@ -48,6 +48,7 @@ export const STRINGS: Record<string, [string, string, string]> = {
   mark: ['Қайд', 'Отметить', 'Mark'],
   came: ['Омад', 'Пришёл', 'Came'],
   did_not_come: ['Наомад', 'Не пришёл', 'Absent'],
+  arrival_time: ['Вақти омадан', 'Время прихода', 'Arrival time'],
   st_present: ['Ҳозир', 'Присутствует', 'Present'],
   st_late: ['Дер омад', 'Опоздал', 'Late'],
   st_absent: ['Ғоиб', 'Отсутствует', 'Absent'],
