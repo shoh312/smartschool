@@ -78,6 +78,8 @@ export function DonutChart({ segments, size = 172, stroke = 30, unit = '', title
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-soft)" strokeWidth={stroke} />
           {segments.map((seg, i) => {
+            // an empty segment would still draw its round cap as a dot
+            if (seg.value <= 0) return null
             const frac = seg.value / total
             const len = c * frac
             const gap = 2
