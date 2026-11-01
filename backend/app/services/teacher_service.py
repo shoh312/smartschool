@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.utils.login_guard import check_login_allowed, clear_login_failures, record_login_failure
 from app.models.class_model import Class
 from app.models.teacher_model import Teacher, TeacherClass
 from app.utils.security import create_jwt_access_token, hash_password, verify_password
@@ -34,14 +35,18 @@ def create_teacher(
 
 
 def authenticate_teacher(db: Session, email: str, password: str) -> Teacher:
+    guard_key = "teacher:" + email.lower()
+    check_login_allowed(guard_key)
     teacher = db.query(Teacher).filter(Teacher.email == email.lower()).first()
     if not teacher or not verify_password(password, teacher.hashed_password):
+        record_login_failure(guard_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid_credentials",
         )
     if not teacher.is_active:
         raise HTTPException(status_code=403, detail="account_inactive")
+    clear_login_failures(guard_key)
     return teacher
 
 

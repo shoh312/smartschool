@@ -80,6 +80,10 @@ services:
       PUBLIC_SERVER_URL: ${PUBLIC_SERVER_URL:-}
       PUBLIC_SERVER_API_KEY: ${PUBLIC_SERVER_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # 1 = eski LAN ilovasi uchun telefon raqami bilan (parolsiz) kirish. Default: o'chiq.
+      LEGACY_PARENT_LOGIN: ${LEGACY_PARENT_LOGIN:-0}
+      # 1 = /demo/* soxta ma'lumot generatorlari (faqat demo server uchun). Default: o'chiq.
+      DEMO_ENDPOINTS: ${DEMO_ENDPOINTS:-0}
       SMS_PROVIDER: ${SMS_PROVIDER:-}
       SMS_ROBITA_BASE: ${SMS_ROBITA_BASE:-https://sms.robita.tj}
       SMS_ROBITA_LOGIN: ${SMS_ROBITA_LOGIN:-}

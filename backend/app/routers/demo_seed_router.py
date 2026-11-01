@@ -49,8 +49,16 @@ from app.services.sync_outbox_service import (
     enqueue_student_analytics_event,
 )
 from app.utils.academic_calendar import quarter_for_date, school_year_for_date
+from app.utils.config import settings
 
 router = APIRouter(tags=["demo"])
+
+
+def _require_demo_enabled() -> None:
+    # The generators below invent or wipe pupils, marks and attendance --
+    # only for a demo install with DEMO_ENDPOINTS=1, never a real school.
+    if not settings.demo_endpoints:
+        raise HTTPException(status_code=404, detail="Not Found")
 
 MARK = "[demo]"
 DEMO_CONF = -1.0   # confidence sentinel: no real detection ever writes a negative value
@@ -90,7 +98,7 @@ def _wipe_previous(db: Session, student_id: int):
     db.flush()
 
 
-@router.post("/students/{student_id}/seed-demo")
+@router.post("/students/{student_id}/seed-demo", dependencies=[Depends(_require_demo_enabled)])
 def seed_demo(
     student_id: int,
     since: date = date(2026, 1, 1),
@@ -280,7 +288,7 @@ def _delete_students(db, ids):
         db.commit()
 
 
-@router.post("/demo/bulk-wipe")
+@router.post("/demo/bulk-wipe", dependencies=[Depends(_require_demo_enabled)])
 def bulk_wipe(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
     ids = _seeded_ids(db, director.school_id)
     if ids:
@@ -296,7 +304,7 @@ def _translit(name: str) -> str:
     return "".join(m.get(ch, "") for ch in name.lower())
 
 
-@router.post("/demo/rebalance")
+@router.post("/demo/rebalance", dependencies=[Depends(_require_demo_enabled)])
 def rebalance(
     per_class: int = 18,
     per_subject: int = 5,
@@ -445,7 +453,7 @@ def rebalance(
     }
 
 
-@router.post("/demo/bulk-seed")
+@router.post("/demo/bulk-seed", dependencies=[Depends(_require_demo_enabled)])
 def bulk_seed(
     per_class: int = 18,
     per_subject: int = 5,
@@ -490,7 +498,7 @@ def _reassign_teacher_refs(db, ids, keeper_id):
     db.query(Teacher).filter(Teacher.id.in_(ids)).delete(synchronize_session=False)
 
 
-@router.post("/demo/fix-teachers")
+@router.post("/demo/fix-teachers", dependencies=[Depends(_require_demo_enabled)])
 def fix_teachers(
     total: int = 100,
     db: Session = Depends(get_db),
@@ -566,7 +574,7 @@ def fix_teachers(
     return {"removed": removed, "created": created, "teachers_total": final}
 
 
-@router.post("/demo/reset")
+@router.post("/demo/reset", dependencies=[Depends(_require_demo_enabled)])
 def reset(db: Session = Depends(get_db), director: Director = Depends(get_current_director)):
     """Undo the demo: remove all seeded pupils and demo teachers, and drop the
     now-empty classes, leaving the school's real pupils, teachers and classes."""
@@ -608,7 +616,7 @@ def reset(db: Session = Depends(get_db), director: Director = Depends(get_curren
     }
 
 
-@router.post("/demo/pack-classes")
+@router.post("/demo/pack-classes", dependencies=[Depends(_require_demo_enabled)])
 def pack_classes(
     count: int = 15,
     db: Session = Depends(get_db),
@@ -820,7 +828,7 @@ def import_bulk_school(
 # wipes its own previous demo rows. Call in batches via limit/offset to keep
 # each request short.
 
-@router.post("/demo/seed-school-academics")
+@router.post("/demo/seed-school-academics", dependencies=[Depends(_require_demo_enabled)])
 def seed_school_academics(
     school_id: int = Body(..., embed=True),
     since: date = Body(date(2026, 9, 1), embed=True),

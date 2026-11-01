@@ -25,6 +25,12 @@ class Settings:
     public_server_url = os.getenv("PUBLIC_SERVER_URL", "http://localhost:8200")
     public_server_api_key = os.getenv("PUBLIC_SERVER_API_KEY", "")
     gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    # Old LAN-only parent app login (phone number, no password). Off by
+    # default: parents sign in on the public server with password / SMS code.
+    legacy_parent_login = os.getenv("LEGACY_PARENT_LOGIN", "0") == "1"
+    # /demo/* data generators. Off in production -- they fabricate or delete
+    # pupils, marks and attendance.
+    demo_endpoints = os.getenv("DEMO_ENDPOINTS", "0") == "1"
 
     sms_provider = os.getenv("SMS_PROVIDER", "")
     sms_robita_base = os.getenv("SMS_ROBITA_BASE", "https://sms.robita.tj")

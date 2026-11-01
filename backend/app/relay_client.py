@@ -18,6 +18,15 @@ RECONNECT_MAX = 60
 
 current_relay_secret: str | None = None
 
+# Paths the relay refuses to forward from the internet: the API map, and the
+# old phone-number-only parent login. They still work on the school LAN.
+RELAY_BLOCKED_PATHS = ("/docs", "/redoc", "/openapi.json", "/auth/login", "/auth/register")
+
+
+def _relay_blocked(path: str) -> bool:
+    path = "/" + path.lstrip("/").split("?", 1)[0].rstrip("/")
+    return any(path == p or path.startswith(p + "/") for p in RELAY_BLOCKED_PATHS)
+
 
 def _tunnel_url() -> str:
     base = settings.public_server_url.rstrip("/")
@@ -92,6 +101,13 @@ async def _answer_http(client: httpx.AsyncClient, payload: dict, send_json) -> N
     request_id = payload.get("id")
     try:
         path = payload.get("path", "/")
+        if _relay_blocked(path):
+            await send_json({
+                "type": "http_response", "id": request_id, "status": 404,
+                "headers": {"content-type": "application/json"},
+                "body_b64": base64.b64encode(b'{"detail":"Not Found"}').decode("ascii"),
+            })
+            return
         query = payload.get("query") or ""
         headers = {k: v for k, v in (payload.get("headers") or {}).items()}
         body = base64.b64decode(payload.get("body_b64") or "")

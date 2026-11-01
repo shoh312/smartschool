@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,6 +14,7 @@ from app.schemas.auth_schema import (
     TokenResponse,
     ParentRegisterRequest,
 )
+from app.utils.config import settings
 from app.services.auth_service import (
     authenticate_director,
     change_director_password,
@@ -27,8 +28,16 @@ from app.services.auth_service import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _require_legacy_parent_login() -> None:
+    # Phone number alone is not proof of identity, so these stay closed
+    # unless LEGACY_PARENT_LOGIN=1 is set for an offline LAN-only install.
+    if not settings.legacy_parent_login:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+
 @router.post("/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    _require_legacy_parent_login()
     result = check_or_register_parent(db, phone=payload.phone)
     if result["status"] == "register":
         return {"status": "register"}
@@ -49,6 +58,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/register/complete")
 def register_complete(payload: ParentRegisterRequest, db: Session = Depends(get_db)):
+    _require_legacy_parent_login()
     parent, token = complete_parent_registration(
         db,
         phone=payload.phone,

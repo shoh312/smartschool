@@ -13,6 +13,7 @@ from app.models.director_model import Director
 from app.models.notification_model import DeviceToken
 from app.models.parent_model import Parent
 from app.utils.config import settings
+from app.utils.login_guard import check_login_allowed, clear_login_failures, record_login_failure
 from app.utils.phone import normalize_phone
 from app.utils.security import (
     create_jwt_access_token,
@@ -131,14 +132,18 @@ def create_director(
 
 
 def authenticate_director(db: Session, email: str, password: str) -> Director:
+    guard_key = "director:" + email.lower()
+    check_login_allowed(guard_key)
     director = db.query(Director).filter(Director.email == email.lower()).first()
     if not director or not verify_password(password, director.hashed_password):
+        record_login_failure(guard_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid_credentials",
         )
     if not director.is_active:
         raise HTTPException(status_code=403, detail="account_inactive")
+    clear_login_failures(guard_key)
     return director
 
 

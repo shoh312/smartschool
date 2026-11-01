@@ -14,6 +14,7 @@ from app.models.parent_model import Parent
 from app.models.student import Student
 from app.models.teacher_model import Teacher, TeacherClass
 from app.schemas.student_schema import StudentResponse
+from app.services.auth_service import MIN_PASSWORD_LENGTH
 from app.utils.security import hash_password
 from app.schemas.teacher_schema import (
     ClassAssignmentCreate,
@@ -70,6 +71,8 @@ def director_create_teacher(
     db: Session = Depends(get_db),
     director: Director = Depends(get_current_director),
 ):
+    if len(payload.password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail="password_too_short")
     return create_teacher(
         db,
         school_id=director.school_id,
@@ -267,7 +270,7 @@ def director_update_teacher(
             raise HTTPException(status_code=409, detail="Teacher email already exists")
         teacher.email = email
     if payload.password is not None:
-        if len(payload.password) < 4:
+        if len(payload.password) < MIN_PASSWORD_LENGTH:
             raise HTTPException(status_code=400, detail="password_too_short")
         teacher.hashed_password = hash_password(payload.password)
     if payload.full_name is not None and payload.full_name.strip():
