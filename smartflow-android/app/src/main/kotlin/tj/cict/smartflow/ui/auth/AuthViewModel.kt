@@ -17,25 +17,28 @@ import tj.cict.smartflow.data.repo.DirectorRepository
 import tj.cict.smartflow.data.repo.TeacherRepository
 
 data class LoginUi(
-    val phone: String = "+992 ",
+    /** Email (director / teacher), phone number (parent) or username (pupil). */
+    val ident: String = "",
     val password: String = "",
     val busy: Boolean = false,
     val error: ApiError? = null,
-    /** Which tab of the sign-in card is showing: 0 parent, 1 student, 2 teacher. */
-    val tab: Int = 0,
-    val username: String = "",
-    val studentPassword: String = "",
-    val email: String = "",
-    val teacherPassword: String = "",
-    /** School-server lookup, teacher tab only. */
+    /** School-server lookup, needed once the login looks like an email. */
     val serverUrl: String? = null,
     val serverSearching: Boolean = false,
 ) {
-    val student: Boolean get() = tab == 1
-    val teacher: Boolean get() = tab == 2
-    val director: Boolean get() = tab == 3
-    /** Teacher and director both sign in against the school server. */
-    val school: Boolean get() = tab >= 2
+    val kind: LoginKind get() = loginKindOf(ident)
+}
+
+enum class LoginKind { STAFF, PARENT, STUDENT }
+
+/** No role tabs: an email is staff, a phone number a parent, anything else a pupil's username. */
+fun loginKindOf(ident: String): LoginKind {
+    val v = ident.trim()
+    return when {
+        '@' in v -> LoginKind.STAFF
+        Regex("""^\+?[\d\s()-]{7,}$""").matches(v) -> LoginKind.PARENT
+        else -> LoginKind.STUDENT
+    }
 }
 
 data class VerifyUi(
@@ -71,16 +74,13 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
 
     // ------------------------------------------------------------ login
 
-    fun onPhone(v: String) = _login.update { it.copy(phone = v, error = null) }
-    fun onPassword(v: String) = _login.update { it.copy(password = v, error = null) }
-
-    fun setTab(tab: Int) {
-        _login.update { it.copy(tab = tab, error = null) }
-        if (tab >= 2 && _login.value.serverUrl == null && !_login.value.serverSearching) findServer()
+    fun onIdent(v: String) {
+        _login.update { it.copy(ident = v, error = null) }
+        // Start finding the school server as soon as it is clearly staff.
+        val ui = _login.value
+        if (ui.kind == LoginKind.STAFF && ui.serverUrl == null && !ui.serverSearching) findServer()
     }
-
-    fun onEmail(v: String) = _login.update { it.copy(email = v, error = null) }
-    fun onTeacherPassword(v: String) = _login.update { it.copy(teacherPassword = v, error = null) }
+    fun onPassword(v: String) = _login.update { it.copy(password = v, error = null) }
 
     fun findServer() {
         _login.update { it.copy(serverSearching = true) }
@@ -90,58 +90,42 @@ class AuthViewModel(private val repo: AuthRepository, private val teachers: Teac
         }
     }
 
-    fun submitTeacherLogin() {
+    fun submit(onNeedsPassword: (String) -> Unit) {
         val ui = _login.value
-        if (ui.busy || ui.email.isBlank()) return
+        if (ui.busy || ui.ident.isBlank() || ui.password.isEmpty()) return
         _login.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            // Discovery runs quietly when the tab opens; if it has not found
-            // the server yet (or failed), one more try before giving up.
-            val server = ui.serverUrl ?: teachers.resolveServer().also { url -> _login.update { it.copy(serverUrl = url) } }
-            if (server == null) {
-                _login.update { it.copy(busy = false, error = ApiError.Detail("school_not_found", 0)) }
-                return@launch
-            }
-            val r = if (ui.director) directors.login(ui.email, ui.teacherPassword, server) else teachers.login(ui.email, ui.teacherPassword, server)
-            when (r) {
-                is ApiResult.Ok -> _login.update { it.copy(busy = false) }
-                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error.asLoginError()) }
-            }
-        }
-    }
-    fun onUsername(v: String) = _login.update { it.copy(username = v, error = null) }
-    fun onStudentPassword(v: String) = _login.update { it.copy(studentPassword = v, error = null) }
-
-    fun submitStudentLogin() {
-        val ui = _login.value
-        if (ui.busy || ui.username.isBlank()) return
-        _login.update { it.copy(busy = true, error = null) }
-        viewModelScope.launch {
-            when (val r = repo.loginStudent(ui.username, ui.studentPassword)) {
-                is ApiResult.Ok -> _login.update { it.copy(busy = false) }
-                is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error.asLoginError()) }
-            }
-        }
-    }
-
-    fun submitLogin(onNeedsPassword: (String) -> Unit) {
-        val ui = _login.value
-        if (ui.busy) return
-        val phone = ui.phone.digits()
-        if (phone.length < 9) return
-        _login.update { it.copy(busy = true, error = null) }
-        viewModelScope.launch {
-            when (val r = repo.login(phone, ui.password)) {
-                is ApiResult.Ok -> {
-                    _login.update { it.copy(busy = false) }
-                    when (val o = r.value) {
-                        LoginOutcome.SignedIn -> Unit // session flow flips the graph
-                        is LoginOutcome.NeedsPassword -> onNeedsPassword(o.phone)
+            val r = when (ui.kind) {
+                LoginKind.STAFF -> staffLogin(ui)
+                LoginKind.STUDENT -> repo.loginStudent(ui.ident.trim(), ui.password)
+                LoginKind.PARENT -> when (val p = repo.login(ui.ident.digits(), ui.password)) {
+                    is ApiResult.Ok -> {
+                        if (p.value is LoginOutcome.NeedsPassword) onNeedsPassword((p.value as LoginOutcome.NeedsPassword).phone)
+                        ApiResult.Ok(Unit)
                     }
+                    // A pupil's username can be all digits -- not a parent, try that.
+                    is ApiResult.Err -> if ((p.error as? ApiError.Detail)?.code == "phone_not_registered") {
+                        repo.loginStudent(ui.ident.trim(), ui.password).let { s -> if (s is ApiResult.Err) p else s }
+                    } else p
                 }
+            }
+            when (r) {
+                is ApiResult.Ok -> _login.update { it.copy(busy = false) } // session flow flips the graph
                 is ApiResult.Err -> _login.update { it.copy(busy = false, error = r.error.asLoginError()) }
             }
         }
+    }
+
+    private suspend fun staffLogin(ui: LoginUi): ApiResult<Unit> {
+        // Discovery runs quietly while typing; one more try if it has not finished.
+        val server = ui.serverUrl ?: teachers.resolveServer().also { url -> _login.update { it.copy(serverUrl = url) } }
+            ?: return ApiResult.Err(ApiError.Detail("school_not_found", 0))
+        val email = ui.ident.trim()
+        val r = teachers.staffLogin(email, ui.password, server)
+        // School server not updated yet: no single staff login there.
+        if (r !is ApiResult.Err || (r.error as? ApiError.Detail)?.status != 404) return r
+        val d = directors.login(email, ui.password, server)
+        return if (d is ApiResult.Err && d.error == ApiError.Unauthorized) teachers.login(email, ui.password, server) else d
     }
 
     // ----------------------------------------------------------- verify

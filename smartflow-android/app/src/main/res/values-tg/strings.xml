@@ -10,7 +10,7 @@
     <string name="error_session">Сеанс ба охир расид. Лутфан, аз нав ворид шавед.</string>
 
     <string name="login_title">Хуш омадед</string>
-    <string name="login_subtitle">Бо рақами телефоне, ки мактаб сабт кардааст, ворид шавед.</string>
+    <string name="login_subtitle">Бо ҳисоби мактабии худ ворид шавед.</string>
     <string name="phone_label">Рақами телефон</string>
     <string name="password_label">Рамз</string>
     <string name="login_button">Ворид шудан</string>
@@ -489,4 +489,6 @@
     <string name="class_averages">Аз рӯи синфҳо</string>
     <string name="avg_all_pupils">Аз рӯи ҳамаи хонандагон</string>
     <string name="avg_ring_label">Бали миёна</string>
+    <string name="login_ident_label">Почта, рақами телефон ё логин</string>
+    <string name="login_ident_hint">Директор ва муаллим: почта. Волидайн: рақами телефон. Хонандагон: логин аз мактаб.</string>
 </resources>

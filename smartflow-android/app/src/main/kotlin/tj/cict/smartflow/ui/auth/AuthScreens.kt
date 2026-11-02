@@ -70,8 +70,6 @@ import tj.cict.smartflow.ui.components.Illustration
 import tj.cict.smartflow.ui.components.PageBackground
 import tj.cict.smartflow.ui.components.PrimaryButton
 import tj.cict.smartflow.ui.components.RoundIconButton
-import tj.cict.smartflow.ui.components.Segment
-import tj.cict.smartflow.ui.components.SegmentRow
 import tj.cict.smartflow.ui.components.SoftCard
 import tj.cict.smartflow.ui.components.VSpace
 import tj.cict.smartflow.ui.theme.Radius
@@ -148,121 +146,53 @@ fun LoginScreen(onNeedsPassword: (String) -> Unit, vm: AuthViewModel = koinViewM
     val focus = LocalFocusManager.current
 
     AuthFrame(R.drawable.ill_school, stringResource(R.string.login_title), stringResource(R.string.login_subtitle)) {
-        SegmentRow(Modifier.fillMaxWidth()) {
-            Segment(stringResource(R.string.role_parent), ui.tab == 0) { vm.setTab(0) }
-            Segment(stringResource(R.string.role_student), ui.tab == 1) { vm.setTab(1) }
-            Segment(stringResource(R.string.role_teacher), ui.tab == 2) { vm.setTab(2) }
-            Segment(stringResource(R.string.role_director), ui.tab == 3) { vm.setTab(3) }
-        }
-        VSpace(16.dp)
         ErrorLine(ui.error)
-        if (ui.school) {
-            TeacherForm(ui, vm, showPassword, onTogglePassword = { showPassword = !showPassword })
-        } else if (!ui.student) {
-            AppTextField(
-                value = ui.phone,
-                onValueChange = vm::onPhone,
-                label = stringResource(R.string.phone_label),
-                leading = Icons.Outlined.Phone,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-            )
-            VSpace(12.dp)
-            AppTextField(
-                value = ui.password,
-                onValueChange = vm::onPassword,
-                label = stringResource(R.string.password_label),
-                leading = Icons.Outlined.Lock,
-                trailing = { EyeToggle(showPassword) { showPassword = !showPassword } },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); vm.submitLogin(onNeedsPassword) }),
-            )
-            VSpace(18.dp)
-            PrimaryButton(
-                stringResource(R.string.login_button),
-                onClick = { focus.clearFocus(); vm.submitLogin(onNeedsPassword) },
-                loading = ui.busy,
-                enabled = ui.phone.digits().length >= 9,
-            )
+        AppTextField(
+            value = ui.ident,
+            onValueChange = vm::onIdent,
+            label = stringResource(R.string.login_ident_label),
+            leading = if (ui.kind == LoginKind.PARENT) Icons.Outlined.Phone else Icons.Outlined.Person,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next, autoCorrectEnabled = false),
+        )
+        VSpace(12.dp)
+        AppTextField(
+            value = ui.password,
+            onValueChange = vm::onPassword,
+            label = stringResource(R.string.password_label),
+            leading = Icons.Outlined.Lock,
+            trailing = { EyeToggle(showPassword) { showPassword = !showPassword } },
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); vm.submit(onNeedsPassword) }),
+        )
+        VSpace(18.dp)
+        PrimaryButton(
+            stringResource(R.string.login_button),
+            onClick = { focus.clearFocus(); vm.submit(onNeedsPassword) },
+            loading = ui.busy,
+            enabled = ui.ident.isNotBlank() && ui.password.isNotEmpty(),
+        )
+        if (ui.kind == LoginKind.PARENT) {
             VSpace(6.dp)
             // Same SMS flow as first sign-up: the server lets any registered
             // number ask for a code, and set-password overwrites the old one.
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 GhostButton(
                     stringResource(R.string.login_forgot),
-                    onClick = { focus.clearFocus(); onNeedsPassword(ui.phone.digits()) },
-                    enabled = ui.phone.digits().length >= 9,
+                    onClick = { focus.clearFocus(); onNeedsPassword(ui.ident.digits()) },
+                    enabled = ui.ident.digits().length >= 9,
                 )
             }
-            VSpace(4.dp)
-            Text(
-                stringResource(R.string.login_first_time),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.smart.inkTertiary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        } else {
-            AppTextField(
-                value = ui.username,
-                onValueChange = vm::onUsername,
-                label = stringResource(R.string.username_label),
-                leading = Icons.Outlined.Person,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next, autoCorrectEnabled = false),
-            )
-            VSpace(12.dp)
-            AppTextField(
-                value = ui.studentPassword,
-                onValueChange = vm::onStudentPassword,
-                label = stringResource(R.string.password_label),
-                leading = Icons.Outlined.Lock,
-                trailing = { EyeToggle(showPassword) { showPassword = !showPassword } },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); vm.submitStudentLogin() }),
-            )
-            VSpace(18.dp)
-            PrimaryButton(
-                stringResource(R.string.login_button),
-                onClick = { focus.clearFocus(); vm.submitStudentLogin() },
-                loading = ui.busy,
-                enabled = ui.username.isNotBlank() && ui.studentPassword.isNotEmpty(),
-            )
-            VSpace(14.dp)
-            Text(
-                stringResource(R.string.student_login_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.smart.inkTertiary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
+        VSpace(14.dp)
+        Text(
+            stringResource(R.string.login_ident_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.smart.inkTertiary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
-}
-
-@Composable
-private fun TeacherForm(ui: LoginUi, vm: AuthViewModel, showPassword: Boolean, onTogglePassword: () -> Unit) {
-    val c = MaterialTheme.smart
-    val focus = LocalFocusManager.current
-    AppTextField(
-        value = ui.email, onValueChange = vm::onEmail, label = stringResource(R.string.email_label), leading = Icons.Outlined.Person,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next, autoCorrectEnabled = false),
-    )
-    VSpace(12.dp)
-    AppTextField(
-        value = ui.teacherPassword, onValueChange = vm::onTeacherPassword, label = stringResource(R.string.password_label), leading = Icons.Outlined.Lock,
-        trailing = { EyeToggle(showPassword, onTogglePassword) },
-        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); vm.submitTeacherLogin() }),
-    )
-    VSpace(18.dp)
-    PrimaryButton(
-        stringResource(R.string.login_button), onClick = { focus.clearFocus(); vm.submitTeacherLogin() }, loading = ui.busy,
-        enabled = ui.email.isNotBlank() && ui.teacherPassword.isNotEmpty(),
-    )
-    VSpace(14.dp)
-    Text(if (ui.director) stringResource(R.string.director_login_hint) else stringResource(R.string.teacher_login_hint), style = MaterialTheme.typography.bodySmall, color = c.inkTertiary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
 }
 
 @Composable

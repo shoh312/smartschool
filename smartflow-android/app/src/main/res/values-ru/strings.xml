@@ -10,7 +10,7 @@
     <string name="error_session">Сеанс завершён. Войдите снова.</string>
 
     <string name="login_title">С возвращением</string>
-    <string name="login_subtitle">Войдите по номеру телефона, который школа указала при регистрации.</string>
+    <string name="login_subtitle">Войдите со своей школьной учётной записью.</string>
     <string name="phone_label">Номер телефона</string>
     <string name="password_label">Пароль</string>
     <string name="login_button">Войти</string>
@@ -489,4 +489,6 @@
     <string name="class_averages">По классам</string>
     <string name="avg_all_pupils">По всем ученикам</string>
     <string name="avg_ring_label">Средний</string>
+    <string name="login_ident_label">Почта, телефон или логин</string>
+    <string name="login_ident_hint">Директор и учитель: почта. Родители: номер телефона. Ученики: логин от школы.</string>
 </resources>

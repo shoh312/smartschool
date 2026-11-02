@@ -14,7 +14,7 @@
 
     <!-- Login -->
     <string name="login_title">Welcome back</string>
-    <string name="login_subtitle">Sign in with the phone number the school registered for you.</string>
+    <string name="login_subtitle">Sign in with your school account.</string>
     <string name="phone_label">Phone number</string>
     <string name="password_label">Password</string>
     <string name="login_button">Sign in</string>
@@ -514,4 +514,6 @@
     <string name="class_averages">By class</string>
     <string name="avg_all_pupils">Across all pupils</string>
     <string name="avg_ring_label">Average</string>
+    <string name="login_ident_label">Email, phone or username</string>
+    <string name="login_ident_hint">Directors and teachers: email. Parents: phone number. Pupils: the username from school.</string>
 </resources>

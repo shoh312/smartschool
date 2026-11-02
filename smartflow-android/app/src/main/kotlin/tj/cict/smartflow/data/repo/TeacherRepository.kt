@@ -68,6 +68,26 @@ class TeacherRepository(private val api: SchoolApi, private val session: Session
         }
     }
 
+    /** Director or teacher by one email -- the school server decides the role. */
+    suspend fun staffLogin(email: String, password: String, serverUrl: String?): ApiResult<Unit> {
+        val url = serverUrl ?: return ApiResult.Err(ApiError.Network)
+        session.rememberServerUrl(url)
+        val login = email.trim()
+        return when (val r = rawCall { api.staffLogin(TeacherLoginRequest(login, password)) }) {
+            is ApiResult.Err -> r
+            is ApiResult.Ok -> {
+                val t = r.value.teacher
+                val d = r.value.director
+                if (r.value.userType == "teacher" && t != null) {
+                    session.save(Session(r.value.accessToken, Role.TEACHER, t.id, t.fullName, t.email, t.subject, url))
+                } else {
+                    session.save(Session(r.value.accessToken, Role.DIRECTOR, d?.id ?: 0, d?.fullName.orEmpty(), login, null, url))
+                }
+                ApiResult.Ok(Unit)
+            }
+        }
+    }
+
     // ----------------------------------------------------------- classes
 
     suspend fun myClasses(): ApiResult<List<ClassAssignmentDto>> = safeCall { api.myClasses() }

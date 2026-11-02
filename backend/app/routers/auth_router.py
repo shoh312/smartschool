@@ -1,9 +1,17 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_director, get_current_superadmin
 from app.models.director_model import Director
+from app.models.teacher_model import Teacher
+from app.schemas.teacher_schema import TeacherResponse
+from app.services.teacher_service import create_teacher_token
+from app.utils.login_guard import check_login_allowed, clear_login_failures, record_login_failure
+from app.utils.security import verify_password
 from app.schemas.auth_schema import (
     DirectorChangePassword,
     DirectorCreate,
@@ -125,3 +133,47 @@ def change_password(
         new_password=payload.new_password,
     )
     return {"message": "Password updated"}
+
+
+class StaffLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_type: str
+    director: Optional[DirectorResponse] = None
+    teacher: Optional[TeacherResponse] = None
+    must_change_password: bool = False
+
+
+@router.post("/staff/login", response_model=StaffLoginResponse)
+def login_staff(payload: DirectorLogin, db: Session = Depends(get_db)):
+    """One sign-in for the school's staff: the login page no longer asks
+    "director or teacher?" -- the email decides. Directors are checked first."""
+    email = str(payload.email).strip().lower()
+    guard_key = "staff:" + email
+    check_login_allowed(guard_key)
+
+    director = db.query(Director).filter(Director.email == email).first()
+    if director and verify_password(payload.password, director.hashed_password):
+        if not director.is_active:
+            raise HTTPException(status_code=403, detail="account_inactive")
+        clear_login_failures(guard_key)
+        return StaffLoginResponse(
+            access_token=create_director_token(director),
+            user_type="director",
+            director=director,
+            must_change_password=bool(director.must_change_password),
+        )
+
+    teacher = db.query(Teacher).filter(Teacher.email == email).first()
+    if teacher and verify_password(payload.password, teacher.hashed_password):
+        if not teacher.is_active:
+            raise HTTPException(status_code=403, detail="account_inactive")
+        clear_login_failures(guard_key)
+        return StaffLoginResponse(
+            access_token=create_teacher_token(teacher),
+            user_type="teacher",
+            teacher=teacher,
+        )
+
+    record_login_failure(guard_key)
+    raise HTTPException(status_code=401, detail="invalid_credentials")

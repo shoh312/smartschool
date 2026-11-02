@@ -13,6 +13,10 @@ export const auth = {
     post<{ access_token: string; teacher: TeacherDto }>('auth/teacher/login', { email, password }, { auth: false }),
   directorLogin: (email: string, password: string) =>
     post<{ access_token: string; director?: DirectorDto | null; must_change_password?: boolean }>('auth/director/login', { email, password }, { auth: false }),
+  // Director or teacher -- the server decides from the email.
+  staffLogin: (email: string, password: string) =>
+    post<{ access_token: string; user_type: 'director' | 'teacher'; director?: DirectorDto | null; teacher?: TeacherDto | null; must_change_password?: boolean }>(
+      'auth/staff/login', { email, password }, { auth: false }),
   // Parents and pupils authenticate on the public server, not the school.
   parentLogin: (phone: string, password: string) =>
     post<{ status: string; access_token?: string; parent_id?: number; full_name?: string; phone?: string }>(

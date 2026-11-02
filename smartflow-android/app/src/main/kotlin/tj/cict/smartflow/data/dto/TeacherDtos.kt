@@ -22,6 +22,15 @@ data class TeacherDto(
 @Serializable
 data class TeacherTokenResponse(@SerialName("access_token") val accessToken: String, val teacher: TeacherDto)
 
+/** `/auth/staff/login`: one sign-in for directors and teachers, the server says which. */
+@Serializable
+data class StaffTokenResponse(
+    @SerialName("access_token") val accessToken: String,
+    @SerialName("user_type") val userType: String,
+    val director: DirectorDto? = null,
+    val teacher: TeacherDto? = null,
+)
+
 /** One (class, subject) the teacher is assigned to. */
 @Serializable
 data class ClassAssignmentDto(

@@ -59,11 +59,15 @@ import tj.cict.smartflow.data.dto.TeacherDiaryEntryDto
 import tj.cict.smartflow.data.dto.TeacherDto
 import tj.cict.smartflow.data.dto.TeacherLoginRequest
 import tj.cict.smartflow.data.dto.TeacherTokenResponse
+import tj.cict.smartflow.data.dto.StaffTokenResponse
 
 /** The school server on the LAN, as a teacher uses it. */
 interface SchoolApi {
     @POST("auth/teacher/login")
     suspend fun teacherLogin(@Body body: TeacherLoginRequest): TeacherTokenResponse
+
+    @POST("auth/staff/login")
+    suspend fun staffLogin(@Body body: TeacherLoginRequest): StaffTokenResponse
 
     @GET("auth/teacher/me")
     suspend fun teacherMe(): TeacherDto
