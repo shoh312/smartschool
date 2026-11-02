@@ -418,7 +418,7 @@
     <string name="assign_classes">Classes</string>
     <string name="assign_due_date">Due date</string>
     <string name="assign_due_time">Time</string>
-    <string name="assign_due_hint">Leave empty for no deadline. Date YYYYMMDD, time HHMM.</string>
+    <string name="assign_due_hint">Tap the date or time to pick it. A date without a time means the end of that day.</string>
     <string name="assign_attempts">Attempts</string>
     <string name="material_new">New material</string>
     <string name="material_edit">Material</string>
@@ -516,4 +516,8 @@
     <string name="avg_ring_label">Average</string>
     <string name="login_ident_label">Email, phone or username</string>
     <string name="login_ident_hint">Directors and teachers: email. Parents: phone number. Pupils: the username from school.</string>
+    <string name="assign_due_none">No deadline</string>
+    <string name="assign_due_tomorrow">Tomorrow</string>
+    <string name="assign_due_week">In a week</string>
+    <string name="ok">OK</string>
 </resources>

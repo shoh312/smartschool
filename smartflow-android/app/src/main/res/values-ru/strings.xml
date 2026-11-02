@@ -393,7 +393,7 @@
     <string name="assign_classes">Классы</string>
     <string name="assign_due_date">Срок сдачи</string>
     <string name="assign_due_time">Время</string>
-    <string name="assign_due_hint">Пусто — без срока. Дата ГГГГММДД, время ЧЧММ.</string>
+    <string name="assign_due_hint">Нажмите на дату или время, чтобы выбрать. Без времени — до конца дня.</string>
     <string name="assign_attempts">Попытки</string>
     <string name="material_new">Новый материал</string>
     <string name="material_edit">Материал</string>
@@ -491,4 +491,8 @@
     <string name="avg_ring_label">Средний</string>
     <string name="login_ident_label">Почта, телефон или логин</string>
     <string name="login_ident_hint">Директор и учитель: почта. Родители: номер телефона. Ученики: логин от школы.</string>
+    <string name="assign_due_none">Без срока</string>
+    <string name="assign_due_tomorrow">Завтра</string>
+    <string name="assign_due_week">Через неделю</string>
+    <string name="ok">ОК</string>
 </resources>

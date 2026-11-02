@@ -201,11 +201,9 @@ private fun AssignSheet(m: MaterialSummaryDto, classes: List<ClassAssignmentDto>
     val distinct = remember(classes) { classes.distinctBy { it.classId } }
     var picked by remember { mutableStateOf(setOf<Int>()) }
     var mode by remember { mutableStateOf("practice") }
-    var date by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf<java.time.LocalDate?>(null) }
+    var time by remember { mutableStateOf<java.time.LocalTime?>(null) }
     var attempts by remember { mutableStateOf<Int?>(null) }
-    val dateOk = date.isBlank() || runCatching { java.time.LocalDate.parse(date) }.isSuccess
-    val timeOk = time.isBlank() || Regex("^([01]?\\d|2[0-3]):[0-5]\\d$").matches(time)
     ModalBottomSheet(
         onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.surface,
         shape = RoundedCornerShape(topStart = Radius.xl, topEnd = Radius.xl),
@@ -224,11 +222,8 @@ private fun AssignSheet(m: MaterialSummaryDto, classes: List<ClassAssignmentDto>
                 TogglePill(stringResource(R.string.mode_control), mode == "control") { mode = "control" }
             }
             VSpace(12.dp)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.weight(1f)) { AppTextField(date, { date = formatDateInput(it) }, stringResource(R.string.assign_due_date), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = !dateOk) }
-                Box(Modifier.weight(1f)) { AppTextField(time, { time = formatTimeInput(it) }, stringResource(R.string.assign_due_time), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), isError = !timeOk) }
-            }
-            Text(stringResource(R.string.assign_due_hint), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary); VSpace(12.dp)
+            DuePicker(date, time, onDate = { date = it }, onTime = { time = it })
+            VSpace(12.dp)
             Text(stringResource(R.string.assign_attempts), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TogglePill(stringResource(R.string.attempts_unlimited), attempts == null) { attempts = null }
@@ -238,12 +233,108 @@ private fun AssignSheet(m: MaterialSummaryDto, classes: List<ClassAssignmentDto>
             PrimaryButton(
                 stringResource(R.string.assign_material),
                 onClick = {
-                    val due = if (date.isNotBlank()) date + "T" + (time.ifBlank { "23:59" }) + ":00" else null
+                    val due = date?.let { d -> "${d}T${(time ?: java.time.LocalTime.of(23, 59)).withSecond(0).withNano(0)}:00" }
                     onAssign(picked.toList(), mode, due, attempts)
                 },
-                enabled = picked.isNotEmpty() && dateOk && timeOk, loading = busy,
+                enabled = picked.isNotEmpty(), loading = busy,
             )
         }
+    }
+}
+
+/**
+ * Deadline by tapping, not typing: quick picks (none / today / tomorrow / in a
+ * week), then a calendar and a clock for anything else. No date = no deadline;
+ * a date without a time means the end of that day (23:59).
+ */
+@Composable
+private fun DuePicker(
+    date: java.time.LocalDate?,
+    time: java.time.LocalTime?,
+    onDate: (java.time.LocalDate?) -> Unit,
+    onTime: (java.time.LocalTime?) -> Unit,
+) {
+    val c = MaterialTheme.smart
+    val today = java.time.LocalDate.now()
+    var calendarOpen by remember { mutableStateOf(false) }
+    var clockOpen by remember { mutableStateOf(false) }
+
+    Text(stringResource(R.string.assign_due_date), style = MaterialTheme.typography.labelMedium, color = c.inkSecondary); VSpace(6.dp)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item { TogglePill(stringResource(R.string.assign_due_none), date == null) { onDate(null); onTime(null) } }
+        item { TogglePill(stringResource(R.string.today), date == today) { onDate(today) } }
+        item { TogglePill(stringResource(R.string.assign_due_tomorrow), date == today.plusDays(1)) { onDate(today.plusDays(1)) } }
+        item { TogglePill(stringResource(R.string.assign_due_week), date == today.plusWeeks(1)) { onDate(today.plusWeeks(1)) } }
+    }
+    VSpace(10.dp)
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        PickerBox(
+            label = stringResource(R.string.assign_due_date),
+            value = date?.format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", currentLocale())),
+            modifier = Modifier.weight(1f),
+        ) { calendarOpen = true }
+        PickerBox(
+            label = stringResource(R.string.assign_due_time),
+            value = date?.let { (time ?: java.time.LocalTime.of(23, 59)).toString() },
+            modifier = Modifier.weight(1f),
+        ) { clockOpen = true }
+    }
+    Text(stringResource(R.string.assign_due_hint), style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+
+    if (calendarOpen) {
+        val zone = java.time.ZoneOffset.UTC
+        val state = androidx.compose.material3.rememberDatePickerState(
+            initialSelectedDateMillis = (date ?: today).atStartOfDay(zone).toInstant().toEpochMilli(),
+            selectableDates = object : androidx.compose.material3.SelectableDates {
+                // Past days make no sense for a deadline.
+                override fun isSelectableDate(utcTimeMillis: Long) =
+                    !java.time.Instant.ofEpochMilli(utcTimeMillis).atZone(zone).toLocalDate().isBefore(today)
+            },
+        )
+        androidx.compose.material3.DatePickerDialog(
+            onDismissRequest = { calendarOpen = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { onDate(java.time.Instant.ofEpochMilli(it).atZone(zone).toLocalDate()) }
+                    calendarOpen = false
+                }) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = { TextButton(onClick = { calendarOpen = false }) { Text(stringResource(R.string.cancel)) } },
+        ) { androidx.compose.material3.DatePicker(state = state) }
+    }
+
+    if (clockOpen) {
+        val start = time ?: java.time.LocalTime.of(23, 59)
+        val state = androidx.compose.material3.rememberTimePickerState(initialHour = start.hour, initialMinute = start.minute, is24Hour = true)
+        AlertDialog(
+            onDismissRequest = { clockOpen = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onTime(java.time.LocalTime.of(state.hour, state.minute))
+                    // A time with no date: deadline is today at that time.
+                    if (date == null) onDate(today)
+                    clockOpen = false
+                }) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = { TextButton(onClick = { clockOpen = false }) { Text(stringResource(R.string.cancel)) } },
+            text = { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { androidx.compose.material3.TimePicker(state = state) } },
+        )
+    }
+}
+
+/** Looks like a text field, opens a picker when tapped. */
+@Composable
+private fun PickerBox(label: String, value: String?, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val c = MaterialTheme.smart
+    Column(
+        modifier
+            .clip(RoundedCornerShape(Radius.md))
+            .border(1.dp, if (value != null) c.brand else c.border, RoundedCornerShape(Radius.md))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = c.inkTertiary)
+        Text(value ?: "—", style = MaterialTheme.typography.titleMedium, color = if (value != null) c.ink else c.inkTertiary)
     }
 }
 

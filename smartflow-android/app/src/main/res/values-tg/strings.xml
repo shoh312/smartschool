@@ -393,7 +393,7 @@
     <string name="assign_classes">Синфҳо</string>
     <string name="assign_due_date">Мӯҳлат</string>
     <string name="assign_due_time">Вақт</string>
-    <string name="assign_due_hint">Холӣ — бе мӯҳлат. Сана СССММРР, вақт ССДД.</string>
+    <string name="assign_due_hint">Барои интихоб ба сана ё вақт пахш кунед. Бе вақт — то охири рӯз.</string>
     <string name="assign_attempts">Кӯшишҳо</string>
     <string name="material_new">Маводи нав</string>
     <string name="material_edit">Мавод</string>
@@ -491,4 +491,8 @@
     <string name="avg_ring_label">Бали миёна</string>
     <string name="login_ident_label">Почта, рақами телефон ё логин</string>
     <string name="login_ident_hint">Директор ва муаллим: почта. Волидайн: рақами телефон. Хонандагон: логин аз мактаб.</string>
+    <string name="assign_due_none">Бе мӯҳлат</string>
+    <string name="assign_due_tomorrow">Пагоҳ</string>
+    <string name="assign_due_week">Пас аз як ҳафта</string>
+    <string name="ok">ОК</string>
 </resources>
