@@ -192,6 +192,21 @@ def create_camera(payload: CameraCreate, db: Session = Depends(get_db), director
     return camera
 
 
+def _with_host(url: str | None, host: str) -> str | None:
+    """The same stream URL with another host; login, port and path stay."""
+    if not url:
+        return url
+    scheme, sep, rest = url.partition("://")
+    if not sep:
+        return url
+    # authority ends at the first / or ? -- but only after the "@", since
+    # camera passwords may contain either character
+    at = rest.rfind("@")
+    login, tail = rest[: at + 1], rest[at + 1:]
+    end = next((i for i, ch in enumerate(tail) if ch in ":/?"), len(tail))
+    return f"{scheme}://{login}{host}{tail[end:]}"
+
+
 @router.put("/cameras/{camera_id}", response_model=CameraResponse)
 def update_camera(camera_id: int, payload: CameraCreate, db: Session = Depends(get_db),
                    director: Director = Depends(get_current_director)):
@@ -204,7 +219,13 @@ def update_camera(camera_id: int, payload: CameraCreate, db: Session = Depends(g
         if not school_class:
             raise HTTPException(status_code=404, detail="Class not found")
 
-    for key, value in payload.model_dump().items():
+    data = payload.model_dump()
+    new_ip = (data.get("ip_address") or "").strip()
+    if new_ip and new_ip != (camera.ip_address or "") and data.get("rtsp_url") == camera.rtsp_url:
+        # Only the IP was edited. The stream is opened from rtsp_url, so the
+        # new address has to go in there too.
+        data["rtsp_url"] = _with_host(camera.rtsp_url, new_ip)
+    for key, value in data.items():
         setattr(camera, key, value)
 
     db.commit()

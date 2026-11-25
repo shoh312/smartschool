@@ -860,6 +860,7 @@ def _run_camera_once(camera_id: int, camera_source: str, gen: int = 0):
 
 
 _active_camera_ids: set[int] = set()
+_cam_source: dict[int, str] = {}  # the URL each running thread was started with
 
 def _ensure_cameras():
     global _detection_threads, _active_camera_ids
@@ -871,9 +872,14 @@ def _ensure_cameras():
         db.close()
 
     for cam in cameras:
-        if cam.id in _active_camera_ids:
-            continue
         src = cam.rtsp_url or CAMERA_SOURCE
+        if cam.id in _active_camera_ids:
+            if _cam_source.get(cam.id) == src:
+                continue
+            # address edited in the app: the new generation below retires the
+            # thread still using the old URL
+            print(f"[+] Camera {cam.id}: address changed, restarting thread")
+        _cam_source[cam.id] = src
         gen = _cam_generation.get(cam.id, 0) + 1
         _cam_generation[cam.id] = gen
         _cam_heartbeat[cam.id] = time.time()
